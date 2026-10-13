@@ -37,39 +37,151 @@
 
     .font-mono-num { font-family: 'JetBrains Mono', monospace; }
 
-    /* Vrai spectre thermique sans vert : Glace -> Indigo -> Violet -> Rouge -> Magma -> Soleil */
+    /* ===================================================================== */
+    /* BARRES THERMIQUES DISTINCTES (NORMAL / FLAMME / MAGMA / FUSION 100%)  */
+    /* ===================================================================== */
+    /* Spectre standard (0% à 98.9%) : Gris -> Bleu -> Indigo -> Violet -> Orange/Rouge (Sans jaune !) */
     .thermal-spectrum {
       background: linear-gradient(
         90deg,
         #475569 0%,
-        #0ea5e9 20%,
-        #6366f1 42%,
-        #a855f7 62%,
-        #ef4444 80%,
-        #f97316 92%,
-        #facc15 100%
+        #0ea5e9 22%,
+        #6366f1 45%,
+        #a855f7 68%,
+        #ec4899 84%,
+        #f97316 100%
       );
     }
 
-    /* Effet de lave / soleil en fusion pour le mot gagnant et le Top 10 */
-    @keyframes solarFlow {
+    /* Barre Magma (Top 1 à 10 : 99.0% à 99.9%) : Rouge volcanique & Lave sombre SANS JAUNE */
+    @keyframes magmaFlow {
       0% { background-position: 0% 50%; }
       50% { background-position: 100% 50%; }
       100% { background-position: 0% 50%; }
     }
-    .solar-magma-bar {
-      background: linear-gradient(90deg, #dc2626, #ea580c, #facc15, #fef08a, #f97316, #dc2626);
-      background-size: 200% 200%;
-      animation: solarFlow 2.2s ease infinite;
-      box-shadow: 0 0 12px rgba(250, 204, 21, 0.6);
-    }
-    .solar-victory-card {
-      background: linear-gradient(135deg, rgba(127, 29, 29, 0.55), rgba(154, 52, 18, 0.55), rgba(161, 98, 7, 0.45));
-      border-color: rgba(250, 204, 21, 0.7) !important;
-      box-shadow: 0 0 24px -2px rgba(249, 115, 22, 0.45);
+    .magma-lava-bar {
+      background: linear-gradient(90deg, #450a0a, #991b1b, #dc2626, #ea580c, #b91c1c, #7f1d1d);
+      background-size: 220% 220%;
+      animation: magmaFlow 2.6s ease infinite;
+      box-shadow: 0 0 10px rgba(220, 38, 38, 0.7);
     }
 
-    /* Animations fluides */
+    /* Barre Fusion Solaire (Uniquement pour 100% !) : Blanc incandescent & Or Solaire */
+    .solar-fusion-bar {
+      background: linear-gradient(90deg, #f59e0b, #facc15, #fef08a, #ffffff, #fef08a, #facc15);
+      background-size: 200% 200%;
+      animation: magmaFlow 1.6s linear infinite;
+      box-shadow: 0 0 16px rgba(254, 240, 138, 0.95);
+    }
+
+    /* ===================================================================== */
+    /* EFFETS AUTOUR DES MOTS : FLAMME vs MAGMA vs RAYONS DE SOLEIL (FUSION) */
+    /* ===================================================================== */
+    /* 1. Effet Feu / Braises pour les mots Flamme (Top 11 à 100) */
+    @keyframes flameFlicker {
+      0%, 100% {
+        box-shadow: 0 0 10px -2px rgba(249, 115, 22, 0.35), inset 0 0 8px rgba(249, 115, 22, 0.12);
+        border-color: rgba(249, 115, 22, 0.55);
+      }
+      50% {
+        box-shadow: 0 0 16px 1px rgba(234, 88, 12, 0.55), inset 0 0 12px rgba(251, 146, 60, 0.22);
+        border-color: rgba(251, 146, 60, 0.85);
+      }
+    }
+    .tier-flame-card {
+      background: linear-gradient(135deg, rgba(67, 20, 7, 0.55), rgba(30, 41, 59, 0.7));
+      animation: flameFlicker 2.2s ease-in-out infinite;
+    }
+    .flame-word-glow {
+      text-shadow: 0 0 8px rgba(249, 115, 22, 0.75), 0 -2px 4px rgba(239, 68, 68, 0.5);
+      color: #ffedd5 !important;
+    }
+
+    /* 2. Effet Lave Volcanique pour les mots Magma (Top 1 à 10) - Rouge profond sans jaune */
+    @keyframes magmaPulse {
+      0%, 100% {
+        box-shadow: 0 0 14px rgba(185, 28, 28, 0.55), inset 0 0 12px rgba(153, 27, 27, 0.35);
+        border-color: rgba(220, 38, 38, 0.75);
+      }
+      50% {
+        box-shadow: 0 0 22px 2px rgba(220, 38, 38, 0.8), inset 0 0 18px rgba(239, 68, 68, 0.45);
+        border-color: rgba(248, 113, 113, 0.95);
+      }
+    }
+    .tier-magma-card {
+      background: linear-gradient(135deg, rgba(69, 10, 10, 0.82), rgba(127, 29, 29, 0.60), rgba(30, 15, 25, 0.85));
+      animation: magmaPulse 1.8s ease-in-out infinite;
+    }
+    .magma-word-glow {
+      text-shadow: 0 0 10px rgba(239, 68, 68, 0.95), 0 0 18px rgba(185, 28, 28, 0.8);
+      color: #fecaca !important;
+    }
+
+    /* 3. Effet Rayons de Soleil / Supernova pour le Mot Secret (100% Fusion) */
+    @keyframes sunbeamsSpin {
+      from { transform: translate(-50%, -50%) rotate(0deg); }
+      to { transform: translate(-50%, -50%) rotate(360deg); }
+    }
+    @keyframes solarCoronaPulse {
+      0%, 100% { box-shadow: 0 0 22px 2px rgba(250, 204, 21, 0.65), inset 0 0 18px rgba(254, 240, 138, 0.4); }
+      50% { box-shadow: 0 0 34px 6px rgba(254, 240, 138, 0.9), inset 0 0 26px rgba(255, 255, 255, 0.6); }
+    }
+    .tier-fusion-card {
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(135deg, rgba(161, 98, 7, 0.75), rgba(202, 138, 4, 0.65), rgba(120, 53, 15, 0.8));
+      border-color: #fef08a !important;
+      animation: solarCoronaPulse 2s ease-in-out infinite;
+    }
+    .tier-fusion-card::before {
+      content: "";
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 240%;
+      height: 600%;
+      background: repeating-conic-gradient(
+        from 0deg,
+        rgba(254, 240, 138, 0.22) 0deg 12deg,
+        transparent 12deg 24deg
+      );
+      animation: sunbeamsSpin 10s linear infinite;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .tier-fusion-card > * {
+      position: relative;
+      z-index: 1;
+    }
+    .fusion-word-glow {
+      text-shadow: 0 0 12px #ffffff, 0 0 22px #facc15;
+      color: #ffffff !important;
+    }
+
+    /* ===================================================================== */
+    /* EXPLOSION DE FUSION SOLAIRE PLEIN ÉCRAN (VICTOIRE)                    */
+    /* ===================================================================== */
+    @keyframes solarScreenFlash {
+      0% { opacity: 0; }
+      12% { opacity: 0.95; }
+      35% { opacity: 0.55; }
+      100% { opacity: 0; }
+    }
+    @keyframes solarShockwaveRing {
+      0% { transform: translate(-50%, -50%) scale(0.1); opacity: 1; border-width: 18px; }
+      70% { opacity: 0.8; border-width: 4px; }
+      100% { transform: translate(-50%, -50%) scale(3.2); opacity: 0; border-width: 1px; }
+    }
+    @keyframes solarCoreBurst {
+      0% { transform: translate(-50%, -50%) scale(0.2) rotate(0deg); opacity: 1; }
+      50% { transform: translate(-50%, -50%) scale(1.6) rotate(45deg); opacity: 0.9; }
+      100% { transform: translate(-50%, -50%) scale(2.4) rotate(90deg); opacity: 0; }
+    }
+    .animate-solar-flash { animation: solarScreenFlash 1.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+    .animate-solar-ring { animation: solarShockwaveRing 1.25s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+    .animate-solar-rays { animation: solarCoreBurst 1.45s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+    /* Autres animations */
     @keyframes shake {
       0%, 100% { transform: translateX(0); }
       20%, 60% { transform: translateX(-6px); }
@@ -96,7 +208,6 @@
     }
     .animate-pop { animation: popIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
 
-    /* Halo de retour thermique sur la barre de saisie */
     .input-glow-cold { box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.35) !important; border-color: #38bdf8 !important; }
     .input-glow-warm { box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.40) !important; border-color: #a855f7 !important; }
     .input-glow-hot  { box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.50) !important; border-color: #facc15 !important; }
@@ -111,11 +222,10 @@
       animation: marqueeScroll 7s ease-in-out infinite alternate;
     }
 
-    /* Mode Clavier Mobile Actif */
+    /* Mode Clavier Mobile Actif : #lastGuessBox reste autorisé si le mot est hors du Top 7 ! */
     body.keyboard-active #mainHeader,
     body.keyboard-active #statsContainer,
-    body.keyboard-active #mobileTabsWrapper,
-    body.keyboard-active #lastGuessBox {
+    body.keyboard-active #mobileTabsWrapper {
       display: none !important;
     }
     body.keyboard-active #mainGrid {
@@ -135,6 +245,19 @@
 <body class="text-slate-100 selection:bg-sky-500 selection:text-white">
 
   <div id="appViewport">
+
+    <!-- ===================================================================== -->
+    <!-- EFFET D'EXPLOSION SOLAIRE PLEIN ÉCRAN (FLASH + ONDE + RAYONS)         -->
+    <!-- ===================================================================== -->
+    <div id="solarExplosionOverlay" class="hidden fixed inset-0 z-50 pointer-events-none overflow-hidden">
+      <!-- Flash solaire radial -->
+      <div id="solarFlashBg" class="absolute inset-0 bg-[radial-gradient(circle_at_center,#ffffff_0%,#fef08a_30%,#f97316_65%,transparent_100%)]"></div>
+      <!-- Rayons de soleil rotatifs qui explosent -->
+      <div id="solarRaysBurst" class="absolute top-1/2 left-1/2 w-[520px] h-[520px] rounded-full"
+           style="background: repeating-conic-gradient(from 0deg, rgba(255,255,255,0.85) 0deg 8deg, transparent 8deg 20deg); mask-image: radial-gradient(circle, black 10%, transparent 70%); -webkit-mask-image: radial-gradient(circle, black 10%, transparent 70%);"></div>
+      <!-- Onde de choc circulaire -->
+      <div id="solarShockwave" class="absolute top-1/2 left-1/2 w-56 h-56 rounded-full border-amber-200 shadow-[0_0_60px_#facc15]"></div>
+    </div>
 
     <!-- ===================================================================== -->
     <!-- 1. MODALE D'ACCUEIL (SOLO / SALON 4 LETTRES)                          -->
@@ -205,7 +328,7 @@
     </div>
 
     <!-- ===================================================================== -->
-    <!-- 2. MODALE DE PROFIL JOUEUR, NIVEAU XP & CLASSEMENT                    -->
+    <!-- 2. MODALE DE PROFIL JOUEUR, STATISTIQUES & CATALOGUE DES GRADES       -->
     <!-- ===================================================================== -->
     <div id="statsModal" onclick="handleStatsBackdropClick(event)"
       class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
@@ -218,19 +341,24 @@
 
         <div id="statsPlayerTabs" class="flex items-center gap-1.5 overflow-x-auto pb-2 mb-3 border-b border-slate-800 pr-8 shrink-0"></div>
 
-        <div class="overflow-y-auto pr-1 flex flex-col gap-4">
-          <div class="bg-slate-950/70 border border-slate-800/90 rounded-2xl p-4">
+        <div class="overflow-y-auto pr-1 flex flex-col gap-3.5">
+          <!-- En-tête du Profil + Bouton Grades Cliquable -->
+          <div class="bg-slate-950/70 border border-slate-800/90 rounded-2xl p-3.5">
             <div class="flex items-center gap-3">
-              <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-sky-500 via-indigo-600 to-orange-500 flex flex-col items-center justify-center shadow-lg shadow-sky-500/20 shrink-0">
+              <div onclick="toggleGradesView()" title="Voir tous les niveaux et grades"
+                class="cursor-pointer w-12 h-12 rounded-2xl bg-gradient-to-br from-sky-500 via-indigo-600 to-orange-500 flex flex-col items-center justify-center shadow-lg shadow-sky-500/20 shrink-0 hover:scale-105 transition">
                 <span class="text-[9px] uppercase font-bold text-sky-100 leading-none">Niv.</span>
                 <span id="profileLevelNum" class="font-mono-num text-lg font-extrabold text-white leading-tight">1</span>
               </div>
               <div class="min-w-0 flex-1">
-                <div class="flex items-center gap-2">
+                <div class="flex items-center justify-between gap-1.5">
                   <h3 id="profileName" class="text-base font-extrabold text-white truncate">Pierre</h3>
-                  <span id="profileRankBadge" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-sky-500/15 text-sky-300 border border-sky-500/30 shrink-0">
-                    ❄️ Flocon Curieux
-                  </span>
+                  <!-- Cliquer sur le grade ouvre l'écran des paliers de niveaux -->
+                  <button onclick="toggleGradesView()" id="profileRankBadge" title="Toucher pour voir tous les grades"
+                    class="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-sky-500/15 hover:bg-sky-500/30 text-sky-300 border border-sky-500/40 shrink-0 transition flex items-center gap-1">
+                    <span id="profileRankText">❄️ Flocon Curieux</span>
+                    <i data-lucide="chevron-right" class="w-3 h-3"></i>
+                  </button>
                 </div>
                 <div class="mt-2">
                   <div class="flex justify-between text-[10px] font-mono-num text-slate-400 mb-1">
@@ -245,40 +373,61 @@
             </div>
           </div>
 
-          <div class="grid grid-cols-3 gap-2">
-            <div class="bg-slate-800/40 border border-slate-800 rounded-xl p-2.5 text-center">
-              <span class="text-[10px] text-slate-400 block">☀️ Victoires</span>
-              <strong id="statCardWins" class="font-mono-num text-base font-extrabold text-amber-400">0</strong>
+          <!-- SOUS-ÉCRAN 1 : CATALOGUE DES GRADES & NIVEAUX (Affiché quand on clique sur le grade) -->
+          <div id="gradesCatalogView" class="hidden flex-col gap-2 bg-slate-950/60 border border-slate-800 rounded-2xl p-3 animate-pop">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-2 mb-1">
+              <span class="text-xs font-extrabold text-amber-300 flex items-center gap-1.5">
+                <i data-lucide="award" class="w-4 h-4"></i>
+                Paliers de Grades & Niveaux
+              </span>
+              <button onclick="toggleGradesView()" class="text-[10px] bg-slate-800 hover:bg-slate-700 text-slate-300 px-2 py-0.5 rounded-md font-bold">
+                ← Retour aux stats
+              </button>
             </div>
-            <div class="bg-slate-800/40 border border-slate-800 rounded-xl p-2.5 text-center">
-              <span class="text-[10px] text-slate-400 block">🎯 Mots testés</span>
-              <strong id="statCardAttempts" class="font-mono-num text-base font-extrabold text-white">0</strong>
+            <p class="text-[10px] text-slate-400 mb-1">Chaque tranche de <strong>500 XP</strong> fait monter d'un niveau :</p>
+            <div id="gradesListContainer" class="flex flex-col gap-1.5"></div>
+          </div>
+
+          <!-- SOUS-ÉCRAN 2 : STATISTIQUES & CLASSEMENT DU SALON (Par défaut) -->
+          <div id="statsMainView" class="flex flex-col gap-3.5">
+            <div class="grid grid-cols-3 gap-2">
+              <div class="bg-slate-800/40 border border-slate-800 rounded-xl p-2.5 text-center">
+                <span class="text-[10px] text-slate-400 block">☀️ Victoires</span>
+                <strong id="statCardWins" class="font-mono-num text-base font-extrabold text-amber-300">0</strong>
+              </div>
+              <div class="bg-slate-800/40 border border-slate-800 rounded-xl p-2.5 text-center">
+                <span class="text-[10px] text-slate-400 block">🎯 Mots testés</span>
+                <strong id="statCardAttempts" class="font-mono-num text-base font-extrabold text-white">0</strong>
+              </div>
+              <div class="bg-slate-800/40 border border-slate-800 rounded-xl p-2.5 text-center">
+                <span class="text-[10px] text-slate-400 block">🔥 Top 1000</span>
+                <strong id="statCardHot" class="font-mono-num text-base font-extrabold text-orange-400">0</strong>
+              </div>
+              <div class="bg-slate-800/40 border border-slate-800 rounded-xl p-2.5 text-center">
+                <span class="text-[10px] text-slate-400 block">🌋 Top 10</span>
+                <strong id="statCardTop10" class="font-mono-num text-base font-extrabold text-red-400">0</strong>
+              </div>
+              <div class="bg-slate-800/40 border border-slate-800 rounded-xl p-2.5 text-center">
+                <span class="text-[10px] text-slate-400 block">📐 Précision</span>
+                <strong id="statCardPrecision" class="font-mono-num text-base font-extrabold text-sky-400">0%</strong>
+              </div>
+              <div class="bg-slate-800/40 border border-slate-800 rounded-xl p-2.5 text-center">
+                <span class="text-[10px] text-slate-400 block">💎 Points</span>
+                <strong id="statCardPoints" class="font-mono-num text-base font-extrabold text-indigo-300">0</strong>
+              </div>
             </div>
-            <div class="bg-slate-800/40 border border-slate-800 rounded-xl p-2.5 text-center">
-              <span class="text-[10px] text-slate-400 block">🔥 Top 1000</span>
-              <strong id="statCardHot" class="font-mono-num text-base font-extrabold text-orange-400">0</strong>
-            </div>
-            <div class="bg-slate-800/40 border border-slate-800 rounded-xl p-2.5 text-center">
-              <span class="text-[10px] text-slate-400 block">🌋 Top 10</span>
-              <strong id="statCardTop10" class="font-mono-num text-base font-extrabold text-rose-400">0</strong>
-            </div>
-            <div class="bg-slate-800/40 border border-slate-800 rounded-xl p-2.5 text-center">
-              <span class="text-[10px] text-slate-400 block">📐 Précision</span>
-              <strong id="statCardPrecision" class="font-mono-num text-base font-extrabold text-sky-400">0%</strong>
-            </div>
-            <div class="bg-slate-800/40 border border-slate-800 rounded-xl p-2.5 text-center">
-              <span class="text-[10px] text-slate-400 block">💎 Points</span>
-              <strong id="statCardPoints" class="font-mono-num text-base font-extrabold text-indigo-300">0</strong>
+
+            <div>
+              <div class="flex items-center justify-between text-xs font-bold text-slate-300 mb-2 px-1">
+                <span>🏅 Classement Général du Salon</span>
+                <button onclick="toggleGradesView()" class="text-[10px] text-sky-400 hover:underline font-semibold">
+                  🎖️ Voir les grades
+                </button>
+              </div>
+              <div id="modalLeaderboardList" class="flex flex-col gap-1.5"></div>
             </div>
           </div>
 
-          <div>
-            <div class="flex items-center justify-between text-xs font-bold text-slate-300 mb-2 px-1">
-              <span>🏅 Classement Général du Salon</span>
-              <span class="text-[10px] text-slate-500 font-normal">Touchez un joueur</span>
-            </div>
-            <div id="modalLeaderboardList" class="flex flex-col gap-1.5"></div>
-          </div>
         </div>
       </div>
     </div>
@@ -288,21 +437,21 @@
     <!-- ===================================================================== -->
     <div id="surgeOverlay" onclick="handleSurgeBackdropClick(event)"
       class="hidden fixed inset-0 z-40 bg-slate-950/60 backdrop-blur-[2px] flex items-center justify-center p-4 cursor-pointer">
-      <div class="relative bg-slate-950/95 border-2 border-amber-400/90 rounded-3xl p-5 shadow-[0_0_55px_rgba(249,115,22,0.5)] text-center max-w-xs w-full animate-pop cursor-default">
+      <div class="relative bg-slate-950/95 border-2 border-red-500/90 rounded-3xl p-5 shadow-[0_0_55px_rgba(220,38,38,0.55)] text-center max-w-xs w-full animate-pop cursor-default">
 
         <button onclick="dismissSurgeOverlay()" title="Fermer"
           class="absolute top-3 right-3 w-7 h-7 rounded-full bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center transition">
           <i data-lucide="x" class="w-4 h-4"></i>
         </button>
 
-        <div class="inline-flex items-center gap-1 bg-gradient-to-r from-red-500/25 to-amber-500/25 border border-amber-400/50 text-amber-300 text-[10px] font-extrabold uppercase tracking-widest px-2.5 py-0.5 rounded-full mb-2">
-          <span>🌋 Montée en fusion</span>
+        <div class="inline-flex items-center gap-1 bg-gradient-to-r from-red-600/30 to-orange-600/30 border border-red-400/50 text-red-200 text-[10px] font-extrabold uppercase tracking-widest px-2.5 py-0.5 rounded-full mb-2">
+          <span>🌋 Percée Thermique</span>
         </div>
         <div id="surgePlayerName" class="text-xs font-bold text-sky-300">Pierre</div>
         <div id="surgeWord" class="text-2xl font-extrabold text-white uppercase tracking-wide my-1">BATEAU</div>
         <div class="flex items-center justify-center gap-2 mt-1.5">
-          <span id="surgeScore" class="font-mono-num text-base font-extrabold text-amber-400">99.0%</span>
-          <span id="surgeBadge" class="bg-orange-500/25 text-amber-200 border border-amber-400/40 font-mono-num text-xs font-bold px-2 py-0.5 rounded-lg">Top 10</span>
+          <span id="surgeScore" class="font-mono-num text-base font-extrabold text-orange-400">99.0%</span>
+          <span id="surgeBadge" class="bg-red-500/25 text-red-200 border border-red-400/40 font-mono-num text-xs font-bold px-2 py-0.5 rounded-lg">Top 10</span>
         </div>
         <p class="text-[10px] text-slate-500 mt-3">Touchez n'importe où pour fermer</p>
       </div>
@@ -314,7 +463,7 @@
     <div id="toastContainer" class="fixed top-2.5 left-1/2 -translate-x-1/2 z-40 flex flex-col items-center gap-1.5 pointer-events-none w-full max-w-xs px-4"></div>
 
     <!-- ===================================================================== -->
-    <!-- 5. EN-TÊTE ULTRA-COMPACT (ZÉRO DÉBORDEMENT MOBILE)                    -->
+    <!-- 5. EN-TÊTE ULTRA-COMPACT                                              -->
     <!-- ===================================================================== -->
     <header id="mainHeader" class="w-full max-w-6xl mx-auto px-2.5 sm:px-4 pt-2 pb-1.5 flex items-center justify-between gap-1.5 border-b border-slate-800/80 shrink-0 overflow-hidden">
       <div class="flex items-center gap-1.5 min-w-0 shrink-0">
@@ -335,7 +484,7 @@
       </div>
 
       <div class="flex items-center gap-1.5 shrink-0">
-        <button onclick="openStatsModal(myId)" title="Voir mon profil et mes statistiques"
+        <button onclick="openStatsModal(myId)" title="Voir mon profil et les grades"
           class="flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 px-2 py-1 rounded-lg transition shrink-0">
           <span id="headerLevelBadge" class="text-[10px] font-extrabold bg-sky-500/20 text-sky-300 px-1.5 py-0.2 rounded">N1</span>
           <i data-lucide="zap" class="w-3 h-3 text-amber-400"></i>
@@ -370,7 +519,7 @@
         <div class="flex items-center gap-2 min-w-0 flex-1 overflow-hidden">
           <span class="inline-block w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse shrink-0"></span>
           <div class="overflow-hidden w-full">
-            <span id="liveTickerText" class="text-slate-300 font-medium text-[11px] block truncate">Atteignez 100% pour entrer en fusion !</span>
+            <span id="liveTickerText" class="text-slate-300 font-medium text-[11px] block truncate">Atteignez 100% pour déclencher la fusion solaire !</span>
           </div>
         </div>
         <button onclick="openStatsModal(myId)" id="liveLeaderBadge" class="shrink-0 font-mono-num text-[10px] text-amber-400 font-bold bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 px-1.5 py-0.5 rounded transition">
@@ -404,7 +553,7 @@
       <!-- COLONNE GAUCHE : ZONE DE JEU -->
       <section id="gameSection" class="lg:col-span-7 flex flex-col gap-1.5 min-h-0 h-full">
 
-        <!-- STATISTIQUES MINIMISABLES (Se replie après 10s ou au clic) -->
+        <!-- STATISTIQUES MINIMISABLES -->
         <div id="statsContainer" onclick="toggleStatsMinimized()" class="cursor-pointer select-none shrink-0 transition-all">
           <div id="statsExpanded" class="grid grid-cols-3 gap-1.5">
             <div class="bg-slate-900/70 border border-slate-800/80 rounded-xl px-2.5 py-1.5 flex items-center justify-between">
@@ -430,7 +579,7 @@
           </div>
         </div>
 
-        <!-- Barre de Saisie avec retour lumineux thermique -->
+        <!-- Barre de Saisie -->
         <form id="guessForm" onsubmit="handleGuess(event)" class="relative flex gap-1.5 shrink-0">
           <div class="relative flex-1">
             <input id="wordInput" type="text" inputmode="text" enterkeyhint="send"
@@ -447,21 +596,25 @@
           </button>
         </form>
 
-        <!-- Bannière de Fin de Manche (Thème Magma / Soleil cohérent avec le 100%) -->
-        <div id="victoryBanner" class="hidden solar-victory-card border rounded-xl p-2.5 animate-pop shrink-0">
+        <!-- Bannière de Fin de Manche (Rayons Solaires & Or Blanc) -->
+        <div id="victoryBanner" class="hidden tier-fusion-card border-2 rounded-xl p-2.5 animate-pop shrink-0">
           <div class="flex items-center justify-between gap-2">
             <div class="min-w-0">
-              <h3 id="victoryTitle" class="text-xs sm:text-sm font-extrabold text-amber-200 truncate">☀️ Fusion atteinte !</h3>
-              <p id="victorySub" class="text-[11px] text-amber-100/90 truncate"></p>
+              <h3 id="victoryTitle" class="text-xs sm:text-sm font-extrabold text-white fusion-word-glow truncate">☀️ Fusion atteinte !</h3>
+              <p id="victorySub" class="text-[11px] text-amber-100 font-medium truncate"></p>
             </div>
-            <button onclick="triggerNextGame()" class="bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-300 hover:to-orange-400 text-slate-950 font-extrabold text-xs px-3 py-1.5 rounded-lg transition shrink-0 shadow-md">
+            <button onclick="triggerNextGame()" class="bg-white hover:bg-amber-100 text-slate-950 font-extrabold text-xs px-3 py-1.5 rounded-lg transition shrink-0 shadow-lg">
               Suivant
             </button>
           </div>
         </div>
 
-        <!-- Dernier Essai Ultra-Compact -->
+        <!-- DERNIER MOT RÉCENT : S'affiche UNIQUEMENT quand le mot n'est pas dans les 7 premiers (même clavier ouvert !) -->
         <div id="lastGuessBox" class="hidden shrink-0">
+          <div class="text-[10px] text-slate-400 font-semibold px-1 mb-0.5 flex justify-between">
+            <span>👇 Mot récent (classé plus bas dans la liste)</span>
+            <span id="lastGuessRankPos" class="font-mono-num text-slate-500"></span>
+          </div>
           <div id="lastGuessContent"></div>
         </div>
 
@@ -471,11 +624,12 @@
             <span class="font-bold text-slate-300">🔥 Mots chauds</span>
             <div class="flex items-center gap-1.5">
               <span class="text-[10px] text-sky-400">0%</span>
-              <div class="w-14 h-1.5 rounded-full thermal-spectrum"></div>
-              <span class="text-[10px] text-amber-400 font-bold">100%</span>
+              <div class="w-12 h-1.5 rounded-full thermal-spectrum"></div>
+              <span class="text-[10px] text-red-400 font-bold">🌋</span>
+              <span class="text-[10px] text-amber-300 font-bold">☀️100%</span>
             </div>
           </div>
-          <div id="guessesList" class="flex-1 overflow-y-auto flex flex-col gap-1 pr-0.5">
+          <div id="guessesList" class="flex-1 overflow-y-auto flex flex-col gap-1.5 pr-0.5">
             <p class="text-slate-500 text-xs text-center my-auto py-8">Chargement...</p>
           </div>
         </div>
@@ -492,21 +646,19 @@
               <h2 class="font-bold text-xs uppercase tracking-wider text-slate-300">Joueurs</h2>
             </div>
             <button onclick="openStatsModal(myId)" class="text-[10px] bg-sky-500/15 hover:bg-sky-500/25 text-sky-300 border border-sky-500/30 px-2 py-0.5 rounded-md font-bold transition flex items-center gap-1">
-              <i data-lucide="bar-chart-2" class="w-3 h-3"></i>
-              <span>Stats & Niveaux</span>
+              <i data-lucide="award" class="w-3 h-3"></i>
+              <span>Stats & Grades</span>
             </button>
           </div>
           <div id="leaderboardList" class="flex flex-col gap-1.5 max-h-40 overflow-y-auto pr-0.5"></div>
         </div>
 
-        <!-- Journal Direct avec Bouton Filtre Inversé (Affiche l'action à effectuer) -->
         <div class="bg-slate-900/60 border border-slate-800/90 rounded-2xl p-3 flex-1 flex flex-col min-h-0 overflow-hidden">
           <div class="flex items-center justify-between border-b border-slate-800 pb-2 mb-2 shrink-0">
             <div class="flex items-center gap-1.5">
               <i data-lucide="radio" class="w-3.5 h-3.5 text-orange-400"></i>
               <h2 class="font-bold text-xs uppercase tracking-wider text-slate-300">Direct (Manche)</h2>
             </div>
-            <!-- Quand tout est affiché, le bouton propose l'action "🔥 Chauds seuls" -->
             <button id="feedFilterBtn" onclick="toggleFeedFilter()"
               class="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-slate-800 text-amber-300 hover:bg-slate-700 border border-slate-700 transition">
               🔥 Chauds seuls
@@ -523,12 +675,22 @@
 
   <script>
     // =========================================================================
-    // 1. CONFIGURATION, ÉCHELLE UNIQUE EN % & GAMIFICATION
+    // 1. CONFIGURATION, CATALOGUE DES GRADES & ÉCHELLE THERMIQUE
     // =========================================================================
     const TOTAL_GAMES = 500;
     const HINT_COST = 750;
     const XP_PER_LEVEL = 500;
     const PEER_PREFIX = "zeroabsolu-fr-v2-";
+
+    // Paliers officiels de Grades
+    const GRADE_TIERS = [
+      { minLevel: 1,  xpReq: 0,    title: "❄️ Flocon Curieux",      desc: "Premiers pas dans le froid absolu",       badgeCls: "bg-slate-800 text-sky-300 border-sky-500/30" },
+      { minLevel: 3,  xpReq: 1000, title: "🧊 Sondeur Polaire",     desc: "Capable de détecter les signaux tièdes",  badgeCls: "bg-sky-950/60 text-sky-300 border-sky-400/50" },
+      { minLevel: 5,  xpReq: 2000, title: "🔥 Chasseur de Braises", desc: "Habitué des mots du Top 1000",            badgeCls: "bg-orange-950/60 text-orange-300 border-orange-500/50" },
+      { minLevel: 9,  xpReq: 4000, title: "⚡ Oracle Thermique",    desc: "Maîtrise des connexions sémantiques",    badgeCls: "bg-purple-950/60 text-purple-300 border-purple-500/50" },
+      { minLevel: 14, xpReq: 6500, title: "🌋 Maître du Magma",     desc: "Plonge régulièrement dans le Top 10",     badgeCls: "bg-red-950/70 text-red-300 border-red-500/60" },
+      { minLevel: 20, xpReq: 9500, title: "☀️ Cœur Solaire",        desc: "Entité en fusion sémantique permanente", badgeCls: "bg-amber-500/25 text-amber-200 border-amber-300/80" }
+    ];
 
     const FALLBACK_WORDS = {
       "océan": [100.0, 1000], "mer": [92.4, 999], "maritime": [86.1, 998], "atlantique": [84.5, 997],
@@ -562,11 +724,12 @@
 
     let guesses = [];
     let roundFinished = false;
-    let roomBestScorePct = 0; // Score record du salon en % (0 à 100%)
+    let roomBestScorePct = 0;
     let roomBestRank = 0;
 
     let players = {};
     let selectedStatsPlayerId = myId;
+    let showingGradesCatalog = false;
 
     let statsMinimized = false;
     let statsIdleTimer = null;
@@ -580,43 +743,31 @@
       const currentLevelXp = safeXp % XP_PER_LEVEL;
       const progressPct = Math.min(100, Math.round((currentLevelXp / XP_PER_LEVEL) * 100));
 
-      let title = "❄️ Flocon Curieux";
-      if (level >= 20) title = "☀️ Cœur Solaire";
-      else if (level >= 14) title = "🌋 Maître du Magma";
-      else if (level >= 9) title = "⚡ Oracle Thermique";
-      else if (level >= 5) title = "🔥 Chasseur de Braises";
-      else if (level >= 3) title = "🧊 Sondeur Polaire";
+      let currentTier = GRADE_TIERS[0];
+      for (const tier of GRADE_TIERS) {
+        if (level >= tier.minLevel) currentTier = tier;
+      }
 
-      return { level, currentLevelXp, nextLevelXp: XP_PER_LEVEL, progressPct, title };
+      return { level, currentLevelXp, nextLevelXp: XP_PER_LEVEL, progressPct, title: currentTier.title, tier: currentTier };
     }
 
-    // =========================================================================
-    // 2. ÉCHELLE UNIFIÉE DE CHALEUR EN % (FINI LES °C ET LES ‰ CONFUS)
-    // =========================================================================
-    // Convertit n'importe quel mot en un pourcentage limpide de 1.0% à 100% :
-    // - Hors Top 1000 (froid) : 1.0% à 39.9%
-    // - Top 1000 (rang 1 à 899) : 40.0% à 89.9%
-    // - Top 100 (rang 900 à 989) : 90.0% à 98.9%
-    // - Top 10 (rang 990 à 999) : 99.0% à 99.9% (ex: 99.9% = Top 1)
-    // - Mot secret (rang 1000) : 100%
     function computeUnifiedScorePct(temp, rank) {
       if (rank === 1000) return 100;
       if (rank !== null && rank >= 900) {
-        return Number((rank / 10).toFixed(1)); // 90.0% à 99.9%
+        return Number((rank / 10).toFixed(1));
       }
       if (rank !== null && rank > 0) {
         const mapped = 40 + (rank / 900) * 49.9;
-        return Number(mapped.toFixed(1)); // 40.0% à 89.9%
+        return Number(mapped.toFixed(1));
       }
       const normCold = Math.max(0, Math.min(1, (temp + 12) / 40));
-      return Number((1 + normCold * 38.5).toFixed(1)); // 1.0% à 39.5%
+      return Number((1 + normCold * 38.5).toFixed(1));
     }
 
-    // Donne le rang humainement lisible ("Top 1" = le plus proche, "Top 15" = 15e plus proche)
     function getReadableTopLabel(rank) {
       if (rank === 1000) return "☀️ FUSION";
       if (!rank) return null;
-      const topPosition = 1000 - rank; // rank 999 -> Top 1, rank 990 -> Top 10
+      const topPosition = 1000 - rank;
       return `Top ${topPosition}`;
     }
 
@@ -655,7 +806,7 @@
     }
 
     // =========================================================================
-    // 3. CLAVIER MOBILE & MINIMISATION AUTO DES STATS (10 SECONDES)
+    // 2. CLAVIER MOBILE & MINIMISATION AUTO DES STATS (10 SECONDES)
     // =========================================================================
     let initialScreenHeight = window.innerHeight;
 
@@ -768,16 +919,17 @@
       document.getElementById("headerLevelBadge").textContent = `N${lvlInfo.level}`;
     }
 
+    // Correction du cadenas : affiche toujours l'ampoule si le joueur a >= 750 points
     function updateHintButtonUI() {
       const me = players[myId];
       const btn = document.getElementById("hintBtn");
       const content = document.getElementById("hintBtnContent");
       if (!btn || !content) return;
 
-      const canAfford = me && me.points >= HINT_COST && !roundFinished;
+      const hasEnoughPoints = me && me.points >= HINT_COST;
 
-      if (canAfford) {
-        btn.className = "flex items-center justify-center gap-1 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/50 text-amber-300 text-xs font-bold px-2 py-1 rounded-lg transition shadow-sm shrink-0";
+      if (hasEnoughPoints) {
+        btn.className = `flex items-center justify-center gap-1 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/50 text-amber-300 text-xs font-bold px-2 py-1 rounded-lg transition shadow-sm shrink-0 ${roundFinished ? 'opacity-50' : ''}`;
         content.innerHTML = `<i data-lucide="lightbulb" class="w-3.5 h-3.5 text-amber-400"></i><span class="font-mono-num text-[11px]">${HINT_COST}</span>`;
       } else {
         btn.className = "flex items-center justify-center gap-1 bg-slate-900/70 border border-slate-800 text-slate-500 text-xs font-semibold px-2 py-1 rounded-lg transition opacity-75 shrink-0";
@@ -787,10 +939,12 @@
     }
 
     // =========================================================================
-    // 4. MODALE PROFIL JOUEUR, STATISTIQUES & CLASSEMENT
+    // 3. MODALE PROFIL JOUEUR & CATALOGUE DES GRADES CLIQUABLE
     // =========================================================================
     function openStatsModal(targetPlayerId = myId) {
       selectedStatsPlayerId = players[targetPlayerId] ? targetPlayerId : myId;
+      showingGradesCatalog = false;
+      updateGradesViewVisibility();
       renderStatsModalContent();
       document.getElementById("statsModal").classList.remove("hidden");
     }
@@ -803,6 +957,26 @@
       if (e.target.id === "statsModal") closeStatsModal();
     }
 
+    function toggleGradesView() {
+      showingGradesCatalog = !showingGradesCatalog;
+      updateGradesViewVisibility();
+      renderStatsModalContent();
+    }
+
+    function updateGradesViewVisibility() {
+      const catalog = document.getElementById("gradesCatalogView");
+      const mainView = document.getElementById("statsMainView");
+      if (showingGradesCatalog) {
+        catalog.classList.remove("hidden");
+        catalog.classList.add("flex");
+        mainView.classList.add("hidden");
+      } else {
+        catalog.classList.add("hidden");
+        catalog.classList.remove("flex");
+        mainView.classList.remove("hidden");
+      }
+    }
+
     function renderStatsModalContent() {
       const allPlayers = Object.values(players);
       const sorted = [...allPlayers].sort((a, b) => (b.xp - a.xp) || (b.points - a.points) || (b.wins - a.wins));
@@ -813,7 +987,7 @@
       tabsContainer.innerHTML = sorted.map(player => {
         const active = player.id === p.id;
         return `
-          <button onclick="openStatsModal('${escapeHTML(player.id)}')"
+          <button onclick="selectedStatsPlayerId='${escapeHTML(player.id)}'; renderStatsModalContent();"
             class="px-3 py-1 rounded-xl text-xs font-bold transition shrink-0 ${active ? "bg-sky-500 text-slate-950" : "bg-slate-800 text-slate-300 hover:bg-slate-700"}">
             ${escapeHTML(player.pseudo)}
           </button>
@@ -823,10 +997,35 @@
       const lvl = getLevelInfo(p.xp || 0);
       document.getElementById("profileLevelNum").textContent = lvl.level;
       document.getElementById("profileName").textContent = p.pseudo;
-      document.getElementById("profileRankBadge").textContent = lvl.title;
+      document.getElementById("profileRankText").textContent = lvl.title;
       document.getElementById("profileXpText").textContent = `${lvl.currentLevelXp} / ${lvl.nextLevelXp} XP (Total: ${p.xp || 0} XP)`;
       document.getElementById("profileNextLevelXp").textContent = `Niv. ${lvl.level + 1}`;
       document.getElementById("profileXpBar").style.width = `${Math.max(6, lvl.progressPct)}%`;
+
+      // Rendu du Catalogue des Grades
+      const gradesContainer = document.getElementById("gradesListContainer");
+      gradesContainer.innerHTML = GRADE_TIERS.map((g, idx) => {
+        const unlocked = lvl.level >= g.minLevel;
+        const isCurrent = lvl.tier.minLevel === g.minLevel;
+        const statusBadge = isCurrent
+          ? `<span class="text-[10px] font-extrabold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2 py-0.5 rounded-full">Grade actuel</span>`
+          : unlocked
+            ? `<span class="text-[10px] font-bold text-sky-400">✓ Débloqué</span>`
+            : `<span class="text-[10px] font-mono-num text-slate-500">🔒 Niv. ${g.minLevel}</span>`;
+
+        return `
+          <div class="p-2.5 rounded-xl border flex items-center justify-between gap-2 ${isCurrent ? "bg-slate-800/90 border-sky-400/60 shadow-md" : unlocked ? "bg-slate-900/80 border-slate-800" : "bg-slate-950/60 border-slate-900 opacity-55"}">
+            <div class="min-w-0">
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-extrabold text-white">${g.title}</span>
+                <span class="text-[10px] font-mono-num text-slate-400">(Niv. ${g.minLevel} • ${g.xpReq} XP)</span>
+              </div>
+              <p class="text-[10px] text-slate-400 mt-0.5">${g.desc}</p>
+            </div>
+            <div class="shrink-0">${statusBadge}</div>
+          </div>
+        `;
+      }).join("");
 
       const totalAtt = p.totalAttempts || p.attempts || 0;
       const hotCount = p.hotWordsFound || 0;
@@ -845,14 +1044,14 @@
         const isSelected = pl.id === p.id;
         const medal = idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : `${idx + 1}.`;
         return `
-          <div onclick="openStatsModal('${escapeHTML(pl.id)}')"
+          <div onclick="selectedStatsPlayerId='${escapeHTML(pl.id)}'; renderStatsModalContent();"
             class="cursor-pointer flex items-center justify-between px-3 py-2 rounded-xl border transition ${isSelected ? "bg-sky-950/40 border-sky-500/50" : "bg-slate-800/40 border-slate-800 hover:bg-slate-800/70"}">
             <div class="flex items-center gap-2.5 min-w-0">
               <span class="text-xs font-bold w-4 text-center">${medal}</span>
               <span class="text-[10px] font-extrabold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-1.5 py-0.5 rounded">Niv.${plLvl.level}</span>
               <div class="min-w-0">
                 <span class="font-bold text-xs text-white truncate block">${escapeHTML(pl.pseudo)}</span>
-                <span class="text-[10px] text-slate-400">☀️ ${pl.wins || 0} vict. • 🎯 ${pl.totalAttempts || 0} mots</span>
+                <span class="text-[10px] text-slate-400">${plLvl.title} • ☀️ ${pl.wins || 0}</span>
               </div>
             </div>
             <div class="text-right shrink-0 font-mono-num">
@@ -862,10 +1061,12 @@
           </div>
         `;
       }).join("");
+
+      lucide.createIcons();
     }
 
     // =========================================================================
-    // 5. RECONNAISSANCE MORPHOLOGIQUE (FÉMININS, PLURIELS, TIRETS)
+    // 4. RECONNAISSANCE MORPHOLOGIQUE (FÉMININS, PLURIELS, TIRETS)
     // =========================================================================
     function buildAccentInsensitiveIndex() {
       accentInsensitiveMap = {};
@@ -920,7 +1121,7 @@
     }
 
     // =========================================================================
-    // 6. DÉTECTION « MONTÉE EN FUSION » (SUR ÉCHELLE UNIQUE %)
+    // 5. PERCÉE THERMIQUE & EXPLOSION DE FUSION SOLAIRE (REMPLACE LES CONFETTIS)
     // =========================================================================
     function checkPowerSurge(rank, newScorePct) {
       if (rank === 1000 || guesses.length < 2 || roomBestScorePct <= 0) return null;
@@ -928,7 +1129,6 @@
       const pctJump = newScorePct - roomBestScorePct;
       const milestoneHit = (rank >= 990 && roomBestRank < 990) || (rank >= 900 && roomBestRank < 750);
 
-      // Si le joueur fait bondir le record du salon d'au moins +15% ou entre dans le Top 10 / Top 100
       if (newScorePct > roomBestScorePct && newScorePct >= 45 && (pctJump >= 15 || milestoneHit)) {
         return Math.max(15, Math.round(pctJump));
       }
@@ -941,7 +1141,7 @@
       document.getElementById("surgeWord").textContent = word;
       document.getElementById("surgeScore").textContent = formatPct(scorePct);
       const topLbl = getReadableTopLabel(rank);
-      document.getElementById("surgeBadge").textContent = topLbl ? `🔥 ${topLbl}` : `+${gainPct}%`;
+      document.getElementById("surgeBadge").textContent = topLbl ? `🌋 ${topLbl}` : `+${gainPct}%`;
 
       overlay.classList.remove("hidden");
       lucide.createIcons();
@@ -949,10 +1149,11 @@
 
       if (typeof confetti === "function") {
         confetti({
-          particleCount: 28,
-          spread: 60,
+          particleCount: 22,
+          spread: 55,
           origin: { y: 0.55 },
-          colors: ["#dc2626", "#f97316", "#facc15", "#fef08a"]
+          shapes: ["circle"],
+          colors: ["#991b1b", "#dc2626", "#ea580c"]
         });
       }
 
@@ -973,8 +1174,60 @@
       }
     }
 
+    // Explosion de Fusion Solaire (Flash + Onde de choc + Supernova 360° d'étoiles solaires)
+    function triggerSolarFusionExplosion() {
+      const overlay = document.getElementById("solarExplosionOverlay");
+      const flash = document.getElementById("solarFlashBg");
+      const rays = document.getElementById("solarRaysBurst");
+      const ring = document.getElementById("solarShockwave");
+
+      overlay.classList.remove("hidden");
+      flash.classList.remove("animate-solar-flash");
+      rays.classList.remove("animate-solar-rays");
+      ring.classList.remove("animate-solar-ring");
+      void overlay.offsetWidth;
+
+      flash.classList.add("animate-solar-flash");
+      rays.classList.add("animate-solar-rays");
+      ring.classList.add("animate-solar-ring");
+
+      setTimeout(() => overlay.classList.add("hidden"), 1550);
+
+      if (typeof confetti !== "function") return;
+
+      // 1. Cœur de la supernova (Explosion radiale à 360° depuis le centre)
+      confetti({
+        particleCount: 70,
+        spread: 360,
+        startVelocity: 42,
+        decay: 0.91,
+        gravity: 0.25,
+        ticks: 160,
+        origin: { x: 0.5, y: 0.42 },
+        shapes: ["star", "circle"],
+        scalar: 1.35,
+        colors: ["#ffffff", "#fef08a", "#facc15", "#f59e0b", "#ea580c"]
+      });
+
+      // 2. Deuxième couronne d'éruption solaire 240ms plus tard
+      setTimeout(() => {
+        confetti({
+          particleCount: 55,
+          spread: 360,
+          startVelocity: 30,
+          decay: 0.92,
+          gravity: 0.2,
+          ticks: 140,
+          origin: { x: 0.5, y: 0.42 },
+          shapes: ["star"],
+          scalar: 1.6,
+          colors: ["#ffffff", "#fef08a", "#facc15"]
+        });
+      }, 240);
+    }
+
     // =========================================================================
-    // 7. MODALE D'ACCUEIL & MULTIJOUEUR
+    // 6. MODALE D'ACCUEIL & MULTIJOUEUR
     // =========================================================================
     function handleRoomCodeInput(input) {
       const cleaned = input.value.replace(/[^a-zA-Z]/g, "").toUpperCase().slice(0, 4);
@@ -1259,7 +1512,7 @@
     }
 
     // =========================================================================
-    // 8. CHARGEMENT DE MANCHE & VALIDATION DES MOTS
+    // 7. CHARGEMENT DE MANCHE & VALIDATION DES MOTS
     // =========================================================================
     async function loadGame(gameId, displayRound = roundNumber, initialGuesses = []) {
       currentGameId = gameId;
@@ -1347,7 +1600,7 @@
         triggerInputShake(form);
         const who = existing.finderId === myId ? "vous" : existing.finderPseudo;
         showToast(`Déjà trouvé par ${who} (#${existing.num})`, "rose");
-        renderLastGuess(existing, false);
+        updateRecentWordBoxVisibility(existing, false);
         highlightExistingWordRow(resolvedWord);
         return;
       }
@@ -1467,18 +1720,14 @@
       };
 
       guesses.push(guessObj);
-      // Tri du plus proche (100%) au plus froid
       guesses.sort((a, b) => (b.scorePct - a.scorePct) || (b.temp - a.temp));
 
-      renderLastGuess(guessObj, true);
+      // Affiche la boîte "Mot récent" UNIQUEMENT si le mot n'est pas dans les 7 premiers de la liste !
+      updateRecentWordBoxVisibility(guessObj, true);
       renderGuesses(data.word);
       updateStatsUI();
       renderLeaderboard();
       resetStatsIdleTimer();
-
-      if (guesses.indexOf(guessObj) < 4) {
-        document.getElementById("guessesList").scrollTop = 0;
-      }
 
       addWordFeedEvent(guessObj, data.surgeGain, data.isNewRecord);
 
@@ -1492,7 +1741,7 @@
       if (data.isWin) {
         roundFinished = true;
         updateHintButtonUI();
-        triggerSolarVictoryConfetti();
+        triggerSolarFusionExplosion();
         showVictoryBanner(data.pseudo, data.word, guesses.length, false);
         updateLiveTicker(`☀️ ${data.pseudo} a trouvé ${data.word.toUpperCase()} (100%) !`);
       } else if (data.isNewRecord && !data.surgeGain) {
@@ -1501,11 +1750,31 @@
       }
     }
 
+    // Logique demandée : n'affiche le "Mot récent" que s'il est hors des 7 premiers mots visibles de la liste
+    function updateRecentWordBoxVisibility(guessObj, animateBar = true) {
+      const box = document.getElementById("lastGuessBox");
+      const posIndex = guesses.findIndex(g => g.word === guessObj.word);
+
+      if (posIndex >= 7) {
+        box.classList.remove("hidden");
+        document.getElementById("lastGuessRankPos").textContent = `${posIndex + 1}e / ${guesses.length}`;
+        document.getElementById("lastGuessContent").innerHTML = renderRowHTML(guessObj, animateBar);
+        if (animateBar) animateNewWordBars();
+      } else {
+        // Le mot est dans les 7 premiers : on masque la boîte récente pour éviter tout doublon et on remonte la liste en haut
+        box.classList.add("hidden");
+        document.getElementById("guessesList").scrollTop = 0;
+      }
+    }
+
     // =========================================================================
-    // 9. INDICE & ABANDON
+    // 8. INDICE & ABANDON
     // =========================================================================
     function useHint() {
-      if (roundFinished) return;
+      if (roundFinished) {
+        showToast("Manche terminée : passez à la suivante !", "amber");
+        return;
+      }
 
       const me = players[myId];
       if (!me || me.points < HINT_COST) {
@@ -1586,7 +1855,7 @@
     }
 
     // =========================================================================
-    // 10. RENDU DES MOTS, EFFET MAGMA/SOLEIL & COMPTEUR % ANIMÉ
+    // 9. RENDU DES MOTS (EFFETS FLAMME / MAGMA ROUGE / RAYONS FUSION SOLAIRE)
     // =========================================================================
     function triggerInputShake(element) {
       if (!element) return;
@@ -1605,20 +1874,6 @@
       }
     }
 
-    // Confettis aux couleurs du Soleil / Magma lors de la victoire
-    function triggerSolarVictoryConfetti() {
-      if (typeof confetti !== "function") return;
-      const duration = 2300;
-      const end = Date.now() + duration;
-      const solarColors = ["#dc2626", "#ea580c", "#facc15", "#fef08a", "#ffffff"];
-
-      (function frame() {
-        confetti({ particleCount: 5, angle: 60, spread: 55, origin: { x: 0, y: 0.65 }, colors: solarColors });
-        confetti({ particleCount: 5, angle: 120, spread: 55, origin: { x: 1, y: 0.65 }, colors: solarColors });
-        if (Date.now() < end) requestAnimationFrame(frame);
-      })();
-    }
-
     function showVictoryBanner(winnerPseudo, secretWord, totalAttempts, isGiveUp = false) {
       const banner = document.getElementById("victoryBanner");
       banner.classList.remove("hidden");
@@ -1634,52 +1889,55 @@
       const initialClipRight = isNewWord ? "100" : targetClipRight;
 
       const topLabel = getReadableTopLabel(g.rank);
-      let badgeHTML = "";
+      const isFlame = g.rank !== null && g.rank >= 900 && g.rank < 990;
 
+      let badgeHTML = "";
       if (g.isWin) {
-        badgeHTML = `<span class="bg-amber-400/25 text-amber-200 border border-amber-300/60 text-[10px] font-extrabold px-1.5 py-0.2 rounded shadow-sm">☀️ FUSION</span>`;
+        badgeHTML = `<span class="bg-amber-300/30 text-white border border-amber-200 text-[10px] font-extrabold px-2 py-0.2 rounded shadow-sm">☀️ FUSION</span>`;
       } else if (g.isTop10) {
-        badgeHTML = `<span class="bg-orange-500/30 text-amber-200 border border-amber-400/60 text-[10px] font-extrabold px-1.5 py-0.2 rounded">🌋 ${topLabel}</span>`;
-      } else if (g.rank >= 900) {
-        badgeHTML = `<span class="bg-rose-500/20 text-rose-200 border border-rose-400/40 text-[10px] font-bold px-1.5 py-0.2 rounded">🔥 ${topLabel}</span>`;
+        badgeHTML = `<span class="bg-red-900/70 text-red-200 border border-red-500/70 text-[10px] font-extrabold px-1.5 py-0.2 rounded">🌋 ${topLabel}</span>`;
+      } else if (isFlame) {
+        badgeHTML = `<span class="bg-orange-500/20 text-orange-200 border border-orange-400/50 text-[10px] font-bold px-1.5 py-0.2 rounded">🔥 ${topLabel}</span>`;
       } else if (g.rank) {
         badgeHTML = `<span class="bg-purple-500/15 text-purple-300 border border-purple-500/30 text-[10px] font-semibold px-1.5 py-0.2 rounded">${topLabel}</span>`;
       }
 
       const isMe = g.finderId === myId;
-      const authorColor = isMe ? "text-sky-400" : "text-indigo-300";
+      const authorColor = isMe ? "text-sky-300" : "text-indigo-300";
 
-      // Couleur de la carte et de la barre (Magma/Soleil pour 100% et Top 10, plus aucun vert incohérent)
+      // 3 styles visuels bien distincts : Fusion (Rayons Solaires Or Blanc) vs Magma (Rouge Volcanique) vs Flamme (Braises Orange)
       let cardStyle = "border-slate-800/70 bg-slate-800/35";
+      let wordGlowClass = "text-slate-100";
+      let barClass = "thermal-spectrum";
+      let pctColor = g.rank ? "text-purple-300" : "text-slate-300";
+
       if (g.isWin) {
-        cardStyle = "solar-victory-card";
+        cardStyle = "tier-fusion-card border-2";
+        wordGlowClass = "fusion-word-glow";
+        barClass = "solar-fusion-bar";
+        pctColor = "text-white font-extrabold";
       } else if (g.isTop10) {
-        cardStyle = "border-amber-500/60 bg-gradient-to-r from-red-950/35 via-orange-950/35 to-amber-950/30 shadow-[0_0_15px_rgba(249,115,22,0.18)]";
-      } else if (g.rank >= 900) {
-        cardStyle = "border-rose-500/40 bg-rose-950/15";
+        cardStyle = "tier-magma-card";
+        wordGlowClass = "magma-word-glow";
+        barClass = "magma-lava-bar";
+        pctColor = "text-red-300";
+      } else if (isFlame) {
+        cardStyle = "tier-flame-card";
+        wordGlowClass = "flame-word-glow";
+        barClass = "thermal-spectrum";
+        pctColor = "text-orange-400";
       }
 
       if (isNewWord) {
         cardStyle += " animate-word-entry";
       }
 
-      const barClass = (g.isWin || g.isTop10) ? "solar-magma-bar" : "thermal-spectrum";
-      const pctColor = g.isWin
-        ? "text-amber-300"
-        : g.isTop10
-          ? "text-amber-400"
-          : g.rank >= 900
-            ? "text-orange-400"
-            : g.rank
-              ? "text-purple-300"
-              : "text-slate-300";
-
       return `
         <div data-word="${escapeHTML(g.word)}" class="rounded-xl px-2.5 py-1.5 border ${cardStyle} flex flex-col gap-1 transition-all shrink-0">
           <div class="flex justify-between items-center text-xs gap-2">
             <div class="flex items-center gap-1.5 min-w-0">
-              <span class="text-slate-500 font-mono-num text-[10px]">#${g.num}</span>
-              <strong class="capitalize truncate text-slate-100">${escapeHTML(g.word)}</strong>
+              <span class="text-slate-400 font-mono-num text-[10px]">#${g.num}</span>
+              <strong class="capitalize truncate ${wordGlowClass}">${escapeHTML(g.word)}</strong>
               <span class="text-[10px] ${authorColor} truncate max-w-[75px]">• ${escapeHTML(g.finderPseudo || "Joueur")}</span>
             </div>
             <div class="flex items-center gap-1.5 shrink-0">
@@ -1699,7 +1957,6 @@
       `;
     }
 
-    // Anime simultanément le remplissage de la barre de 0% à X% et le compteur chiffré (420ms)
     function animateNewWordBars() {
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
@@ -1716,7 +1973,7 @@
 
             function step(now) {
               const progress = Math.min(1, (now - startTime) / duration);
-              const eased = 1 - Math.pow(1 - progress, 3); // Ease-out cubic
+              const eased = 1 - Math.pow(1 - progress, 3);
               const current = targetVal * eased;
               el.textContent = targetVal >= 100 && progress === 1 ? "100%" : `${current.toFixed(1)}%`;
               if (progress < 1) requestAnimationFrame(step);
@@ -1725,13 +1982,6 @@
           });
         });
       });
-    }
-
-    function renderLastGuess(g, animateBar = true) {
-      const box = document.getElementById("lastGuessBox");
-      box.classList.remove("hidden");
-      document.getElementById("lastGuessContent").innerHTML = renderRowHTML(g, animateBar);
-      if (animateBar) animateNewWordBars();
     }
 
     function renderGuesses(latestWord = "") {
@@ -1789,7 +2039,7 @@
             : "--";
 
         return `
-          <div onclick="openStatsModal('${escapeHTML(p.id)}')" title="Voir les statistiques de ${escapeHTML(p.pseudo)}"
+          <div onclick="openStatsModal('${escapeHTML(p.id)}')" title="Voir les statistiques et grades de ${escapeHTML(p.pseudo)}"
             class="cursor-pointer flex items-center justify-between px-2.5 py-1.5 rounded-xl border transition hover:border-sky-500/50 ${isMe ? "bg-sky-950/30 border-sky-500/40" : "bg-slate-800/40 border-slate-800"}">
             <div class="flex items-center gap-2 min-w-0">
               <span class="text-xs font-bold w-4 text-center">${medal}</span>
@@ -1813,14 +2063,11 @@
     }
 
     // =========================================================================
-    // 11. JOURNAL DIRECT (BOUTON FILTRE INVERSÉ LOGIQUE + SCORE %)
+    // 10. JOURNAL DIRECT
     // =========================================================================
     function toggleFeedFilter() {
       feedOnlyHot = !feedOnlyHot;
       const btn = document.getElementById("feedFilterBtn");
-      // Affiche l'action que le clic va déclencher :
-      // - Si tout est affiché (feedOnlyHot = false) -> bouton propose "🔥 Chauds seuls"
-      // - Si seuls les chauds sont affichés (feedOnlyHot = true) -> bouton propose "📋 Tout afficher"
       btn.textContent = feedOnlyHot ? "📋 Tout afficher" : "🔥 Chauds seuls";
       btn.className = feedOnlyHot
         ? "text-[10px] font-bold px-2 py-0.5 rounded-md bg-sky-500/20 text-sky-300 border border-sky-500/40 transition"
@@ -1870,18 +2117,22 @@
 
         const topLbl = getReadableTopLabel(ev.rank);
         const badge = ev.isWin
-          ? `<span class="text-amber-300 font-extrabold">☀️ FUSION</span>`
-          : topLbl
-            ? `<span class="text-orange-300 font-bold">${topLbl}</span>`
-            : "";
+          ? `<span class="text-amber-200 font-extrabold">☀️ FUSION</span>`
+          : ev.rank >= 990
+            ? `<span class="text-red-300 font-bold">🌋 ${topLbl}</span>`
+            : topLbl
+              ? `<span class="text-orange-300 font-bold">🔥 ${topLbl}</span>`
+              : "";
 
         const rowStyle = ev.isWin
-          ? "solar-victory-card"
-          : ev.rank >= 900
-            ? "bg-orange-950/35 border-orange-500/40"
-            : ev.rank
-              ? "bg-purple-950/25 border-purple-500/30"
-              : "bg-slate-800/30 border-slate-800/70";
+          ? "tier-fusion-card"
+          : ev.rank >= 990
+            ? "bg-red-950/50 border-red-500/50"
+            : ev.rank >= 900
+              ? "bg-orange-950/35 border-orange-500/40"
+              : ev.rank
+                ? "bg-purple-950/25 border-purple-500/30"
+                : "bg-slate-800/30 border-slate-800/70";
 
         return `
           <div class="px-2.5 py-1.5 rounded-lg border ${rowStyle} flex items-center justify-between gap-2 text-[11px]">
