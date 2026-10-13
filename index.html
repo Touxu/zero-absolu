@@ -31,8 +31,8 @@
       flex-direction: column;
       overflow: hidden;
       background-image:
-        radial-gradient(at 0% 0%, rgba(56, 189, 248, 0.12) 0px, transparent 50%),
-        radial-gradient(at 100% 0%, rgba(139, 92, 246, 0.12) 0px, transparent 50%);
+        radial-gradient(at 0% 0%, rgba(56, 189, 248, 0.10) 0px, transparent 50%),
+        radial-gradient(at 100% 0%, rgba(139, 92, 246, 0.10) 0px, transparent 50%);
     }
 
     .font-mono-num { font-family: 'JetBrains Mono', monospace; }
@@ -53,22 +53,22 @@
     /* Animations */
     @keyframes shake {
       0%, 100% { transform: translateX(0); }
-      20%, 60% { transform: translateX(-7px); }
-      40%, 80% { transform: translateX(7px); }
+      20%, 60% { transform: translateX(-6px); }
+      40%, 80% { transform: translateX(6px); }
     }
-    .animate-shake { animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
+    .animate-shake { animation: shake 0.35s cubic-bezier(.36,.07,.19,.97) both; }
 
     @keyframes duplicatePulse {
       0%, 100% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0); transform: scale(1); }
-      50% { box-shadow: 0 0 0 5px rgba(244, 63, 94, 0.4); transform: scale(1.01); border-color: #f43f5e; }
+      50% { box-shadow: 0 0 0 4px rgba(244, 63, 94, 0.45); transform: scale(1.01); border-color: #f43f5e; }
     }
-    .animate-duplicate { animation: duplicatePulse 0.8s ease-in-out 2; }
+    .animate-duplicate { animation: duplicatePulse 0.75s ease-in-out 2; }
 
     @keyframes popIn {
-      from { opacity: 0; transform: translateY(6px) scale(0.97); }
+      from { opacity: 0; transform: translateY(4px) scale(0.98); }
       to { opacity: 1; transform: translateY(0) scale(1); }
     }
-    .animate-pop { animation: popIn 0.22s ease-out forwards; }
+    .animate-pop { animation: popIn 0.2s ease-out forwards; }
 
     @keyframes surgeOverlayAnim {
       0% { opacity: 0; transform: translate(-50%, -40%) scale(0.8); }
@@ -78,26 +78,37 @@
       100% { opacity: 0; transform: translate(-50%, -60%) scale(0.95); }
     }
     .animate-surge-banner {
-      animation: surgeOverlayAnim 2.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      animation: surgeOverlayAnim 2.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
 
-    /* Adaptation stricte quand le clavier mobile est déployé */
+    /* Défilement doux si un texte de bandeau est long sur petit écran */
+    @keyframes marqueeScroll {
+      0%, 20% { transform: translateX(0%); }
+      80%, 100% { transform: translateX(calc(-100% + 220px)); }
+    }
+    .ticker-scroll {
+      display: inline-block;
+      white-space: nowrap;
+      animation: marqueeScroll 7s ease-in-out infinite alternate;
+    }
+
+    /* Mode Clavier Mobile Actif : épure tout le superflu pour afficher un maximum de mots chauds */
     body.keyboard-active #mainHeader,
-    body.keyboard-active #statsRow,
+    body.keyboard-active #statsContainer,
     body.keyboard-active #mobileTabsWrapper,
     body.keyboard-active #lastGuessBox {
       display: none !important;
     }
     body.keyboard-active #mainGrid {
-      padding-top: 0.25rem !important;
-      padding-bottom: 0.25rem !important;
-      gap: 0.35rem !important;
+      padding-top: 0.2rem !important;
+      padding-bottom: 0.2rem !important;
+      gap: 0.3rem !important;
     }
     body.keyboard-active #gameSection {
-      gap: 0.35rem !important;
+      gap: 0.3rem !important;
     }
 
-    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 9999px; }
   </style>
@@ -107,79 +118,91 @@
   <div id="appViewport">
 
     <!-- ===================================================================== -->
-    <!-- MODALE D'ACCUEIL (PSEUDO + SOLO + SALON 4 LETTRES)                    -->
+    <!-- MODALE D'ACCUEIL (FERMABLE AU CLIC EXTÉRIEUR OU CROIX X)              -->
     <!-- ===================================================================== -->
-    <div id="onboardingModal" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
-      <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 md:p-8 shadow-2xl animate-pop">
-        <div class="flex items-center gap-3 mb-2">
-          <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-sky-400 via-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-sky-500/20">
-            <i data-lucide="thermometer-snowflake" class="w-6 h-6 text-white"></i>
+    <div id="onboardingModal" onclick="handleModalBackdropClick(event)"
+      class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
+      <div class="relative bg-slate-900 border border-slate-800 rounded-3xl max-w-sm w-full p-5 sm:p-6 shadow-2xl animate-pop">
+
+        <!-- Bouton Croix (X) pour fermer la carte et revenir au jeu -->
+        <button id="closeModalBtn" onclick="closeOnboardingModal()" title="Fermer"
+          class="hidden absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-sky-400 via-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-sky-500/20 shrink-0">
+            <i data-lucide="thermometer-snowflake" class="w-5 h-5 text-white"></i>
           </div>
           <div>
-            <h1 class="text-2xl font-extrabold tracking-tight bg-gradient-to-r from-sky-300 via-indigo-200 to-purple-300 bg-clip-text text-transparent">
+            <h1 class="text-xl font-extrabold tracking-tight bg-gradient-to-r from-sky-300 via-indigo-200 to-purple-300 bg-clip-text text-transparent">
               ZéroAbsolu
             </h1>
-            <p class="text-xs text-slate-400">Coopération & Duel sémantique en temps réel</p>
+            <p class="text-[11px] text-slate-400">Trouvez le mot secret ensemble</p>
           </div>
         </div>
 
-        <div class="mt-5">
-          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Votre Pseudo</label>
+        <!-- Pseudo -->
+        <div>
+          <label class="block text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Pseudo</label>
           <div class="relative">
             <i data-lucide="user" class="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
             <input id="modalPseudo" type="text" maxlength="16" placeholder="Ex: Pierre"
-              class="w-full bg-slate-950 border border-slate-800 focus:border-sky-500 rounded-xl pl-10 pr-4 py-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-sky-500/20 transition">
+              class="w-full bg-slate-950 border border-slate-800 focus:border-sky-500 rounded-xl pl-10 pr-4 py-2.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-sky-500/20 transition">
           </div>
         </div>
 
-        <div class="grid grid-cols-2 gap-3 mt-5">
+        <!-- Actions : Solo ou Créer -->
+        <div class="grid grid-cols-2 gap-2.5 mt-4">
           <button onclick="startSoloMode()"
-            class="flex flex-col items-center justify-center gap-1.5 bg-slate-800/80 hover:bg-slate-800 border border-slate-700/70 rounded-2xl p-4 transition group">
+            class="flex flex-col items-center justify-center gap-1 bg-slate-800/80 hover:bg-slate-800 border border-slate-700/70 rounded-2xl p-3.5 transition group">
             <i data-lucide="compass" class="w-5 h-5 text-sky-400 group-hover:scale-110 transition"></i>
-            <span class="text-sm font-bold">Jouer en Solo</span>
-            <span class="text-[11px] text-slate-400">Partie immédiate</span>
+            <span class="text-xs font-bold">Solo</span>
           </button>
 
           <button onclick="startCreateRoom()"
-            class="flex flex-col items-center justify-center gap-1.5 bg-gradient-to-br from-sky-600/90 to-indigo-600/90 hover:from-sky-500 hover:to-indigo-500 border border-sky-400/30 rounded-2xl p-4 transition shadow-lg shadow-sky-600/15 group">
+            class="flex flex-col items-center justify-center gap-1 bg-gradient-to-br from-sky-600/90 to-indigo-600/90 hover:from-sky-500 hover:to-indigo-500 border border-sky-400/30 rounded-2xl p-3.5 transition shadow-lg shadow-sky-600/15 group">
             <i data-lucide="users" class="w-5 h-5 text-white group-hover:scale-110 transition"></i>
-            <span class="text-sm font-bold">Créer un Salon</span>
-            <span class="text-[11px] text-sky-100">Code à 4 lettres</span>
+            <span class="text-xs font-bold">Créer Salon</span>
           </button>
         </div>
 
-        <div class="relative flex py-4 items-center">
+        <!-- Séparateur -->
+        <div class="relative flex py-3.5 items-center">
           <div class="flex-grow border-t border-slate-800"></div>
-          <span class="flex-shrink mx-3 text-xs text-slate-500 uppercase tracking-wider">Ou rejoindre des amis</span>
+          <span class="flex-shrink mx-3 text-[10px] text-slate-500 uppercase tracking-wider">Rejoindre un salon</span>
           <div class="flex-grow border-t border-slate-800"></div>
         </div>
 
-        <div class="flex gap-2">
-          <input id="modalRoomCode" type="text" maxlength="4" placeholder="CODE (4 lettres)"
-            class="flex-1 bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl px-4 py-3 text-center font-mono-num text-base font-bold uppercase tracking-[0.25em] placeholder:tracking-normal placeholder:font-sans placeholder:text-xs placeholder:font-normal focus:outline-none">
-          <button onclick="startJoinRoom()"
-            class="bg-indigo-600 hover:bg-indigo-500 font-bold px-5 py-3 rounded-xl text-sm transition flex items-center gap-2">
-            <span>Rejoindre</span>
+        <!-- Code à 4 lettres + Bouton Rejoindre EN DESSOUS (Grisé tant que < 4 lettres) -->
+        <div class="flex flex-col gap-2.5">
+          <input id="modalRoomCode" type="text" maxlength="4" placeholder="CODE À 4 LETTRES" oninput="handleRoomCodeInput(this)"
+            class="w-full bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl px-4 py-2.5 text-center font-mono-num text-base font-bold uppercase tracking-[0.3em] placeholder:tracking-normal placeholder:font-sans placeholder:text-xs placeholder:font-normal focus:outline-none transition">
+
+          <button id="joinRoomBtn" onclick="startJoinRoom()" disabled
+            class="w-full py-2.5 rounded-xl text-sm font-bold transition flex items-center justify-center gap-2 bg-slate-800 text-slate-500 cursor-not-allowed opacity-60">
+            <span>Rejoindre le salon</span>
             <i data-lucide="arrow-right" class="w-4 h-4"></i>
           </button>
         </div>
-        <p id="modalError" class="text-rose-400 text-xs mt-2.5 text-center min-h-[1rem]"></p>
+
+        <p id="modalError" class="text-rose-400 text-xs mt-2 text-center min-h-[1rem]"></p>
       </div>
     </div>
 
     <!-- ===================================================================== -->
-    <!-- ANIMATION CENTRALE DE « MONTÉE EN PUISSANCE » (POUR TOUS LES JOUEURS) -->
+    <!-- ANIMATION CENTRALE DE « MONTÉE EN PUISSANCE »                         -->
     <!-- ===================================================================== -->
-    <div id="surgeOverlay" class="hidden fixed top-1/2 left-1/2 z-40 pointer-events-none w-[90%] max-w-sm">
-      <div class="bg-slate-950/95 border-2 border-amber-400/80 rounded-3xl p-5 shadow-[0_0_50px_rgba(245,158,11,0.45)] text-center backdrop-blur-xl">
-        <div class="inline-flex items-center gap-1.5 bg-amber-500/20 border border-amber-400/40 text-amber-300 text-[11px] font-extrabold uppercase tracking-widest px-3 py-1 rounded-full mb-2">
-          <span>🚀 Montée en puissance</span>
+    <div id="surgeOverlay" class="hidden fixed top-1/2 left-1/2 z-40 pointer-events-none w-[88%] max-w-xs">
+      <div class="bg-slate-950/95 border-2 border-amber-400/80 rounded-3xl p-4 shadow-[0_0_50px_rgba(245,158,11,0.45)] text-center backdrop-blur-xl">
+        <div class="inline-flex items-center gap-1 bg-amber-500/20 border border-amber-400/40 text-amber-300 text-[10px] font-extrabold uppercase tracking-widest px-2.5 py-0.5 rounded-full mb-1.5">
+          <span>🚀 Percée majeure</span>
         </div>
-        <div id="surgePlayerName" class="text-sm font-bold text-sky-300">Pierre</div>
-        <div id="surgeWord" class="text-2xl font-extrabold text-white uppercase tracking-wide my-1">BATEAU</div>
+        <div id="surgePlayerName" class="text-xs font-bold text-sky-300">Pierre</div>
+        <div id="surgeWord" class="text-xl font-extrabold text-white uppercase tracking-wide my-0.5">BATEAU</div>
         <div class="flex items-center justify-center gap-2 mt-1">
-          <span id="surgeTemp" class="font-mono-num text-base font-extrabold text-amber-400">70.50°C</span>
-          <span id="surgeDelta" class="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-mono-num text-xs font-bold px-2 py-0.5 rounded-lg">+28% plus proche !</span>
+          <span id="surgeTemp" class="font-mono-num text-sm font-extrabold text-amber-400">70.5°C</span>
+          <span id="surgeDelta" class="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-mono-num text-[11px] font-bold px-2 py-0.5 rounded-lg">+28%</span>
         </div>
       </div>
     </div>
@@ -187,85 +210,81 @@
     <!-- ===================================================================== -->
     <!-- TOAST DE NOTIFICATION FLOTTANT                                        -->
     <!-- ===================================================================== -->
-    <div id="toastContainer" class="fixed top-2.5 left-1/2 -translate-x-1/2 z-40 flex flex-col items-center gap-1.5 pointer-events-none w-full max-w-sm px-4"></div>
+    <div id="toastContainer" class="fixed top-2.5 left-1/2 -translate-x-1/2 z-40 flex flex-col items-center gap-1.5 pointer-events-none w-full max-w-xs px-4"></div>
 
     <!-- ===================================================================== -->
-    <!-- EN-TÊTE PRINCIPAL                                                     -->
+    <!-- EN-TÊTE COMPACT                                                       -->
     <!-- ===================================================================== -->
-    <header id="mainHeader" class="w-full max-w-6xl mx-auto px-3 sm:px-4 pt-2.5 pb-2 flex flex-wrap items-center justify-between gap-2 border-b border-slate-800/80 shrink-0">
-      <div class="flex items-center gap-2.5">
+    <header id="mainHeader" class="w-full max-w-6xl mx-auto px-3 sm:px-4 pt-2 pb-1.5 flex items-center justify-between gap-2 border-b border-slate-800/80 shrink-0">
+      <div class="flex items-center gap-2">
         <button onclick="openOnboardingModal()" title="Menu Salon / Pseudo"
-          class="w-9 h-9 rounded-xl bg-gradient-to-br from-sky-500 to-indigo-600 flex items-center justify-center shadow-md shadow-sky-500/10 hover:opacity-90 transition">
+          class="w-8 h-8 rounded-xl bg-gradient-to-br from-sky-500 to-indigo-600 flex items-center justify-center shadow-md shadow-sky-500/10 hover:opacity-90 transition">
           <i data-lucide="thermometer-snowflake" class="w-4 h-4 text-white"></i>
         </button>
-        <div>
-          <div class="flex items-center gap-2">
-            <span class="font-extrabold text-base sm:text-lg tracking-tight">ZéroAbsolu</span>
-            <span id="roundBadge" class="text-[11px] font-mono-num bg-sky-500/15 text-sky-300 px-2 py-0.5 rounded-md border border-sky-500/30 font-bold">Manche #1</span>
-          </div>
-          <p id="modeSubtitle" class="text-[11px] text-slate-400">Mode Solo</p>
-        </div>
+        <span class="font-extrabold text-sm sm:text-base tracking-tight">ZéroAbsolu</span>
+        <span id="roundBadge" class="text-[11px] font-mono-num bg-sky-500/15 text-sky-300 px-1.5 py-0.5 rounded-md border border-sky-500/30 font-bold">#1</span>
       </div>
 
-      <div class="flex items-center gap-1.5 sm:gap-2">
-        <div class="flex items-center gap-1 bg-slate-900 border border-slate-800 px-2.5 py-1.5 rounded-xl" title="Vos points cumulés">
-          <i data-lucide="zap" class="w-3.5 h-3.5 text-amber-400"></i>
+      <div class="flex items-center gap-1.5">
+        <div class="flex items-center gap-1 bg-slate-900 border border-slate-800 px-2 py-1 rounded-lg" title="Vos points">
+          <i data-lucide="zap" class="w-3 h-3 text-amber-400"></i>
           <span id="headerPoints" class="font-mono-num text-xs font-extrabold text-amber-400">0</span>
-          <span class="text-[10px] text-slate-400 hidden sm:inline">pts</span>
         </div>
 
-        <button id="roomCodePill" onclick="copyRoomCode()" class="hidden items-center gap-1.5 bg-indigo-950/70 hover:bg-indigo-900/70 border border-indigo-500/40 px-2.5 py-1.5 rounded-xl transition">
+        <button id="roomCodePill" onclick="copyRoomCode()" class="hidden items-center gap-1 bg-indigo-950/70 hover:bg-indigo-900/70 border border-indigo-500/40 px-2 py-1 rounded-lg transition">
           <strong id="headerRoomCode" class="font-mono-num text-xs font-bold tracking-widest text-white">----</strong>
           <i data-lucide="copy" class="w-3 h-3 text-indigo-400"></i>
         </button>
 
         <button id="hintBtn" onclick="useHint()"
-          class="flex items-center gap-1.5 bg-slate-900/70 border border-slate-800 text-slate-500 text-xs font-semibold px-2.5 py-1.5 rounded-xl transition opacity-75">
-          <span id="hintBtnContent" class="flex items-center gap-1.5">
-            <i data-lucide="lock" class="w-3.5 h-3.5 text-slate-500"></i>
-            <span class="font-mono-num text-[11px]">750 pts</span>
+          class="flex items-center gap-1 bg-slate-900/70 border border-slate-800 text-slate-500 text-xs font-semibold px-2 py-1 rounded-lg transition opacity-75">
+          <span id="hintBtnContent" class="flex items-center gap-1">
+            <i data-lucide="lock" class="w-3 h-3 text-slate-500"></i>
+            <span class="font-mono-num text-[11px]">750</span>
           </span>
         </button>
 
-        <button id="giveUpBtn" onclick="giveUpRound()" title="Révéler le mot secret"
-          class="flex items-center gap-1 bg-slate-900 hover:bg-rose-950/50 border border-slate-800 hover:border-rose-500/40 text-slate-300 hover:text-rose-300 text-xs font-semibold px-2.5 py-1.5 rounded-xl transition">
+        <button id="giveUpBtn" onclick="giveUpRound()" title="Révéler le mot"
+          class="flex items-center bg-slate-900 hover:bg-rose-950/50 border border-slate-800 text-slate-400 hover:text-rose-300 p-1.5 rounded-lg transition">
           <i data-lucide="flag" class="w-3.5 h-3.5"></i>
         </button>
 
         <button id="nextGameBtn" onclick="triggerNextGame()" title="Manche suivante"
-          class="flex items-center gap-1 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-200 text-xs font-semibold px-2.5 py-1.5 rounded-xl transition">
+          class="flex items-center bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 p-1.5 rounded-lg transition">
           <i data-lucide="skip-forward" class="w-3.5 h-3.5"></i>
         </button>
       </div>
     </header>
 
     <!-- ===================================================================== -->
-    <!-- BANDEAU DIRECT PERMANENT (VISIBLE MÊME CLAVIER MOBILE OUVERT)         -->
+    <!-- BANDEAU DIRECT (AVEC DÉFILEMENT AUTO SI TEXTE LONG)                   -->
     <!-- ===================================================================== -->
     <div class="w-full max-w-6xl mx-auto px-3 sm:px-4 pt-1.5 shrink-0">
-      <div class="bg-slate-900/90 border border-slate-800/90 rounded-xl px-3 py-1.5 flex items-center justify-between gap-2 text-xs">
-        <div class="flex items-center gap-2 min-w-0">
-          <span class="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0"></span>
-          <span id="liveTickerText" class="truncate text-slate-300 font-medium">Liste commune active — Tous les mots trouvés s'affichent ici !</span>
+      <div class="bg-slate-900/90 border border-slate-800/90 rounded-xl px-2.5 py-1 flex items-center justify-between gap-2 text-xs">
+        <div class="flex items-center gap-2 min-w-0 flex-1 overflow-hidden">
+          <span class="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0"></span>
+          <div class="overflow-hidden w-full">
+            <span id="liveTickerText" class="text-slate-300 font-medium text-[11px] block truncate">Prêt — Proposez un mot !</span>
+          </div>
         </div>
-        <span id="liveLeaderBadge" class="shrink-0 font-mono-num text-[11px] text-amber-400 font-bold bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-md">
+        <span id="liveLeaderBadge" class="shrink-0 font-mono-num text-[10px] text-amber-400 font-bold bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded">
           🥇 --
         </span>
       </div>
     </div>
 
     <!-- ===================================================================== -->
-    <!-- ONGLETS MOBILES (JEU vs CLASSEMENT & SALON)                           -->
+    <!-- ONGLETS MOBILES ÉPURÉS                                                -->
     <!-- ===================================================================== -->
     <div id="mobileTabsWrapper" class="lg:hidden w-full max-w-6xl mx-auto px-3 sm:px-4 pt-1.5 shrink-0">
-      <div class="grid grid-cols-2 bg-slate-900/90 p-1 rounded-xl border border-slate-800 text-xs font-bold">
-        <button id="tabGameBtn" onclick="switchMobileTab('game')" class="py-1.5 rounded-lg bg-slate-800 text-white transition flex items-center justify-center gap-1.5">
+      <div class="grid grid-cols-2 bg-slate-900/90 p-0.5 rounded-xl border border-slate-800 text-xs font-bold">
+        <button id="tabGameBtn" onclick="switchMobileTab('game')" class="py-1 rounded-lg bg-slate-800 text-white transition flex items-center justify-center gap-1.5">
           <i data-lucide="flame" class="w-3.5 h-3.5 text-sky-400"></i>
           <span>Mots (<span id="mobileAttemptCount">0</span>)</span>
         </button>
-        <button id="tabSocialBtn" onclick="switchMobileTab('social')" class="py-1.5 rounded-lg text-slate-400 transition flex items-center justify-center gap-1.5 relative">
+        <button id="tabSocialBtn" onclick="switchMobileTab('social')" class="py-1 rounded-lg text-slate-400 transition flex items-center justify-center gap-1.5 relative">
           <i data-lucide="trophy" class="w-3.5 h-3.5 text-amber-400"></i>
-          <span>Classement & Journal</span>
+          <span>Salon & Direct</span>
           <span id="unreadDot" class="hidden w-2 h-2 rounded-full bg-rose-500"></span>
         </button>
       </div>
@@ -274,109 +293,121 @@
     <!-- ===================================================================== -->
     <!-- GRILLE PRINCIPALE                                                     -->
     <!-- ===================================================================== -->
-    <main id="mainGrid" class="w-full max-w-6xl mx-auto flex-1 grid grid-cols-1 lg:grid-cols-12 gap-3 px-3 sm:px-4 py-2 min-h-0 overflow-hidden">
+    <main id="mainGrid" class="w-full max-w-6xl mx-auto flex-1 grid grid-cols-1 lg:grid-cols-12 gap-3 px-3 sm:px-4 py-1.5 min-h-0 overflow-hidden">
 
-      <!-- COLONNE GAUCHE : ZONE DE JEU COMMUNE -->
-      <section id="gameSection" class="lg:col-span-7 flex flex-col gap-2 min-h-0 h-full">
+      <!-- COLONNE GAUCHE : ZONE DE JEU -->
+      <section id="gameSection" class="lg:col-span-7 flex flex-col gap-1.5 min-h-0 h-full">
 
-        <!-- Mini-Cartes de Statistiques (masquées automatiquement quand le clavier s'ouvre) -->
-        <div id="statsRow" class="grid grid-cols-3 gap-2 shrink-0">
-          <div class="bg-slate-900/70 border border-slate-800/80 rounded-xl p-2 flex items-center justify-between">
-            <span class="text-[11px] text-slate-400">Total Mots</span>
-            <span id="statAttempts" class="font-mono-num text-sm font-bold text-white">0</span>
+        <!-- STATISTIQUES MINIMISABLES (Se replie après 10s ou au clic) -->
+        <div id="statsContainer" onclick="toggleStatsMinimized()" class="cursor-pointer select-none shrink-0 transition-all">
+          <!-- Vue Dépliée -->
+          <div id="statsExpanded" class="grid grid-cols-3 gap-1.5">
+            <div class="bg-slate-900/70 border border-slate-800/80 rounded-xl px-2.5 py-1.5 flex items-center justify-between">
+              <span class="text-[10px] text-slate-400">Mots</span>
+              <span id="statAttempts" class="font-mono-num text-xs font-bold text-white">0</span>
+            </div>
+            <div class="bg-slate-900/70 border border-slate-800/80 rounded-xl px-2.5 py-1.5 flex items-center justify-between">
+              <span class="text-[10px] text-slate-400">Record</span>
+              <span id="statBestTemp" class="font-mono-num text-xs font-bold text-sky-400">--°C</span>
+            </div>
+            <div class="bg-slate-900/70 border border-slate-800/80 rounded-xl px-2.5 py-1.5 flex items-center justify-between">
+              <span class="text-[10px] text-slate-400">Top 1000</span>
+              <span id="statTopWords" class="font-mono-num text-xs font-bold text-amber-400">0</span>
+            </div>
           </div>
-          <div class="bg-slate-900/70 border border-slate-800/80 rounded-xl p-2 flex items-center justify-between">
-            <span class="text-[11px] text-slate-400">Record Salon</span>
-            <span id="statBestTemp" class="font-mono-num text-sm font-bold text-sky-400">--°C</span>
-          </div>
-          <div class="bg-slate-900/70 border border-slate-800/80 rounded-xl p-2 flex items-center justify-between">
-            <span class="text-[11px] text-slate-400">Top 1000</span>
-            <span id="statTopWords" class="font-mono-num text-sm font-bold text-amber-400">0</span>
+          <!-- Vue Minimisée (Barre fine) -->
+          <div id="statsCollapsed" class="hidden bg-slate-900/50 border border-slate-800/60 rounded-lg px-2.5 py-1 flex items-center justify-between text-[11px] text-slate-400">
+            <div class="flex items-center gap-3 font-mono-num">
+              <span>Mots: <strong id="miniAttempts" class="text-slate-200">0</strong></span>
+              <span>Record: <strong id="miniBestTemp" class="text-sky-400">--°C</strong></span>
+              <span>Top: <strong id="miniTopWords" class="text-amber-400">0</strong></span>
+            </div>
+            <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-500"></i>
           </div>
         </div>
 
-        <!-- Barre de Saisie (Toujours en haut de l'écran même avec clavier ouvert) -->
-        <form id="guessForm" onsubmit="handleGuess(event)" class="relative flex gap-2 shrink-0">
+        <!-- Barre de Saisie -->
+        <form id="guessForm" onsubmit="handleGuess(event)" class="relative flex gap-1.5 shrink-0">
           <div class="relative flex-1">
             <input id="wordInput" type="text" inputmode="text" enterkeyhint="send"
-              placeholder="Entrez un mot (ex: mer, adolescente, canidé)..." autocomplete="off" autocapitalize="none" spellcheck="false"
-              class="w-full bg-slate-900 border border-slate-700/90 focus:border-sky-500 rounded-xl pl-3.5 pr-9 py-2.5 text-base font-medium placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500/20 transition">
-            <button type="button" onclick="clearInput()" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 p-1">
+              placeholder="Proposer un mot..." autocomplete="off" autocapitalize="none" spellcheck="false"
+              class="w-full bg-slate-900 border border-slate-700/90 focus:border-sky-500 rounded-xl pl-3 pr-8 py-2 text-base font-medium placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500/20 transition">
+            <button type="button" onclick="clearInput()" class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 p-1">
               <i data-lucide="x" class="w-4 h-4"></i>
             </button>
           </div>
           <button type="submit"
-            class="bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 active:scale-[0.98] font-bold px-4 sm:px-6 rounded-xl text-sm transition shadow-lg shadow-sky-600/20 flex items-center gap-1.5 shrink-0">
-            <span>Valider</span>
-            <i data-lucide="corner-down-left" class="w-4 h-4 hidden sm:inline"></i>
+            class="bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 active:scale-[0.98] font-bold px-4 sm:px-5 rounded-xl text-sm transition shadow-lg shadow-sky-600/20 flex items-center gap-1 shrink-0">
+            <span>OK</span>
+            <i data-lucide="corner-down-left" class="w-3.5 h-3.5 hidden sm:inline"></i>
           </button>
         </form>
 
         <!-- Bannière de Fin de Manche -->
-        <div id="victoryBanner" class="hidden bg-gradient-to-r from-emerald-950/90 via-teal-950/90 to-slate-900 border border-emerald-500/40 rounded-xl p-3 animate-pop shrink-0">
-          <div class="flex items-center justify-between gap-3">
-            <div>
-              <span id="victoryBadge" class="text-[10px] font-bold uppercase tracking-wider text-emerald-400">Manche terminée</span>
-              <h3 id="victoryTitle" class="text-sm sm:text-base font-extrabold text-white">Mot secret trouvé !</h3>
-              <p id="victorySub" class="text-xs text-slate-300"></p>
+        <div id="victoryBanner" class="hidden bg-gradient-to-r from-emerald-950/90 via-teal-950/90 to-slate-900 border border-emerald-500/40 rounded-xl p-2.5 animate-pop shrink-0">
+          <div class="flex items-center justify-between gap-2">
+            <div class="min-w-0">
+              <h3 id="victoryTitle" class="text-xs sm:text-sm font-extrabold text-white truncate">Mot trouvé !</h3>
+              <p id="victorySub" class="text-[11px] text-slate-300 truncate"></p>
             </div>
-            <button onclick="triggerNextGame()" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs px-3.5 py-2 rounded-lg transition shrink-0">
-              Manche suivante
+            <button onclick="triggerNextGame()" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs px-3 py-1.5 rounded-lg transition shrink-0">
+              Suivant
             </button>
           </div>
         </div>
 
-        <!-- Dernier Mot Testé (Masqué sur mobile quand le clavier est ouvert pour laisser toute la place à la liste) -->
-        <div id="lastGuessBox" class="hidden bg-slate-900/95 border border-slate-800 rounded-xl p-2 shrink-0">
-          <div class="flex justify-between items-center text-[10px] text-slate-400 uppercase tracking-wider mb-1 px-0.5">
-            <span id="lastGuessAuthor">Dernier essai</span>
-            <span id="lastGuessPoints" class="text-sky-400 font-bold"></span>
-          </div>
+        <!-- Dernier Essai Ultra-Compact -->
+        <div id="lastGuessBox" class="hidden shrink-0">
           <div id="lastGuessContent"></div>
         </div>
 
-        <!-- Liste Commune des Mots (Toujours visible au-dessus du clavier mobile) -->
-        <div class="bg-slate-900/60 border border-slate-800/90 rounded-2xl p-2.5 sm:p-3 flex-1 flex flex-col min-h-0 overflow-hidden">
-          <div class="flex justify-between items-center text-[11px] text-slate-400 border-b border-slate-800 pb-1.5 mb-2 shrink-0">
-            <span class="font-semibold text-slate-300">🔥 Mots les plus chauds (Commun)</span>
+        <!-- Liste Commune des Mots Chauds -->
+        <div class="bg-slate-900/60 border border-slate-800/90 rounded-2xl p-2 sm:p-2.5 flex-1 flex flex-col min-h-0 overflow-hidden">
+          <div class="flex justify-between items-center text-[11px] text-slate-400 border-b border-slate-800 pb-1.5 mb-1.5 shrink-0 px-0.5">
+            <span class="font-bold text-slate-300">🔥 Mots chauds</span>
             <div class="flex items-center gap-1.5">
-              <span class="hidden sm:inline text-[10px] text-slate-500">Froid</span>
-              <div class="w-14 h-1.5 rounded-full thermal-spectrum"></div>
-              <span class="hidden sm:inline text-[10px] text-rose-400">Brûlant</span>
+              <div class="w-12 h-1.5 rounded-full thermal-spectrum"></div>
+              <span class="text-[10px] text-slate-500">Temp.</span>
             </div>
           </div>
-          <div id="guessesList" class="flex-1 overflow-y-auto flex flex-col gap-1.5 pr-1">
-            <p class="text-slate-500 text-xs sm:text-sm text-center my-auto py-8">Chargement du dictionnaire...</p>
+          <div id="guessesList" class="flex-1 overflow-y-auto flex flex-col gap-1 pr-0.5">
+            <p class="text-slate-500 text-xs text-center my-auto py-8">Chargement...</p>
           </div>
         </div>
 
       </section>
 
-      <!-- COLONNE DROITE : CLASSEMENT & JOURNAL EN DIRECT -->
-      <aside id="socialSection" class="hidden lg:flex lg:col-span-5 flex-col gap-3 min-h-0 h-full">
+      <!-- COLONNE DROITE : JOUEURS & DIRECT ÉPURÉ -->
+      <aside id="socialSection" class="hidden lg:flex lg:col-span-5 flex-col gap-2.5 min-h-0 h-full">
 
-        <div class="bg-slate-900/60 border border-slate-800/90 rounded-2xl p-3.5 shrink-0">
-          <div class="flex items-center justify-between border-b border-slate-800 pb-2.5 mb-2.5">
-            <div class="flex items-center gap-2">
-              <i data-lucide="trophy" class="w-4 h-4 text-amber-400"></i>
-              <h2 class="font-bold text-sm">Classement des Joueurs</h2>
+        <!-- Classement des joueurs -->
+        <div class="bg-slate-900/60 border border-slate-800/90 rounded-2xl p-3 shrink-0">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-2 mb-2">
+            <div class="flex items-center gap-1.5">
+              <i data-lucide="trophy" class="w-3.5 h-3.5 text-amber-400"></i>
+              <h2 class="font-bold text-xs uppercase tracking-wider text-slate-300">Joueurs</h2>
             </div>
-            <span id="playerCountBadge" class="text-[11px] bg-sky-500/15 text-sky-300 px-2.5 py-0.5 rounded-full font-medium">
-              1 joueur
+            <span id="playerCountBadge" class="text-[10px] bg-sky-500/15 text-sky-300 px-2 py-0.5 rounded-full font-semibold">
+              1
             </span>
           </div>
-          <div id="leaderboardList" class="flex flex-col gap-1.5 max-h-48 overflow-y-auto pr-1"></div>
+          <div id="leaderboardList" class="flex flex-col gap-1.5 max-h-40 overflow-y-auto pr-0.5"></div>
         </div>
 
-        <div class="bg-slate-900/60 border border-slate-800/90 rounded-2xl p-3.5 flex-1 flex flex-col min-h-0 overflow-hidden">
-          <div class="flex items-center justify-between border-b border-slate-800 pb-2.5 mb-2.5 shrink-0">
-            <div class="flex items-center gap-2">
-              <i data-lucide="radio" class="w-4 h-4 text-sky-400"></i>
-              <h2 class="font-bold text-sm">Direct & Percées</h2>
+        <!-- Journal Direct Structuré & Filtrable -->
+        <div class="bg-slate-900/60 border border-slate-800/90 rounded-2xl p-3 flex-1 flex flex-col min-h-0 overflow-hidden">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-2 mb-2 shrink-0">
+            <div class="flex items-center gap-1.5">
+              <i data-lucide="radio" class="w-3.5 h-3.5 text-sky-400"></i>
+              <h2 class="font-bold text-xs uppercase tracking-wider text-slate-300">Direct</h2>
             </div>
-            <span class="text-[11px] text-slate-500">Indice = 750 pts</span>
+            <!-- Filtre anti-pollution : Tout vs Chauds uniquement -->
+            <button id="feedFilterBtn" onclick="toggleFeedFilter()"
+              class="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-slate-800 text-slate-300 hover:bg-slate-700 transition">
+              Tout afficher
+            </button>
           </div>
-          <div id="liveFeed" class="flex-1 overflow-y-auto flex flex-col gap-1.5 pr-1 text-xs"></div>
+          <div id="liveFeed" class="flex-1 overflow-y-auto flex flex-col gap-1 pr-0.5 text-xs"></div>
         </div>
 
       </aside>
@@ -387,7 +418,7 @@
 
   <script>
     // =========================================================================
-    // 1. CONFIGURATION & ÉTAT GLOBAL PARTAGÉ
+    // 1. CONFIGURATION & ÉTAT GLOBAL
     // =========================================================================
     const TOTAL_GAMES = 500;
     const HINT_COST = 750;
@@ -403,7 +434,6 @@
       "adolescent": 12.4, "chien": 8.9, "canidé": 9.1, "nouveau-né": 11.2
     };
 
-    // ID unique par onglet (sessionStorage évite les collisions entre 2 onglets)
     let myId = sessionStorage.getItem("zeroabsolu_tab_id");
     if (!myId) {
       myId = "p_" + Math.random().toString(36).substring(2, 10);
@@ -414,6 +444,7 @@
     let savedPoints = parseInt(localStorage.getItem("zeroabsolu_points") || "0", 10);
     let savedWins = parseInt(localStorage.getItem("zeroabsolu_wins") || "0", 10);
 
+    let hasStartedSession = false;
     let roomCode = null;
     let isHost = true;
 
@@ -424,7 +455,6 @@
     let gameDictionary = {};
     let accentInsensitiveMap = {};
 
-    // LISTE COMMUNE DES ESSAIS DU SALON
     let guesses = [];
     let roundFinished = false;
     let roomBestTemp = null;
@@ -432,6 +462,12 @@
     let roomBestProximityPct = 0;
 
     let players = {};
+
+    // Gestion de la minimisation auto des stats (10s) et du filtre Direct
+    let statsMinimized = false;
+    let statsIdleTimer = null;
+    let feedOnlyHot = false;
+    let feedEvents = []; // Stocke les 40 derniers événements pour affichage propre
 
     function pickUnplayedGameId() {
       if (playedGameIds.size >= TOTAL_GAMES) playedGameIds.clear();
@@ -463,7 +499,7 @@
     }
 
     // =========================================================================
-    // 2. GESTION DU CLAVIER MOBILE (VISUAL VIEWPORT LOCK)
+    // 2. CLAVIER MOBILE & MINIMISATION AUTOMATIQUE DES STATS (10 SECONDES)
     // =========================================================================
     let initialScreenHeight = window.innerHeight;
 
@@ -475,9 +511,26 @@
       app.style.height = `${vv.height}px`;
       app.style.top = `${vv.offsetTop}px`;
 
-      // Détecte si le clavier mange plus de 140px de hauteur d'écran
       const isKeyboardUp = (initialScreenHeight - vv.height) > 140 && window.innerWidth < 1024;
       document.body.classList.toggle("keyboard-active", isKeyboardUp);
+    }
+
+    function resetStatsIdleTimer() {
+      if (statsIdleTimer) clearTimeout(statsIdleTimer);
+      statsIdleTimer = setTimeout(() => {
+        setStatsMinimized(true);
+      }, 10000);
+    }
+
+    function toggleStatsMinimized() {
+      setStatsMinimized(!statsMinimized);
+      if (!statsMinimized) resetStatsIdleTimer();
+    }
+
+    function setStatsMinimized(minimized) {
+      statsMinimized = minimized;
+      document.getElementById("statsExpanded").classList.toggle("hidden", minimized);
+      document.getElementById("statsCollapsed").classList.toggle("hidden", !minimized);
     }
 
     window.addEventListener("DOMContentLoaded", () => {
@@ -489,16 +542,19 @@
       }
       initSelfPlayer();
       loadGame(currentGameId, 1);
+      resetStatsIdleTimer();
 
       document.getElementById("modalRoomCode").addEventListener("keydown", (e) => {
-        if (e.key === "Enter") startJoinRoom();
+        if (e.key === "Enter" && !document.getElementById("joinRoomBtn").disabled) {
+          startJoinRoom();
+        }
       });
 
       const inputEl = document.getElementById("wordInput");
       inputEl.addEventListener("focus", () => {
         if (window.innerWidth < 1024) {
           document.body.classList.add("keyboard-active");
-          setTimeout(syncMobileViewport, 80);
+          setTimeout(syncMobileViewport, 60);
         }
       });
       inputEl.addEventListener("blur", () => {
@@ -537,7 +593,6 @@
       document.getElementById("headerPoints").textContent = me.points;
     }
 
-    // Correction du bug du 50e essai : ne détruit plus jamais de balise enfant requise
     function updateHintButtonUI() {
       const me = players[myId];
       const btn = document.getElementById("hintBtn");
@@ -547,17 +602,17 @@
       const canAfford = me && me.points >= HINT_COST && !roundFinished;
 
       if (canAfford) {
-        btn.className = "flex items-center gap-1.5 bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 text-amber-300 text-xs font-bold px-2.5 py-1.5 rounded-xl transition shadow-sm";
-        content.innerHTML = `<i data-lucide="lightbulb" class="w-3.5 h-3.5 text-amber-400"></i><span class="font-mono-num text-[11px]">Indice (${HINT_COST})</span>`;
+        btn.className = "flex items-center gap-1 bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 text-amber-300 text-xs font-bold px-2 py-1 rounded-lg transition shadow-sm";
+        content.innerHTML = `<i data-lucide="lightbulb" class="w-3 h-3 text-amber-400"></i><span class="font-mono-num text-[11px]">Indice</span>`;
       } else {
-        btn.className = "flex items-center gap-1.5 bg-slate-900/70 border border-slate-800 text-slate-500 text-xs font-semibold px-2.5 py-1.5 rounded-xl transition opacity-75";
-        content.innerHTML = `<i data-lucide="lock" class="w-3.5 h-3.5 text-slate-500"></i><span class="font-mono-num text-[11px]">${HINT_COST} pts</span>`;
+        btn.className = "flex items-center gap-1 bg-slate-900/70 border border-slate-800 text-slate-500 text-xs font-semibold px-2 py-1 rounded-lg transition opacity-75";
+        content.innerHTML = `<i data-lucide="lock" class="w-3 h-3 text-slate-500"></i><span class="font-mono-num text-[11px]">${HINT_COST}</span>`;
       }
       lucide.createIcons();
     }
 
     // =========================================================================
-    // 3. RECONNAISSANCE MORPHOLOGIQUE FRANÇAISE (FÉMININS, PLURIELS, TIRETS)
+    // 3. RECONNAISSANCE MORPHOLOGIQUE (FÉMININS, PLURIELS, TIRETS)
     // =========================================================================
     function buildAccentInsensitiveIndex() {
       accentInsensitiveMap = {};
@@ -566,10 +621,8 @@
         if (!(stripped in accentInsensitiveMap) || word === stripped) {
           accentInsensitiveMap[stripped] = word;
         }
-        // Indexe aussi les mots à tiret sans leur tiret (ex: "nouveau-né" -> "nouveaune" / "nouveau ne")
         if (word.includes("-")) {
-          const noHyphen = stripped.replace(/-/g, "");
-          accentInsensitiveMap[noHyphen] = word;
+          accentInsensitiveMap[stripped.replace(/-/g, "")] = word;
         }
       }
     }
@@ -581,40 +634,21 @@
       return null;
     }
 
-    // Convertit automatiquement "adolescente" -> "adolescent", "chevaux" -> "cheval", etc.
     function resolveWordInDictionary(rawInput) {
       const cleaned = rawInput.trim().toLowerCase().replace(/\s+/g, "-");
-
-      // 1. Recherche directe (avec ou sans accents/tirets)
       let match = tryDirectMatch(cleaned);
       if (match) return match;
 
-      // 2. Retrait du pluriel simple (-s ou -x) pour tester les règles de féminin ensuite
       const baseForms = [cleaned];
       if (cleaned.endsWith("s") && cleaned.length > 3) baseForms.push(cleaned.slice(0, -1));
       if (cleaned.endsWith("x") && cleaned.length > 3) baseForms.push(cleaned.slice(0, -1));
 
-      // Règles de transformation Féminin / Pluriel / Conjugaison -> Lemme masculin singulier / Infinitif
       const suffixRules = [
-        ["aux", "al"],       // chevaux -> cheval
-        ["euse", "eur"],     // chanteuse -> chanteur
-        ["rice", "eur"],     // actrice -> acteur
-        ["trice", "teur"],   // directrice -> directeur
-        ["ive", "if"],       // sportive -> sportif
-        ["ienne", "ien"],    // chienne -> chien, lycéenne -> lycéen
-        ["onne", "on"],      // lionne -> lion
-        ["elle", "el"],      // naturelle -> naturel
-        ["elle", "eau"],     // nouvelle -> nouveau, belle -> beau
-        ["ère", "er"],       // première -> premier, boulangère -> boulanger
-        ["ere", "er"],
-        ["ette", "et"],      // muette -> muet, cadette -> cadet
-        ["otte", "ot"],      // sotte -> sot
-        ["e", ""],           // adolescente -> adolescent, étudiante -> étudiant, amie -> ami
-        ["ée", "er"],        // mangée -> manger
-        ["é", "er"],         // mangé -> manger
-        ["és", "er"],        // mangés -> manger
-        ["ées", "er"],       // mangées -> manger
-        ["er", "e"]
+        ["aux", "al"], ["euse", "eur"], ["rice", "eur"], ["trice", "teur"],
+        ["ive", "if"], ["ienne", "ien"], ["onne", "on"], ["elle", "el"],
+        ["elle", "eau"], ["ère", "er"], ["ere", "er"], ["ette", "et"],
+        ["otte", "ot"], ["e", ""], ["ée", "er"], ["é", "er"],
+        ["és", "er"], ["ées", "er"], ["er", "e"]
       ];
 
       for (const form of baseForms) {
@@ -629,58 +663,44 @@
           }
         }
       }
-
       return null;
     }
 
     // =========================================================================
-    // 4. CALCUL DU POURCENTAGE DE PROXIMITÉ & DÉTECTION « MONTÉE EN PUISSANCE »
+    // 4. CALCUL DE PROXIMITÉ & DÉTECTION « MONTÉE EN PUISSANCE »
     // =========================================================================
-    // Convertit n'importe quel (temp, rank) en un pourcentage continu de 3% à 100%
     function computeProximityPct(temp, rank) {
       if (rank === 1000) return 100;
       if (rank !== null && rank > 0) {
-        // Un mot dans le Top 1000 occupe la plage 38% -> 99.5% de la barre spectrale
         return 38 + (rank / 1000) * 61.5;
       }
-      // Un mot froid occupe la plage 4% -> 37% selon sa température (-10°C à +28°C)
       const normalizedCold = Math.max(0, Math.min(1, (temp + 10) / 38));
       return 4 + normalizedCold * 33;
     }
 
-    // Détecte si un nouveau mot constitue une "Montée en puissance" (percée d'au moins ~20%)
     function checkPowerSurge(temp, rank, newPct) {
-      if (rank === 1000) return null; // La victoire a déjà sa propre célébration
-
-      // S'il n'y a pas encore de base de référence significative, on enregistre simplement le record
-      if (guesses.length < 2 || roomBestTemp === null) {
-        return null;
-      }
+      if (rank === 1000 || guesses.length < 2 || roomBestTemp === null) return null;
 
       const prevTemp = roomBestTemp;
       const prevPct = roomBestProximityPct;
       const prevRank = roomBestRank;
 
-      // Condition 1 : Le mot améliore la température record d'au moins +20% (et dépasse 18°C)
       const relTempGain = prevTemp > 5 ? ((temp - prevTemp) / prevTemp) * 100 : (temp - prevTemp) * 4;
-      // Condition 2 : Bond d'au moins +14 points sur l'échelle de proximité globale (0-100%)
       const pctJump = newPct - prevPct;
-      // Condition 3 : Entrée dans le Top 100 ou le Top 10 pour la première fois
       const milestoneHit = (rank >= 990 && prevRank < 990) || (rank >= 900 && prevRank < 750);
 
       if (temp > prevTemp && temp >= 18 && (relTempGain >= 20 || pctJump >= 14 || milestoneHit)) {
-        const displayedGain = Math.max(20, Math.min(99, Math.round(Math.max(relTempGain, pctJump * 1.5))));
-        return displayedGain;
+        return Math.max(20, Math.min(99, Math.round(Math.max(relTempGain, pctJump * 1.5))));
       }
       return null;
     }
 
     function triggerSurgeAnimation(pseudo, word, temp, gainPct) {
       const overlay = document.getElementById("surgeOverlay");
-      document.getElementById("surgePlayerName").textContent = `${pseudo} fait grimper la température !`;
+      document.getElementById("surgePlayerName").textContent = pseudo;
       document.getElementById("surgeWord").textContent = word;
-      document.getElementById("surgeTemp").textContent = `${temp.toFixed(2)}°C`;
-      document.getElementById("surgeDelta").textContent = `+${gainPct}% plus précis !`;
+      document.getElementById("surgeTemp").textContent = `${temp.toFixed(1)}°C`;
+      document.getElementById("surgeDelta").textContent = `+${gainPct}%`;
 
       overlay.classList.remove("hidden", "animate-surge-banner");
       void overlay.offsetWidth;
@@ -690,26 +710,46 @@
 
       if (typeof confetti === "function") {
         confetti({
-          particleCount: 28,
-          spread: 65,
+          particleCount: 25,
+          spread: 60,
           origin: { y: 0.55 },
           colors: ["#38bdf8", "#a855f7", "#f59e0b", "#f43f5e"]
         });
       }
 
-      setTimeout(() => {
-        overlay.classList.add("hidden");
-      }, 2600);
+      setTimeout(() => overlay.classList.add("hidden"), 2500);
     }
 
     // =========================================================================
-    // 5. MODALE & MULTIJOUEUR TEMPS RÉEL (LISTE COMMUNE SYNCHRONISÉE)
+    // 5. MODALE D'ACCUEIL, BOUTON REJOINDRE DYNAMIQUE & MULTIJOUEUR
     // =========================================================================
+    function handleRoomCodeInput(input) {
+      // Garde uniquement les lettres (insensible à la casse)
+      const cleaned = input.value.replace(/[^a-zA-Z]/g, "").toUpperCase().slice(0, 4);
+      input.value = cleaned;
+
+      const btn = document.getElementById("joinRoomBtn");
+      const isValid = cleaned.length === 4;
+      btn.disabled = !isValid;
+
+      if (isValid) {
+        btn.className = "w-full py-2.5 rounded-xl text-sm font-bold transition flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/20 cursor-pointer";
+      } else {
+        btn.className = "w-full py-2.5 rounded-xl text-sm font-bold transition flex items-center justify-center gap-2 bg-slate-800 text-slate-500 cursor-not-allowed opacity-60";
+      }
+    }
+
+    function handleModalBackdropClick(e) {
+      if (e.target.id === "onboardingModal" && hasStartedSession) {
+        closeOnboardingModal();
+      }
+    }
+
     function validatePseudoInput() {
       const raw = document.getElementById("modalPseudo").value.trim();
       const err = document.getElementById("modalError");
       if (!raw || raw.length < 2) {
-        err.textContent = "Veuillez choisir un pseudo d'au moins 2 caractères.";
+        err.textContent = "Pseudo trop court (2 lettres min).";
         triggerInputShake(document.getElementById("modalPseudo"));
         return null;
       }
@@ -721,11 +761,16 @@
     }
 
     function closeOnboardingModal() {
+      hasStartedSession = true;
+      document.getElementById("closeModalBtn").classList.remove("hidden");
       document.getElementById("onboardingModal").classList.add("hidden");
     }
 
     function openOnboardingModal() {
       document.getElementById("modalError").textContent = "";
+      if (hasStartedSession) {
+        document.getElementById("closeModalBtn").classList.remove("hidden");
+      }
       document.getElementById("onboardingModal").classList.remove("hidden");
     }
 
@@ -735,9 +780,9 @@
       isHost = true;
       roomCode = null;
       document.getElementById("roomCodePill").classList.add("hidden");
-      document.getElementById("modeSubtitle").textContent = `Solo • ${myPseudo}`;
       closeOnboardingModal();
-      showToast(`Bienvenue ${myPseudo} !`, "sky");
+      updateLiveTicker(`Mode Solo • Manche #${roundNumber}`);
+      showToast(`Mode Solo activé`, "sky");
     }
 
     function generate4LetterCode() {
@@ -771,18 +816,27 @@
       isHost = true;
       roundNumber = 1;
       roomCode = generate4LetterCode();
-      const fullPeerId = PEER_PREFIX + roomCode;
 
-      document.getElementById("modalError").textContent = "Création du salon...";
+      // Copie immédiate dans le presse-papiers pendant l'interaction utilisateur
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(roomCode).catch(() => {});
+      }
+
+      const fullPeerId = PEER_PREFIX + roomCode;
+      document.getElementById("modalError").textContent = "Création...";
       peer = new Peer(fullPeerId);
 
       peer.on("open", () => {
         document.getElementById("modalError").textContent = "";
         updateRoomHeaderUI();
         closeOnboardingModal();
-        addFeedMessage(`Salon ${roomCode} créé ! Partagez ces 4 lettres.`, "sky");
-        updateLiveTicker(`Salon ${roomCode} actif • Liste de mots commune activée !`);
-        showToast(`Salon ${roomCode} créé !`, "sky");
+        // Deuxième tentative de copie au cas où et notification explicite
+        if (navigator.clipboard) {
+          navigator.clipboard.writeText(roomCode).catch(() => {});
+        }
+        addSystemFeedEvent(`Salon ${roomCode} créé (code copié)`);
+        updateLiveTicker(`Salon ${roomCode} actif • Code copié !`);
+        showToast(`📋 Salon ${roomCode} créé et copié !`, "emerald");
       });
 
       peer.on("connection", (conn) => {
@@ -803,7 +857,7 @@
               roomBestRank,
               roomBestProximityPct
             });
-            addFeedMessage(`${leftName} a quitté le salon.`, "slate");
+            addSystemFeedEvent(`${leftName} a quitté`);
             renderLeaderboard();
           }
         });
@@ -813,7 +867,7 @@
         if (err.type === "unavailable-id") {
           startCreateRoom();
         } else {
-          document.getElementById("modalError").textContent = "Erreur réseau : " + err.type;
+          document.getElementById("modalError").textContent = "Erreur réseau.";
         }
       });
     }
@@ -823,15 +877,12 @@
       const rawCode = document.getElementById("modalRoomCode").value.trim().toUpperCase();
       const err = document.getElementById("modalError");
 
-      if (!/^[A-Z]{4}$/.test(rawCode)) {
-        err.textContent = "Le code doit contenir exactement 4 lettres.";
-        return;
-      }
+      if (!/^[A-Z]{4}$/.test(rawCode)) return;
 
       disconnectMultiplayer();
       isHost = false;
       roomCode = rawCode;
-      err.textContent = `Connexion au salon ${roomCode}...`;
+      err.textContent = `Connexion à ${roomCode}...`;
 
       peer = new Peer();
       peer.on("open", () => {
@@ -839,9 +890,7 @@
         clientConnection = conn;
 
         const timeout = setTimeout(() => {
-          if (!conn.open) {
-            err.textContent = `Salon "${roomCode}" introuvable.`;
-          }
+          if (!conn.open) err.textContent = `Salon "${roomCode}" introuvable.`;
         }, 5000);
 
         conn.on("open", () => {
@@ -850,12 +899,12 @@
           updateRoomHeaderUI();
           closeOnboardingModal();
           conn.send({ type: "JOIN", player: players[myId] });
-          showToast(`Connecté au salon ${roomCode} !`, "sky");
+          showToast(`Connecté à ${roomCode} !`, "sky");
         });
 
         conn.on("data", (data) => handleClientReceivedData(data));
         conn.on("close", () => {
-          showToast("Le salon a été fermé par l'hôte.", "rose");
+          showToast("Salon fermé par l'hôte.", "rose");
           startSoloMode();
         });
       });
@@ -873,7 +922,7 @@
           bestRank: 0,
           attempts: 0
         };
-        const joinMsg = `👋 ${players[data.player.id].pseudo} a rejoint la partie !`;
+        const joinMsg = `👋 ${players[data.player.id].pseudo} a rejoint`;
         broadcastFromHost({
           type: "STATE_SYNC",
           gameId: currentGameId,
@@ -883,13 +932,12 @@
           roomBestTemp,
           roomBestRank,
           roomBestProximityPct,
-          feedEvent: { text: joinMsg, style: "sky" }
+          joinText: joinMsg
         });
         renderLeaderboard();
-        addFeedMessage(joinMsg, "sky");
+        addSystemFeedEvent(joinMsg);
         updateLiveTicker(joinMsg);
       } else if (data.type === "SHARED_GUESS") {
-        // L'hôte intègre le mot trouvé par l'invité et le relaie à tous les joueurs
         applySharedGuess(data, false);
         broadcastFromHost(data);
       }
@@ -907,7 +955,7 @@
         } else {
           if (data.roundNumber) {
             roundNumber = data.roundNumber;
-            document.getElementById("roundBadge").textContent = `Manche #${roundNumber}`;
+            document.getElementById("roundBadge").textContent = `#${roundNumber}`;
           }
           if (Array.isArray(data.guesses)) {
             guesses = data.guesses;
@@ -915,9 +963,9 @@
             updateStatsUI();
           }
         }
-        if (data.feedEvent) {
-          addFeedMessage(data.feedEvent.text, data.feedEvent.style);
-          updateLiveTicker(data.feedEvent.text);
+        if (data.joinText) {
+          addSystemFeedEvent(data.joinText);
+          updateLiveTicker(data.joinText);
         }
         renderLeaderboard();
       } else if (data.type === "NEW_ROUND") {
@@ -927,8 +975,8 @@
       } else if (data.type === "ROUND_GIVEN_UP") {
         roundFinished = true;
         showVictoryBanner("Abandon", data.secretWord, guesses.length, true);
-        addFeedMessage(`🏳️ Manche abandonnée ! Le mot était « ${data.secretWord.toUpperCase()} ».`, "rose");
-        updateLiveTicker(`🏳️ Le mot secret était « ${data.secretWord.toUpperCase()} » !`);
+        addSystemFeedEvent(`🏳️ Mot révélé : ${data.secretWord.toUpperCase()}`);
+        updateLiveTicker(`🏳️ Réponse : ${data.secretWord.toUpperCase()}`);
       } else if (data.type === "SHARED_GUESS") {
         if (data.playerId !== myId) {
           applySharedGuess(data, false);
@@ -938,11 +986,8 @@
 
     function sendGuessToNetwork(payload) {
       if (!roomCode) return;
-      if (isHost) {
-        broadcastFromHost(payload);
-      } else if (clientConnection && clientConnection.open) {
-        clientConnection.send(payload);
-      }
+      if (isHost) broadcastFromHost(payload);
+      else if (clientConnection && clientConnection.open) clientConnection.send(payload);
     }
 
     function broadcastFromHost(payload) {
@@ -954,17 +999,16 @@
       pill.classList.remove("hidden");
       pill.classList.add("flex");
       document.getElementById("headerRoomCode").textContent = roomCode;
-      document.getElementById("modeSubtitle").textContent = `${isHost ? "Hôte" : "Invité"} • ${myPseudo}`;
     }
 
     function copyRoomCode() {
       if (!roomCode) return;
       navigator.clipboard.writeText(roomCode);
-      showToast(`Code "${roomCode}" copié !`, "sky");
+      showToast(`📋 Code "${roomCode}" copié !`, "sky");
     }
 
     // =========================================================================
-    // 6. CHARGEMENT D'UNE MANCHE & VALIDATION COMMUNE DES MOTS
+    // 6. CHARGEMENT DE MANCHE & VALIDATION COMMUNE
     // =========================================================================
     async function loadGame(gameId, displayRound = roundNumber, initialGuesses = []) {
       currentGameId = gameId;
@@ -981,7 +1025,7 @@
         p.attempts = 0;
       });
 
-      document.getElementById("roundBadge").textContent = `Manche #${roundNumber}`;
+      document.getElementById("roundBadge").textContent = `#${roundNumber}`;
       document.getElementById("lastGuessBox").classList.add("hidden");
       document.getElementById("victoryBanner").classList.add("hidden");
       updateStatsUI();
@@ -989,9 +1033,9 @@
       renderLeaderboard();
 
       document.getElementById("guessesList").innerHTML = `
-        <div class="text-slate-400 text-xs sm:text-sm text-center my-auto py-8 flex flex-col items-center gap-2">
-          <div class="w-5 h-5 border-2 border-sky-500 border-t-transparent rounded-full animate-spin"></div>
-          <span>Préparation de la Manche #${roundNumber}...</span>
+        <div class="text-slate-400 text-xs text-center my-auto py-8 flex flex-col items-center gap-2">
+          <div class="w-4 h-4 border-2 border-sky-500 border-t-transparent rounded-full animate-spin"></div>
+          <span>Manche #${roundNumber}...</span>
         </div>`;
 
       try {
@@ -1010,13 +1054,11 @@
         updateStatsUI();
       } else {
         document.getElementById("guessesList").innerHTML = `
-          <p class="text-slate-500 text-xs sm:text-sm text-center my-auto py-8">
-            <strong>Manche #${roundNumber} prête</strong> (${Object.keys(gameDictionary).length.toLocaleString('fr-FR')} mots).<br>
-            <span class="text-xs text-slate-600">Tous les mots proposés par le salon apparaîtront ici.</span>
+          <p class="text-slate-500 text-xs text-center my-auto py-8">
+            Manche #${roundNumber} prête • Tapez un premier mot !
           </p>`;
       }
-      addFeedMessage(`🎯 Manche #${roundNumber} lancée !`, "sky");
-      updateLiveTicker(`🎯 Manche #${roundNumber} en cours — Liste de mots commune !`);
+      updateLiveTicker(roomCode ? `Salon ${roomCode} • Manche #${roundNumber}` : `Manche #${roundNumber} en cours`);
     }
 
     function handleGuess(e) {
@@ -1029,23 +1071,21 @@
 
       const resolvedWord = resolveWordInDictionary(rawText);
 
-      // 1. Mot inconnu
       if (!resolvedWord) {
         vibrateDevice(40);
         triggerInputShake(form);
-        showToast(`Mot « ${rawText.toLowerCase()} » inconnu.`, "rose");
+        showToast(`« ${rawText.toLowerCase()} » inconnu`, "rose");
         return;
       }
 
-      // 2. Mot déjà proposé (par soi-même OU par un autre joueur du salon !)
       const existing = guesses.find(g => g.word === resolvedWord);
       if (existing) {
         input.value = "";
         vibrateDevice([30, 50, 30]);
         triggerInputShake(form);
         const who = existing.finderId === myId ? "vous" : existing.finderPseudo;
-        showToast(`« ${resolvedWord} » a déjà été trouvé par ${who} (#${existing.num}) !`, "rose");
-        renderLastGuess(existing, `Déjà trouvé par ${who}`);
+        showToast(`Déjà trouvé par ${who} (#${existing.num})`, "rose");
+        renderLastGuess(existing);
         highlightExistingWordRow(resolvedWord);
         return;
       }
@@ -1059,10 +1099,8 @@
       const isTop10 = rank !== null && rank >= 990 && rank < 1000;
       const proximityPct = computeProximityPct(temp, rank);
 
-      // Détection de la « Montée en puissance » (+20% plus précis)
       const surgeGain = checkPowerSurge(temp, rank, proximityPct);
 
-      // Calcul des points
       let pointsEarned = 0;
       let isNewRecord = false;
 
@@ -1085,9 +1123,7 @@
       me.points += pointsEarned;
       if (me.bestTemp === null || temp > me.bestTemp) me.bestTemp = temp;
       if (rank && rank > me.bestRank) me.bestRank = rank;
-      if (isWin && !roundFinished) {
-        me.wins += 1;
-      }
+      if (isWin && !roundFinished) me.wins += 1;
 
       saveLocalProgress();
       updateHintButtonUI();
@@ -1116,9 +1152,7 @@
       sendGuessToNetwork(sharedPayload);
     }
 
-    // Applique un mot trouvé (qu'il vienne de nous ou d'un ami) dans la liste commune
     function applySharedGuess(data, isLocal) {
-      // Évite tout doublon réseau éventuel
       if (guesses.some(g => g.word === data.word)) return;
 
       const p = players[data.playerId] || { id: data.playerId, pseudo: data.pseudo, points: 0, wins: 0 };
@@ -1149,64 +1183,49 @@
       guesses.push(guessObj);
       guesses.sort((a, b) => b.temp - a.temp);
 
-      const ptsLabel = data.pointsEarned > 0
-        ? `+${data.pointsEarned} pts (${data.pseudo})`
-        : `Par ${data.pseudo}`;
-
-      renderLastGuess(guessObj, ptsLabel);
+      renderLastGuess(guessObj);
       renderGuesses(data.word);
       updateStatsUI();
       renderLeaderboard();
+      resetStatsIdleTimer();
 
-      // Si le nouveau mot est dans les 4 plus chauds de la liste commune, on remonte en haut de liste
       if (guesses.indexOf(guessObj) < 4) {
         document.getElementById("guessesList").scrollTop = 0;
       }
 
-      // 1. Animation de « Montée en puissance » pour TOUS les joueurs du salon !
+      // Ajout propre et compact dans le journal Direct
+      addWordFeedEvent(guessObj, data.surgeGain, data.isNewRecord);
+
       if (data.surgeGain) {
         triggerSurgeAnimation(data.pseudo, data.word, data.temp, data.surgeGain);
-        const surgeMsg = `🚀 Montée en puissance de ${data.pseudo} avec « ${data.word.toUpperCase()} » (${data.temp.toFixed(2)}°C • +${data.surgeGain}%) !`;
-        addFeedMessage(surgeMsg, "amber");
-        updateLiveTicker(surgeMsg);
+        updateLiveTicker(`🚀 ${data.pseudo} : ${data.word.toUpperCase()} (${data.temp.toFixed(1)}°C • +${data.surgeGain}%)`);
       } else if (data.isTop10 && isLocal) {
-        showToast(`🔥 TOP ${1000 - data.rank} trouvé !`, "amber");
+        showToast(`🔥 TOP ${1000 - data.rank} !`, "amber");
       }
 
-      // 2. Victoire
       if (data.isWin) {
         roundFinished = true;
         updateHintButtonUI();
         triggerVictoryConfetti();
         showVictoryBanner(data.pseudo, data.word, guesses.length, false);
-        const winMsg = `🏆 ${data.pseudo} a trouvé « ${data.word.toUpperCase()} » (Essai #${guesses.length}) !`;
-        addFeedMessage(winMsg, "emerald");
-        updateLiveTicker(winMsg);
-      } else if (!data.surgeGain) {
-        const rankTxt = data.rank ? ` • 🔥 ${data.rank}‰` : "";
-        const feedTxt = `${data.pseudo} a trouvé « ${data.word} » : ${data.temp.toFixed(2)}°C${rankTxt}`;
-        addFeedMessage(feedTxt, data.isNewRecord ? "sky" : "slate");
-        if (data.isNewRecord) {
-          updateLiveTicker(`🔥 ${data.pseudo} prend la tête avec « ${data.word} » (${data.temp.toFixed(2)}°C) !`);
-        }
+        updateLiveTicker(`🏆 ${data.pseudo} a trouvé ${data.word.toUpperCase()} !`);
+      } else if (data.isNewRecord && !data.surgeGain) {
+        updateLiveTicker(`🔥 Record par ${data.pseudo} : ${data.word} (${data.temp.toFixed(1)}°C)`);
       }
     }
 
     // =========================================================================
-    // 7. INDICE VERROUILLÉ À 750 PTS & ABANDON
+    // 7. INDICE & ABANDON
     // =========================================================================
     function useHint() {
-      if (roundFinished) {
-        showToast("La manche est déjà terminée !", "amber");
-        return;
-      }
+      if (roundFinished) return;
 
       const me = players[myId];
       if (!me || me.points < HINT_COST) {
         const missing = HINT_COST - (me?.points || 0);
         vibrateDevice(50);
         triggerInputShake(document.getElementById("hintBtn"));
-        showToast(`🔒 Indice verrouillé : il vous manque ${missing} pts (Coût : ${HINT_COST} pts).`, "rose");
+        showToast(`🔒 Il manque ${missing} pts (Coût : ${HINT_COST})`, "rose");
         return;
       }
 
@@ -1225,17 +1244,14 @@
         }
       }
 
-      if (!bestCandidate) {
-        showToast("Aucun indice supplémentaire disponible !", "amber");
-        return;
-      }
+      if (!bestCandidate) return;
 
       me.points -= HINT_COST;
       saveLocalProgress();
       updateHintButtonUI();
 
       document.getElementById("wordInput").value = bestCandidate;
-      showToast(`💡 Indice débloqué (-${HINT_COST} pts) : « ${bestCandidate} »`, "amber");
+      showToast(`💡 Indice : « ${bestCandidate} »`, "amber");
       handleGuess(new Event("submit"));
     }
 
@@ -1249,15 +1265,15 @@
     function giveUpRound() {
       if (roundFinished) return;
       if (roomCode && !isHost) {
-        showToast("Seul l'hôte du salon peut révéler le mot secret.", "amber");
+        showToast("Seul l'hôte peut révéler le mot.", "amber");
         return;
       }
       const secret = findSecretWordInDict();
       roundFinished = true;
       updateHintButtonUI();
-      showVictoryBanner("Mot révélé", secret, guesses.length, true);
-      addFeedMessage(`🏳️ Manche abandonnée. Le mot secret était « ${secret.toUpperCase()} ».`, "rose");
-      updateLiveTicker(`🏳️ Mot secret révélé : « ${secret.toUpperCase()} »`);
+      showVictoryBanner("Abandon", secret, guesses.length, true);
+      addSystemFeedEvent(`🏳️ Mot révélé : ${secret.toUpperCase()}`);
+      updateLiveTicker(`🏳️ Réponse : ${secret.toUpperCase()}`);
 
       if (roomCode && isHost) {
         broadcastFromHost({ type: "ROUND_GIVEN_UP", secretWord: secret });
@@ -1266,7 +1282,7 @@
 
     function triggerNextGame() {
       if (roomCode && !isHost) {
-        showToast("Seul l'hôte du salon peut lancer la manche suivante.", "amber");
+        showToast("Seul l'hôte peut changer de manche.", "amber");
         return;
       }
       const nextId = pickUnplayedGameId();
@@ -1283,7 +1299,7 @@
     }
 
     // =========================================================================
-    // 8. RENDU GRAPHIQUE & BARRE SPECTRALE PROGRESSIVE
+    // 8. RENDU ÉPURÉ (MOTS, BARRE SPECTRALE, DIRECT COMPACT)
     // =========================================================================
     function triggerInputShake(element) {
       if (!element) return;
@@ -1304,7 +1320,7 @@
 
     function triggerVictoryConfetti() {
       if (typeof confetti !== "function") return;
-      const duration = 2400;
+      const duration = 2200;
       const end = Date.now() + duration;
 
       (function frame() {
@@ -1317,32 +1333,27 @@
     function showVictoryBanner(winnerPseudo, secretWord, totalAttempts, isGiveUp = false) {
       const banner = document.getElementById("victoryBanner");
       banner.classList.remove("hidden");
-      document.getElementById("victoryBadge").textContent = isGiveUp ? "Mot révélé" : `Manche #${roundNumber} remportée`;
-      document.getElementById("victoryTitle").textContent = secretWord
-        ? `Le mot secret était « ${secretWord.toUpperCase()} » !`
-        : `Trouvé par ${winnerPseudo} !`;
+      document.getElementById("victoryTitle").textContent = `Réponse : ${secretWord.toUpperCase()}`;
       document.getElementById("victorySub").textContent = isGiveUp
-        ? "Vous pouvez lancer la manche suivante."
-        : `Trouvé par ${winnerPseudo} après ${totalAttempts} mot${totalAttempts > 1 ? "s" : ""} testés par le salon.`;
+        ? "Manche révélée"
+        : `Trouvé par ${winnerPseudo} (${totalAttempts} mots)`;
     }
 
     function renderRowHTML(g, isHighlighted = false) {
-      // Largeur continue entre 4% et 100%
       const width = Math.max(4, Math.min(100, g.proximityPct || computeProximityPct(g.temp, g.rank)));
       const clipRight = (100 - width).toFixed(1);
 
-      let badgeHTML = `<span class="text-slate-500 text-[11px]">❄️</span>`;
+      let badgeHTML = "";
       if (g.isWin) {
-        badgeHTML = `<span class="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[11px] font-bold px-2 py-0.5 rounded-full">TROUVÉ 🏆</span>`;
+        badgeHTML = `<span class="bg-emerald-500/20 text-emerald-300 text-[10px] font-bold px-1.5 py-0.2 rounded">🏆</span>`;
       } else if (g.isTop10) {
-        const topN = 1000 - g.rank;
-        badgeHTML = `<span class="bg-rose-500/25 text-rose-200 border border-rose-400/50 text-[11px] font-extrabold px-2 py-0.5 rounded-full">🔥 TOP ${topN} (${g.rank}‰)</span>`;
+        badgeHTML = `<span class="bg-rose-500/25 text-rose-200 text-[10px] font-extrabold px-1.5 py-0.2 rounded">TOP ${1000 - g.rank}</span>`;
       } else if (g.rank) {
-        badgeHTML = `<span class="bg-purple-500/15 text-purple-300 border border-purple-500/30 text-[11px] font-semibold px-2 py-0.5 rounded-full">⚡ ${g.rank}‰</span>`;
+        badgeHTML = `<span class="bg-purple-500/15 text-purple-300 text-[10px] font-semibold px-1.5 py-0.2 rounded">${g.rank}‰</span>`;
       }
 
       const isMe = g.finderId === myId;
-      const authorColor = isMe ? "bg-sky-500/15 text-sky-300 border-sky-500/30" : "bg-indigo-500/15 text-indigo-300 border-indigo-500/30";
+      const authorColor = isMe ? "text-sky-400" : "text-indigo-300";
 
       const borderClass = g.isTop10
         ? "border-rose-500/50 bg-rose-950/15"
@@ -1350,23 +1361,22 @@
           ? "border-emerald-500/50 bg-emerald-950/20"
           : isHighlighted
             ? "border-sky-500/40 bg-slate-800/80"
-            : "border-slate-800/80 bg-slate-800/40";
+            : "border-slate-800/70 bg-slate-800/35";
 
       return `
-        <div data-word="${escapeHTML(g.word)}" class="rounded-xl p-2 border ${borderClass} flex flex-col gap-1.5 transition-all shrink-0">
-          <div class="flex justify-between items-center text-xs sm:text-sm gap-2">
+        <div data-word="${escapeHTML(g.word)}" class="rounded-xl px-2.5 py-1.5 border ${borderClass} flex flex-col gap-1 transition-all shrink-0">
+          <div class="flex justify-between items-center text-xs gap-2">
             <div class="flex items-center gap-1.5 min-w-0">
-              <span class="text-slate-500 font-mono-num text-[11px]">#${g.num}</span>
+              <span class="text-slate-500 font-mono-num text-[10px]">#${g.num}</span>
               <strong class="capitalize truncate text-slate-100">${escapeHTML(g.word)}</strong>
-              <span class="text-[10px] px-1.5 py-0.2 rounded border ${authorColor} truncate max-w-[85px]">${escapeHTML(g.finderPseudo || "Joueur")}</span>
+              <span class="text-[10px] ${authorColor} truncate max-w-[75px]">• ${escapeHTML(g.finderPseudo || "Joueur")}</span>
             </div>
             <div class="flex items-center gap-1.5 shrink-0">
-              <span class="font-mono-num font-bold text-xs">${g.temp.toFixed(2)}°C</span>
               ${badgeHTML}
+              <span class="font-mono-num font-bold text-xs">${g.temp.toFixed(1)}°C</span>
             </div>
           </div>
-          <!-- Jauge spectrale progressive : dévoile Gris -> Bleu -> Vert -> Violet -> Rouge selon le % -->
-          <div class="w-full bg-slate-950 h-2 rounded-full overflow-hidden relative">
+          <div class="w-full bg-slate-950 h-1.5 rounded-full overflow-hidden">
             <div class="w-full h-full thermal-spectrum transition-all duration-500"
                  style="clip-path: inset(0 ${clipRight}% 0 0 round 9999px);"></div>
           </div>
@@ -1374,11 +1384,9 @@
       `;
     }
 
-    function renderLastGuess(g, ptsText = "") {
+    function renderLastGuess(g) {
       const box = document.getElementById("lastGuessBox");
       box.classList.remove("hidden");
-      document.getElementById("lastGuessAuthor").textContent = `Dernier coup • ${g.finderPseudo || "Joueur"}`;
-      document.getElementById("lastGuessPoints").textContent = ptsText;
       document.getElementById("lastGuessContent").innerHTML = renderRowHTML(g, true);
     }
 
@@ -1388,17 +1396,29 @@
     }
 
     function updateStatsUI() {
-      document.getElementById("statAttempts").textContent = guesses.length;
-      document.getElementById("mobileAttemptCount").textContent = guesses.length;
-      document.getElementById("statBestTemp").textContent = roomBestTemp !== null
-        ? `${roomBestTemp.toFixed(1)}°C`
-        : "--°C";
+      const total = guesses.length;
+      const bestStr = roomBestTemp !== null ? `${roomBestTemp.toFixed(1)}°C` : "--°C";
       const topCount = guesses.filter(g => g.rank !== null).length;
+
+      document.getElementById("statAttempts").textContent = total;
+      document.getElementById("mobileAttemptCount").textContent = total;
+      document.getElementById("statBestTemp").textContent = bestStr;
       document.getElementById("statTopWords").textContent = topCount;
+
+      document.getElementById("miniAttempts").textContent = total;
+      document.getElementById("miniBestTemp").textContent = bestStr;
+      document.getElementById("miniTopWords").textContent = topCount;
     }
 
     function updateLiveTicker(message) {
-      document.getElementById("liveTickerText").textContent = message;
+      const el = document.getElementById("liveTickerText");
+      el.textContent = message;
+      // Active l'animation de défilement uniquement si le texte dépasse sur petit écran
+      if (message.length > 34 && window.innerWidth < 640) {
+        el.className = "text-slate-300 font-medium text-[11px] ticker-scroll";
+      } else {
+        el.className = "text-slate-300 font-medium text-[11px] block truncate";
+      }
     }
 
     function renderLeaderboard() {
@@ -1415,7 +1435,7 @@
         document.getElementById("liveLeaderBadge").textContent = `🥇 ${sortedByPoints[0]?.pseudo || "--"}`;
       }
 
-      document.getElementById("playerCountBadge").textContent = `${sortedByPoints.length} joueur${sortedByPoints.length > 1 ? "s" : ""}`;
+      document.getElementById("playerCountBadge").textContent = `${sortedByPoints.length}`;
 
       list.innerHTML = sortedByPoints.map((p, idx) => {
         const isMe = p.id === myId;
@@ -1424,46 +1444,108 @@
           ? `🔥 ${p.bestRank}‰`
           : p.bestTemp !== null && p.bestTemp !== undefined
             ? `${p.bestTemp.toFixed(1)}°C`
-            : "En attente";
+            : "--";
 
         return `
-          <div class="flex items-center justify-between p-2 rounded-xl border ${isMe ? "bg-sky-950/30 border-sky-500/40" : "bg-slate-800/40 border-slate-800"}">
+          <div class="flex items-center justify-between px-2.5 py-1.5 rounded-xl border ${isMe ? "bg-sky-950/30 border-sky-500/40" : "bg-slate-800/40 border-slate-800"}">
             <div class="flex items-center gap-2 min-w-0">
-              <span class="text-xs font-bold w-5 text-center">${medal}</span>
+              <span class="text-xs font-bold w-4 text-center">${medal}</span>
               <div class="min-w-0">
-                <div class="flex items-center gap-1.5">
-                  <span class="font-bold text-xs text-white truncate">${escapeHTML(p.pseudo)}</span>
-                  ${isMe ? `<span class="text-[10px] bg-sky-500/20 text-sky-300 px-1.5 rounded">Vous</span>` : ""}
-                </div>
-                <div class="text-[11px] text-slate-400">${bestInfo} • ${p.attempts || 0} mot${(p.attempts || 0) > 1 ? "s" : ""}</div>
+                <span class="font-bold text-xs text-white truncate block">${escapeHTML(p.pseudo)}</span>
+                <span class="text-[10px] text-slate-400">${bestInfo} • ${p.attempts || 0} essais</span>
               </div>
             </div>
             <div class="text-right shrink-0">
               <div class="font-mono-num text-xs font-extrabold text-amber-400">${p.points} pts</div>
-              <div class="text-[10px] text-slate-400">🏆 ${p.wins} vict.</div>
+              <div class="text-[10px] text-slate-400">🏆 ${p.wins}</div>
             </div>
           </div>
         `;
       }).join("");
     }
 
-    function addFeedMessage(text, color = "slate") {
-      const feed = document.getElementById("liveFeed");
-      const styles = {
-        sky: "bg-sky-950/40 border-sky-500/30 text-sky-200",
-        amber: "bg-amber-950/40 border-amber-500/40 text-amber-200 font-semibold",
-        emerald: "bg-emerald-950/50 border-emerald-500/40 text-emerald-200 font-bold",
-        rose: "bg-rose-950/40 border-rose-500/40 text-rose-200 font-semibold",
-        slate: "bg-slate-800/40 border-slate-800 text-slate-300"
-      };
-      const div = document.createElement("div");
-      div.className = `p-2 rounded-xl border animate-pop ${styles[color] || styles.slate}`;
-      div.textContent = text;
-      feed.prepend(div);
+    // =========================================================================
+    // 9. JOURNAL DIRECT ULTRA-LISIBLE & FILTRABLE
+    // =========================================================================
+    function toggleFeedFilter() {
+      feedOnlyHot = !feedOnlyHot;
+      const btn = document.getElementById("feedFilterBtn");
+      btn.textContent = feedOnlyHot ? "🔥 Chauds seuls" : "Tout afficher";
+      btn.className = feedOnlyHot
+        ? "text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/30 transition"
+        : "text-[10px] font-semibold px-2 py-0.5 rounded-md bg-slate-800 text-slate-300 hover:bg-slate-700 transition";
+      renderFeed();
+    }
 
-      if (document.getElementById("socialSection").classList.contains("hidden")) {
+    function addWordFeedEvent(g, surgeGain, isNewRecord) {
+      const isHot = g.isWin || g.rank !== null || surgeGain || isNewRecord;
+      feedEvents.unshift({
+        kind: "word",
+        word: g.word,
+        pseudo: g.finderPseudo,
+        temp: g.temp,
+        rank: g.rank,
+        isWin: g.isWin,
+        surgeGain,
+        isHot
+      });
+      if (feedEvents.length > 40) feedEvents.pop();
+      renderFeed();
+
+      if (isHot && document.getElementById("socialSection").classList.contains("hidden")) {
         document.getElementById("unreadDot").classList.remove("hidden");
       }
+    }
+
+    function addSystemFeedEvent(text) {
+      feedEvents.unshift({ kind: "system", text, isHot: true });
+      if (feedEvents.length > 40) feedEvents.pop();
+      renderFeed();
+    }
+
+    function renderFeed() {
+      const feed = document.getElementById("liveFeed");
+      const filtered = feedOnlyHot ? feedEvents.filter(e => e.isHot) : feedEvents;
+
+      if (filtered.length === 0) {
+        feed.innerHTML = `<p class="text-slate-500 text-[11px] text-center my-auto py-6">Aucun événement.</p>`;
+        return;
+      }
+
+      feed.innerHTML = filtered.map(ev => {
+        if (ev.kind === "system") {
+          return `<div class="px-2.5 py-1.5 rounded-lg bg-slate-800/40 border border-slate-800 text-[11px] text-sky-300 font-medium">${escapeHTML(ev.text)}</div>`;
+        }
+
+        const badge = ev.isWin
+          ? `<span class="text-emerald-300 font-bold">🏆</span>`
+          : ev.surgeGain
+            ? `<span class="text-amber-300 font-bold">+${ev.surgeGain}%</span>`
+            : ev.rank
+              ? `<span class="text-purple-300">${ev.rank}‰</span>`
+              : "";
+
+        const rowStyle = ev.isWin
+          ? "bg-emerald-950/40 border-emerald-500/40"
+          : ev.surgeGain
+            ? "bg-amber-950/35 border-amber-500/40"
+            : ev.rank
+              ? "bg-purple-950/25 border-purple-500/30"
+              : "bg-slate-800/30 border-slate-800/70";
+
+        return `
+          <div class="px-2.5 py-1.5 rounded-lg border ${rowStyle} flex items-center justify-between gap-2 text-[11px]">
+            <div class="flex items-center gap-1.5 min-w-0">
+              <span class="text-slate-400 truncate max-w-[70px]">${escapeHTML(ev.pseudo)}</span>
+              <strong class="text-slate-100 capitalize truncate">${escapeHTML(ev.word)}</strong>
+            </div>
+            <div class="flex items-center gap-1.5 font-mono-num shrink-0">
+              ${badge}
+              <span class="font-bold text-slate-200">${ev.temp.toFixed(1)}°C</span>
+            </div>
+          </div>
+        `;
+      }).join("");
     }
 
     function showToast(message, color = "sky") {
@@ -1475,14 +1557,14 @@
         emerald: "bg-emerald-950/95 border-emerald-500/60 text-emerald-100"
       };
       const toast = document.createElement("div");
-      toast.className = `px-3.5 py-2 rounded-xl border shadow-xl backdrop-blur-md text-xs font-semibold text-center animate-pop ${colors[color] || colors.sky}`;
+      toast.className = `px-3 py-1.5 rounded-xl border shadow-xl backdrop-blur-md text-xs font-semibold text-center animate-pop ${colors[color] || colors.sky}`;
       toast.textContent = message;
       container.appendChild(toast);
       setTimeout(() => {
         toast.style.opacity = "0";
-        toast.style.transition = "opacity 0.22s ease";
-        setTimeout(() => toast.remove(), 220);
-      }, 2400);
+        toast.style.transition = "opacity 0.2s ease";
+        setTimeout(() => toast.remove(), 200);
+      }, 2200);
     }
 
     function clearInput() {
@@ -1500,15 +1582,15 @@
       if (tab === "game") {
         gameSec.classList.remove("hidden");
         socialSec.classList.add("hidden");
-        btnGame.className = "py-1.5 rounded-lg bg-slate-800 text-white transition flex items-center justify-center gap-1.5";
-        btnSocial.className = "py-1.5 rounded-lg text-slate-400 transition flex items-center justify-center gap-1.5 relative";
+        btnGame.className = "py-1 rounded-lg bg-slate-800 text-white transition flex items-center justify-center gap-1.5";
+        btnSocial.className = "py-1 rounded-lg text-slate-400 transition flex items-center justify-center gap-1.5 relative";
       } else {
         gameSec.classList.add("hidden");
         socialSec.classList.remove("hidden");
         socialSec.classList.add("flex");
         document.getElementById("unreadDot").classList.add("hidden");
-        btnSocial.className = "py-1.5 rounded-lg bg-slate-800 text-white transition flex items-center justify-center gap-1.5 relative";
-        btnGame.className = "py-1.5 rounded-lg text-slate-400 transition flex items-center justify-center gap-1.5";
+        btnSocial.className = "py-1 rounded-lg bg-slate-800 text-white transition flex items-center justify-center gap-1.5 relative";
+        btnGame.className = "py-1 rounded-lg text-slate-400 transition flex items-center justify-center gap-1.5";
       }
     }
   </script>
