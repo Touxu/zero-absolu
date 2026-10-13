@@ -2,25 +2,53 @@
 <html lang="fr" class="dark">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>ZéroAbsolu — Duel Sémantique</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
-    body {
-      font-family: 'Plus Jakarta Sans', sans-serif;
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
       background-color: #070b14;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    #appViewport {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
       background-image:
         radial-gradient(at 0% 0%, rgba(56, 189, 248, 0.12) 0px, transparent 50%),
-        radial-gradient(at 100% 0%, rgba(99, 102, 241, 0.12) 0px, transparent 50%);
-      height: 100dvh;
-      overflow: hidden;
+        radial-gradient(at 100% 0%, rgba(139, 92, 246, 0.12) 0px, transparent 50%);
     }
+
     .font-mono-num { font-family: 'JetBrains Mono', monospace; }
+
+    /* Spectre thermique progressif : Gris -> Bleu -> Vert -> Violet -> Orange -> Rouge */
+    .thermal-spectrum {
+      background: linear-gradient(
+        90deg,
+        #64748b 0%,
+        #0ea5e9 22%,
+        #10b981 45%,
+        #8b5cf6 68%,
+        #f59e0b 85%,
+        #f43f5e 100%
+      );
+    }
 
     /* Animations */
     @keyframes shake {
@@ -32,34 +60,41 @@
 
     @keyframes duplicatePulse {
       0%, 100% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0); transform: scale(1); }
-      50% { box-shadow: 0 0 0 6px rgba(244, 63, 94, 0.35); transform: scale(1.015); border-color: #f43f5e; }
+      50% { box-shadow: 0 0 0 5px rgba(244, 63, 94, 0.4); transform: scale(1.01); border-color: #f43f5e; }
     }
-    .animate-duplicate { animation: duplicatePulse 0.9s ease-in-out 2; }
-
-    @keyframes top10Glow {
-      0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7); transform: scale(0.97); }
-      50% { box-shadow: 0 0 28px 6px rgba(245, 158, 11, 0.45); transform: scale(1.02); }
-      100% { box-shadow: 0 0 12px 0 rgba(245, 158, 11, 0.2); transform: scale(1); }
-    }
-    .animate-top10 { animation: top10Glow 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+    .animate-duplicate { animation: duplicatePulse 0.8s ease-in-out 2; }
 
     @keyframes popIn {
-      from { opacity: 0; transform: translateY(6px) scale(0.98); }
+      from { opacity: 0; transform: translateY(6px) scale(0.97); }
       to { opacity: 1; transform: translateY(0) scale(1); }
     }
     .animate-pop { animation: popIn 0.22s ease-out forwards; }
 
-    /* Mode Clavier Mobile Actif : masque les éléments non essentiels pour voir les mots les plus chauds */
-    @media (max-width: 1023px) {
-      body.keyboard-open #statsRow,
-      body.keyboard-open #mobileTabsWrapper,
-      body.keyboard-open #mainHeader {
-        display: none !important;
-      }
-      body.keyboard-open main {
-        padding-top: 0.35rem !important;
-        padding-bottom: 0.25rem !important;
-      }
+    @keyframes surgeOverlayAnim {
+      0% { opacity: 0; transform: translate(-50%, -40%) scale(0.8); }
+      15% { opacity: 1; transform: translate(-50%, -50%) scale(1.04); }
+      25% { transform: translate(-50%, -50%) scale(1); }
+      85% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+      100% { opacity: 0; transform: translate(-50%, -60%) scale(0.95); }
+    }
+    .animate-surge-banner {
+      animation: surgeOverlayAnim 2.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    /* Adaptation stricte quand le clavier mobile est déployé */
+    body.keyboard-active #mainHeader,
+    body.keyboard-active #statsRow,
+    body.keyboard-active #mobileTabsWrapper,
+    body.keyboard-active #lastGuessBox {
+      display: none !important;
+    }
+    body.keyboard-active #mainGrid {
+      padding-top: 0.25rem !important;
+      padding-bottom: 0.25rem !important;
+      gap: 0.35rem !important;
+    }
+    body.keyboard-active #gameSection {
+      gap: 0.35rem !important;
     }
 
     ::-webkit-scrollbar { width: 5px; height: 5px; }
@@ -67,281 +102,296 @@
     ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 9999px; }
   </style>
 </head>
-<body class="text-slate-100 flex flex-col selection:bg-sky-500 selection:text-white">
+<body class="text-slate-100 selection:bg-sky-500 selection:text-white">
 
-  <!-- ===================================================================== -->
-  <!-- MODALE D'ACCUEIL (PSEUDO + SOLO + SALON 4 LETTRES)                    -->
-  <!-- ===================================================================== -->
-  <div id="onboardingModal" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
-    <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 md:p-8 shadow-2xl animate-pop">
-      <div class="flex items-center gap-3 mb-2">
-        <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-sky-400 via-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-sky-500/20">
-          <i data-lucide="thermometer-snowflake" class="w-6 h-6 text-white"></i>
-        </div>
-        <div>
-          <h1 class="text-2xl font-extrabold tracking-tight bg-gradient-to-r from-sky-300 via-indigo-200 to-purple-300 bg-clip-text text-transparent">
-            ZéroAbsolu
-          </h1>
-          <p class="text-xs text-slate-400">De -273,15°C jusqu'au mot brûlant</p>
-        </div>
-      </div>
+  <div id="appViewport">
 
-      <!-- Pseudo -->
-      <div class="mt-6">
-        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Votre Pseudo</label>
-        <div class="relative">
-          <i data-lucide="user" class="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
-          <input id="modalPseudo" type="text" maxlength="16" placeholder="Ex: Pierre"
-            class="w-full bg-slate-950 border border-slate-800 focus:border-sky-500 rounded-xl pl-10 pr-4 py-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-sky-500/20 transition">
-        </div>
-      </div>
-
-      <!-- Actions : Solo ou Créer -->
-      <div class="grid grid-cols-2 gap-3 mt-5">
-        <button onclick="startSoloMode()"
-          class="flex flex-col items-center justify-center gap-1.5 bg-slate-800/80 hover:bg-slate-800 border border-slate-700/70 rounded-2xl p-4 transition group">
-          <i data-lucide="compass" class="w-5 h-5 text-sky-400 group-hover:scale-110 transition"></i>
-          <span class="text-sm font-bold">Jouer en Solo</span>
-          <span class="text-[11px] text-slate-400">Partie immédiate</span>
-        </button>
-
-        <button onclick="startCreateRoom()"
-          class="flex flex-col items-center justify-center gap-1.5 bg-gradient-to-br from-sky-600/90 to-indigo-600/90 hover:from-sky-500 hover:to-indigo-500 border border-sky-400/30 rounded-2xl p-4 transition shadow-lg shadow-sky-600/15 group">
-          <i data-lucide="users" class="w-5 h-5 text-white group-hover:scale-110 transition"></i>
-          <span class="text-sm font-bold">Créer un Salon</span>
-          <span class="text-[11px] text-sky-100">Code à 4 lettres</span>
-        </button>
-      </div>
-
-      <!-- Séparateur -->
-      <div class="relative flex py-5 items-center">
-        <div class="flex-grow border-t border-slate-800"></div>
-        <span class="flex-shrink mx-3 text-xs text-slate-500 uppercase tracking-wider">Ou rejoindre des amis</span>
-        <div class="flex-grow border-t border-slate-800"></div>
-      </div>
-
-      <!-- Rejoindre avec code à 4 lettres -->
-      <div class="flex gap-2">
-        <input id="modalRoomCode" type="text" maxlength="4" placeholder="CODE (4 lettres)"
-          class="flex-1 bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl px-4 py-3 text-center font-mono-num text-base font-bold uppercase tracking-[0.25em] placeholder:tracking-normal placeholder:font-sans placeholder:text-xs placeholder:font-normal focus:outline-none">
-        <button onclick="startJoinRoom()"
-          class="bg-indigo-600 hover:bg-indigo-500 font-bold px-5 py-3 rounded-xl text-sm transition flex items-center gap-2">
-          <span>Rejoindre</span>
-          <i data-lucide="arrow-right" class="w-4 h-4"></i>
-        </button>
-      </div>
-      <p id="modalError" class="text-rose-400 text-xs mt-2.5 text-center min-h-[1rem]"></p>
-    </div>
-  </div>
-
-  <!-- ===================================================================== -->
-  <!-- TOAST DE NOTIFICATION FLOTTANT                                        -->
-  <!-- ===================================================================== -->
-  <div id="toastContainer" class="fixed top-3 left-1/2 -translate-x-1/2 z-40 flex flex-col items-center gap-1.5 pointer-events-none w-full max-w-sm px-4"></div>
-
-  <!-- ===================================================================== -->
-  <!-- EN-TÊTE PRINCIPAL                                                     -->
-  <!-- ===================================================================== -->
-  <header id="mainHeader" class="w-full max-w-6xl mx-auto px-3 sm:px-4 pt-2.5 pb-2 flex flex-wrap items-center justify-between gap-2 border-b border-slate-800/80 shrink-0">
-    <div class="flex items-center gap-2.5">
-      <button onclick="openOnboardingModal()" title="Menu Salon / Changer de pseudo"
-        class="w-9 h-9 rounded-xl bg-gradient-to-br from-sky-500 to-indigo-600 flex items-center justify-center shadow-md shadow-sky-500/10 hover:opacity-90 transition">
-        <i data-lucide="thermometer-snowflake" class="w-4 h-4 text-white"></i>
-      </button>
-      <div>
-        <div class="flex items-center gap-2">
-          <span class="font-extrabold text-base sm:text-lg tracking-tight">ZéroAbsolu</span>
-          <span id="roundBadge" class="text-[11px] font-mono-num bg-sky-500/15 text-sky-300 px-2 py-0.5 rounded-md border border-sky-500/30 font-bold">Manche #1</span>
-        </div>
-        <p id="modeSubtitle" class="text-[11px] text-slate-400">Mode Solo</p>
-      </div>
-    </div>
-
-    <!-- Actions & Points -->
-    <div class="flex items-center gap-1.5 sm:gap-2">
-      <!-- Compteur de Points du Joueur -->
-      <div class="flex items-center gap-1 bg-slate-900 border border-slate-800 px-2.5 py-1.5 rounded-xl" title="Vos points cumulés">
-        <i data-lucide="zap" class="w-3.5 h-3.5 text-amber-400"></i>
-        <span id="headerPoints" class="font-mono-num text-xs font-extrabold text-amber-400">0</span>
-        <span class="text-[10px] text-slate-400 hidden sm:inline">pts</span>
-      </div>
-
-      <!-- Badge Code Salon 4 lettres -->
-      <button id="roomCodePill" onclick="copyRoomCode()" class="hidden items-center gap-1.5 bg-indigo-950/70 hover:bg-indigo-900/70 border border-indigo-500/40 px-2.5 py-1.5 rounded-xl transition">
-        <strong id="headerRoomCode" class="font-mono-num text-xs font-bold tracking-widest text-white">----</strong>
-        <i data-lucide="copy" class="w-3 h-3 text-indigo-400"></i>
-      </button>
-
-      <!-- Bouton Indice (Verrouillé si < 750 pts) -->
-      <button id="hintBtn" onclick="useHint()"
-        class="flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-xs font-semibold px-2.5 py-1.5 rounded-xl transition">
-        <i id="hintIcon" data-lucide="lock" class="w-3.5 h-3.5 text-slate-500"></i>
-        <span id="hintLabel" class="font-mono-num text-[11px] text-slate-400">750 pts</span>
-      </button>
-
-      <!-- Bouton Abandonner / Révéler -->
-      <button id="giveUpBtn" onclick="giveUpRound()" title="Révéler le mot secret"
-        class="flex items-center gap-1 bg-slate-900 hover:bg-rose-950/50 border border-slate-800 hover:border-rose-500/40 text-slate-300 hover:text-rose-300 text-xs font-semibold px-2.5 py-1.5 rounded-xl transition">
-        <i data-lucide="flag" class="w-3.5 h-3.5"></i>
-      </button>
-
-      <!-- Bouton Manche Suivante -->
-      <button id="nextGameBtn" onclick="triggerNextGame()" title="Manche suivante"
-        class="flex items-center gap-1 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-200 text-xs font-semibold px-2.5 py-1.5 rounded-xl transition">
-        <i data-lucide="skip-forward" class="w-3.5 h-3.5"></i>
-      </button>
-    </div>
-  </header>
-
-  <!-- ===================================================================== -->
-  <!-- BANDEAU DIRECT PERMANENT (VISIBLE MÊME CLAVIER MOBILE OUVERT)         -->
-  <!-- ===================================================================== -->
-  <div class="w-full max-w-6xl mx-auto px-3 sm:px-4 pt-2 shrink-0">
-    <div class="bg-slate-900/90 border border-slate-800/90 rounded-xl px-3 py-1.5 flex items-center justify-between gap-2 text-xs">
-      <div class="flex items-center gap-2 min-w-0">
-        <span class="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0"></span>
-        <span id="liveTickerText" class="truncate text-slate-300 font-medium">Prêt à jouer — Tapez un mot sans vous soucier des accents !</span>
-      </div>
-      <span id="liveLeaderBadge" class="shrink-0 font-mono-num text-[11px] text-amber-400 font-bold bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-md">
-        🥇 --
-      </span>
-    </div>
-  </div>
-
-  <!-- ===================================================================== -->
-  <!-- ONGLETS MOBILES (JEU vs CLASSEMENT & SALON)                           -->
-  <!-- ===================================================================== -->
-  <div id="mobileTabsWrapper" class="lg:hidden w-full max-w-6xl mx-auto px-3 sm:px-4 pt-2 shrink-0">
-    <div class="grid grid-cols-2 bg-slate-900/90 p-1 rounded-xl border border-slate-800 text-xs font-bold">
-      <button id="tabGameBtn" onclick="switchMobileTab('game')" class="py-1.5 rounded-lg bg-slate-800 text-white transition flex items-center justify-center gap-1.5">
-        <i data-lucide="flame" class="w-3.5 h-3.5 text-sky-400"></i>
-        <span>Jeu (<span id="mobileAttemptCount">0</span>)</span>
-      </button>
-      <button id="tabSocialBtn" onclick="switchMobileTab('social')" class="py-1.5 rounded-lg text-slate-400 transition flex items-center justify-center gap-1.5 relative">
-        <i data-lucide="trophy" class="w-3.5 h-3.5 text-amber-400"></i>
-        <span>Classement & Salon</span>
-        <span id="unreadDot" class="hidden w-2 h-2 rounded-full bg-rose-500"></span>
-      </button>
-    </div>
-  </div>
-
-  <!-- ===================================================================== -->
-  <!-- GRILLE PRINCIPALE (OPTIMISÉE POUR LE CLAVIER MOBILE)                  -->
-  <!-- ===================================================================== -->
-  <main class="w-full max-w-6xl mx-auto flex-1 grid grid-cols-1 lg:grid-cols-12 gap-4 px-3 sm:px-4 py-2.5 min-h-0 overflow-hidden">
-
-    <!-- COLONNE GAUCHE : ZONE DE JEU (7 colonnes Desktop) -->
-    <section id="gameSection" class="lg:col-span-7 flex flex-col gap-2.5 min-h-0 h-full">
-
-      <!-- Mini-Cartes de Statistiques (masquées automatiquement quand le clavier mobile est ouvert) -->
-      <div id="statsRow" class="grid grid-cols-3 gap-2 shrink-0">
-        <div class="bg-slate-900/70 border border-slate-800/80 rounded-xl p-2.5 flex items-center justify-between">
-          <span class="text-[11px] text-slate-400">Essais</span>
-          <span id="statAttempts" class="font-mono-num text-sm sm:text-base font-bold text-white">0</span>
-        </div>
-        <div class="bg-slate-900/70 border border-slate-800/80 rounded-xl p-2.5 flex items-center justify-between">
-          <span class="text-[11px] text-slate-400">Record</span>
-          <span id="statBestTemp" class="font-mono-num text-sm sm:text-base font-bold text-sky-400">--°C</span>
-        </div>
-        <div class="bg-slate-900/70 border border-slate-800/80 rounded-xl p-2.5 flex items-center justify-between">
-          <span class="text-[11px] text-slate-400">Top 1000</span>
-          <span id="statTopWords" class="font-mono-num text-sm sm:text-base font-bold text-amber-400">0</span>
-        </div>
-      </div>
-
-      <!-- Barre de Saisie (Toujours en haut pour ne jamais être masquée par le clavier) -->
-      <form id="guessForm" onsubmit="handleGuess(event)" class="relative flex gap-2 shrink-0">
-        <div class="relative flex-1">
-          <input id="wordInput" type="text" inputmode="text" enterkeyhint="send"
-            placeholder="Entrez un mot (ex: mer, bateau, foret)..." autocomplete="off" autocapitalize="none" spellcheck="false"
-            class="w-full bg-slate-900 border border-slate-700/90 focus:border-sky-500 rounded-xl pl-3.5 pr-9 py-2.5 sm:py-3 text-base font-medium placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500/20 transition">
-          <button type="button" onclick="clearInput()" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 p-1">
-            <i data-lucide="x" class="w-4 h-4"></i>
-          </button>
-        </div>
-        <button type="submit"
-          class="bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 active:scale-[0.98] font-bold px-4 sm:px-6 rounded-xl text-sm transition shadow-lg shadow-sky-600/20 flex items-center gap-1.5 shrink-0">
-          <span>Valider</span>
-          <i data-lucide="corner-down-left" class="w-4 h-4 hidden sm:inline"></i>
-        </button>
-      </form>
-
-      <!-- Bannière de Fin de Manche (Victoire ou Révélation) -->
-      <div id="victoryBanner" class="hidden bg-gradient-to-r from-emerald-950/90 via-teal-950/90 to-slate-900 border border-emerald-500/40 rounded-xl p-3 animate-pop shrink-0">
-        <div class="flex items-center justify-between gap-3">
+    <!-- ===================================================================== -->
+    <!-- MODALE D'ACCUEIL (PSEUDO + SOLO + SALON 4 LETTRES)                    -->
+    <!-- ===================================================================== -->
+    <div id="onboardingModal" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
+      <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 md:p-8 shadow-2xl animate-pop">
+        <div class="flex items-center gap-3 mb-2">
+          <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-sky-400 via-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-sky-500/20">
+            <i data-lucide="thermometer-snowflake" class="w-6 h-6 text-white"></i>
+          </div>
           <div>
-            <span id="victoryBadge" class="text-[10px] font-bold uppercase tracking-wider text-emerald-400">Manche terminée</span>
-            <h3 id="victoryTitle" class="text-sm sm:text-base font-extrabold text-white">Mot secret trouvé !</h3>
-            <p id="victorySub" class="text-xs text-slate-300"></p>
+            <h1 class="text-2xl font-extrabold tracking-tight bg-gradient-to-r from-sky-300 via-indigo-200 to-purple-300 bg-clip-text text-transparent">
+              ZéroAbsolu
+            </h1>
+            <p class="text-xs text-slate-400">Coopération & Duel sémantique en temps réel</p>
           </div>
-          <button onclick="triggerNextGame()" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs px-3.5 py-2 rounded-lg transition shrink-0">
-            Manche suivante
+        </div>
+
+        <div class="mt-5">
+          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Votre Pseudo</label>
+          <div class="relative">
+            <i data-lucide="user" class="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
+            <input id="modalPseudo" type="text" maxlength="16" placeholder="Ex: Pierre"
+              class="w-full bg-slate-950 border border-slate-800 focus:border-sky-500 rounded-xl pl-10 pr-4 py-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-sky-500/20 transition">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3 mt-5">
+          <button onclick="startSoloMode()"
+            class="flex flex-col items-center justify-center gap-1.5 bg-slate-800/80 hover:bg-slate-800 border border-slate-700/70 rounded-2xl p-4 transition group">
+            <i data-lucide="compass" class="w-5 h-5 text-sky-400 group-hover:scale-110 transition"></i>
+            <span class="text-sm font-bold">Jouer en Solo</span>
+            <span class="text-[11px] text-slate-400">Partie immédiate</span>
+          </button>
+
+          <button onclick="startCreateRoom()"
+            class="flex flex-col items-center justify-center gap-1.5 bg-gradient-to-br from-sky-600/90 to-indigo-600/90 hover:from-sky-500 hover:to-indigo-500 border border-sky-400/30 rounded-2xl p-4 transition shadow-lg shadow-sky-600/15 group">
+            <i data-lucide="users" class="w-5 h-5 text-white group-hover:scale-110 transition"></i>
+            <span class="text-sm font-bold">Créer un Salon</span>
+            <span class="text-[11px] text-sky-100">Code à 4 lettres</span>
           </button>
         </div>
-      </div>
 
-      <!-- Dernier Mot Testé (Compact) -->
-      <div id="lastGuessBox" class="hidden bg-slate-900/95 border border-slate-800 rounded-xl p-2.5 shrink-0">
-        <div class="flex justify-between items-center text-[10px] text-slate-400 uppercase tracking-wider mb-1 px-0.5">
-          <span>Dernier essai</span>
-          <span id="lastGuessPoints" class="text-sky-400 font-bold"></span>
+        <div class="relative flex py-4 items-center">
+          <div class="flex-grow border-t border-slate-800"></div>
+          <span class="flex-shrink mx-3 text-xs text-slate-500 uppercase tracking-wider">Ou rejoindre des amis</span>
+          <div class="flex-grow border-t border-slate-800"></div>
         </div>
-        <div id="lastGuessContent"></div>
-      </div>
 
-      <!-- Liste Scrollable des Mots (Les plus chauds toujours en haut, visibles même avec le clavier !) -->
-      <div class="bg-slate-900/60 border border-slate-800/90 rounded-2xl p-3 flex-1 flex flex-col min-h-0 overflow-hidden">
-        <div class="flex justify-between items-center text-[11px] text-slate-400 border-b border-slate-800 pb-2 mb-2 shrink-0">
-          <span class="font-semibold text-slate-300">🔥 Vos mots les plus chauds</span>
-          <span>Température & Rang</span>
+        <div class="flex gap-2">
+          <input id="modalRoomCode" type="text" maxlength="4" placeholder="CODE (4 lettres)"
+            class="flex-1 bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl px-4 py-3 text-center font-mono-num text-base font-bold uppercase tracking-[0.25em] placeholder:tracking-normal placeholder:font-sans placeholder:text-xs placeholder:font-normal focus:outline-none">
+          <button onclick="startJoinRoom()"
+            class="bg-indigo-600 hover:bg-indigo-500 font-bold px-5 py-3 rounded-xl text-sm transition flex items-center gap-2">
+            <span>Rejoindre</span>
+            <i data-lucide="arrow-right" class="w-4 h-4"></i>
+          </button>
         </div>
-        <div id="guessesList" class="flex-1 overflow-y-auto flex flex-col gap-1.5 pr-1">
-          <p class="text-slate-500 text-xs sm:text-sm text-center my-auto py-8">Chargement du dictionnaire...</p>
+        <p id="modalError" class="text-rose-400 text-xs mt-2.5 text-center min-h-[1rem]"></p>
+      </div>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- ANIMATION CENTRALE DE « MONTÉE EN PUISSANCE » (POUR TOUS LES JOUEURS) -->
+    <!-- ===================================================================== -->
+    <div id="surgeOverlay" class="hidden fixed top-1/2 left-1/2 z-40 pointer-events-none w-[90%] max-w-sm">
+      <div class="bg-slate-950/95 border-2 border-amber-400/80 rounded-3xl p-5 shadow-[0_0_50px_rgba(245,158,11,0.45)] text-center backdrop-blur-xl">
+        <div class="inline-flex items-center gap-1.5 bg-amber-500/20 border border-amber-400/40 text-amber-300 text-[11px] font-extrabold uppercase tracking-widest px-3 py-1 rounded-full mb-2">
+          <span>🚀 Montée en puissance</span>
+        </div>
+        <div id="surgePlayerName" class="text-sm font-bold text-sky-300">Pierre</div>
+        <div id="surgeWord" class="text-2xl font-extrabold text-white uppercase tracking-wide my-1">BATEAU</div>
+        <div class="flex items-center justify-center gap-2 mt-1">
+          <span id="surgeTemp" class="font-mono-num text-base font-extrabold text-amber-400">70.50°C</span>
+          <span id="surgeDelta" class="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-mono-num text-xs font-bold px-2 py-0.5 rounded-lg">+28% plus proche !</span>
         </div>
       </div>
+    </div>
 
-    </section>
+    <!-- ===================================================================== -->
+    <!-- TOAST DE NOTIFICATION FLOTTANT                                        -->
+    <!-- ===================================================================== -->
+    <div id="toastContainer" class="fixed top-2.5 left-1/2 -translate-x-1/2 z-40 flex flex-col items-center gap-1.5 pointer-events-none w-full max-w-sm px-4"></div>
 
-    <!-- COLONNE DROITE : CLASSEMENT & HISTORIQUE EN DIRECT (5 colonnes Desktop) -->
-    <aside id="socialSection" class="hidden lg:flex lg:col-span-5 flex-col gap-3 min-h-0 h-full">
-
-      <!-- Classement des joueurs -->
-      <div class="bg-slate-900/60 border border-slate-800/90 rounded-2xl p-3.5 shrink-0">
-        <div class="flex items-center justify-between border-b border-slate-800 pb-2.5 mb-2.5">
+    <!-- ===================================================================== -->
+    <!-- EN-TÊTE PRINCIPAL                                                     -->
+    <!-- ===================================================================== -->
+    <header id="mainHeader" class="w-full max-w-6xl mx-auto px-3 sm:px-4 pt-2.5 pb-2 flex flex-wrap items-center justify-between gap-2 border-b border-slate-800/80 shrink-0">
+      <div class="flex items-center gap-2.5">
+        <button onclick="openOnboardingModal()" title="Menu Salon / Pseudo"
+          class="w-9 h-9 rounded-xl bg-gradient-to-br from-sky-500 to-indigo-600 flex items-center justify-center shadow-md shadow-sky-500/10 hover:opacity-90 transition">
+          <i data-lucide="thermometer-snowflake" class="w-4 h-4 text-white"></i>
+        </button>
+        <div>
           <div class="flex items-center gap-2">
-            <i data-lucide="trophy" class="w-4 h-4 text-amber-400"></i>
-            <h2 class="font-bold text-sm">Classement du Salon</h2>
+            <span class="font-extrabold text-base sm:text-lg tracking-tight">ZéroAbsolu</span>
+            <span id="roundBadge" class="text-[11px] font-mono-num bg-sky-500/15 text-sky-300 px-2 py-0.5 rounded-md border border-sky-500/30 font-bold">Manche #1</span>
           </div>
-          <span id="playerCountBadge" class="text-[11px] bg-sky-500/15 text-sky-300 px-2.5 py-0.5 rounded-full font-medium">
-            1 joueur
+          <p id="modeSubtitle" class="text-[11px] text-slate-400">Mode Solo</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-1.5 sm:gap-2">
+        <div class="flex items-center gap-1 bg-slate-900 border border-slate-800 px-2.5 py-1.5 rounded-xl" title="Vos points cumulés">
+          <i data-lucide="zap" class="w-3.5 h-3.5 text-amber-400"></i>
+          <span id="headerPoints" class="font-mono-num text-xs font-extrabold text-amber-400">0</span>
+          <span class="text-[10px] text-slate-400 hidden sm:inline">pts</span>
+        </div>
+
+        <button id="roomCodePill" onclick="copyRoomCode()" class="hidden items-center gap-1.5 bg-indigo-950/70 hover:bg-indigo-900/70 border border-indigo-500/40 px-2.5 py-1.5 rounded-xl transition">
+          <strong id="headerRoomCode" class="font-mono-num text-xs font-bold tracking-widest text-white">----</strong>
+          <i data-lucide="copy" class="w-3 h-3 text-indigo-400"></i>
+        </button>
+
+        <button id="hintBtn" onclick="useHint()"
+          class="flex items-center gap-1.5 bg-slate-900/70 border border-slate-800 text-slate-500 text-xs font-semibold px-2.5 py-1.5 rounded-xl transition opacity-75">
+          <span id="hintBtnContent" class="flex items-center gap-1.5">
+            <i data-lucide="lock" class="w-3.5 h-3.5 text-slate-500"></i>
+            <span class="font-mono-num text-[11px]">750 pts</span>
           </span>
-        </div>
-        <div id="leaderboardList" class="flex flex-col gap-1.5 max-h-48 overflow-y-auto pr-1"></div>
-      </div>
+        </button>
 
-      <!-- Journal d'activité en direct -->
-      <div class="bg-slate-900/60 border border-slate-800/90 rounded-2xl p-3.5 flex-1 flex flex-col min-h-0 overflow-hidden">
-        <div class="flex items-center justify-between border-b border-slate-800 pb-2.5 mb-2.5 shrink-0">
-          <div class="flex items-center gap-2">
-            <i data-lucide="radio" class="w-4 h-4 text-sky-400"></i>
-            <h2 class="font-bold text-sm">Direct & Événements</h2>
+        <button id="giveUpBtn" onclick="giveUpRound()" title="Révéler le mot secret"
+          class="flex items-center gap-1 bg-slate-900 hover:bg-rose-950/50 border border-slate-800 hover:border-rose-500/40 text-slate-300 hover:text-rose-300 text-xs font-semibold px-2.5 py-1.5 rounded-xl transition">
+          <i data-lucide="flag" class="w-3.5 h-3.5"></i>
+        </button>
+
+        <button id="nextGameBtn" onclick="triggerNextGame()" title="Manche suivante"
+          class="flex items-center gap-1 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-200 text-xs font-semibold px-2.5 py-1.5 rounded-xl transition">
+          <i data-lucide="skip-forward" class="w-3.5 h-3.5"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- ===================================================================== -->
+    <!-- BANDEAU DIRECT PERMANENT (VISIBLE MÊME CLAVIER MOBILE OUVERT)         -->
+    <!-- ===================================================================== -->
+    <div class="w-full max-w-6xl mx-auto px-3 sm:px-4 pt-1.5 shrink-0">
+      <div class="bg-slate-900/90 border border-slate-800/90 rounded-xl px-3 py-1.5 flex items-center justify-between gap-2 text-xs">
+        <div class="flex items-center gap-2 min-w-0">
+          <span class="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0"></span>
+          <span id="liveTickerText" class="truncate text-slate-300 font-medium">Liste commune active — Tous les mots trouvés s'affichent ici !</span>
+        </div>
+        <span id="liveLeaderBadge" class="shrink-0 font-mono-num text-[11px] text-amber-400 font-bold bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-md">
+          🥇 --
+        </span>
+      </div>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- ONGLETS MOBILES (JEU vs CLASSEMENT & SALON)                           -->
+    <!-- ===================================================================== -->
+    <div id="mobileTabsWrapper" class="lg:hidden w-full max-w-6xl mx-auto px-3 sm:px-4 pt-1.5 shrink-0">
+      <div class="grid grid-cols-2 bg-slate-900/90 p-1 rounded-xl border border-slate-800 text-xs font-bold">
+        <button id="tabGameBtn" onclick="switchMobileTab('game')" class="py-1.5 rounded-lg bg-slate-800 text-white transition flex items-center justify-center gap-1.5">
+          <i data-lucide="flame" class="w-3.5 h-3.5 text-sky-400"></i>
+          <span>Mots (<span id="mobileAttemptCount">0</span>)</span>
+        </button>
+        <button id="tabSocialBtn" onclick="switchMobileTab('social')" class="py-1.5 rounded-lg text-slate-400 transition flex items-center justify-center gap-1.5 relative">
+          <i data-lucide="trophy" class="w-3.5 h-3.5 text-amber-400"></i>
+          <span>Classement & Journal</span>
+          <span id="unreadDot" class="hidden w-2 h-2 rounded-full bg-rose-500"></span>
+        </button>
+      </div>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- GRILLE PRINCIPALE                                                     -->
+    <!-- ===================================================================== -->
+    <main id="mainGrid" class="w-full max-w-6xl mx-auto flex-1 grid grid-cols-1 lg:grid-cols-12 gap-3 px-3 sm:px-4 py-2 min-h-0 overflow-hidden">
+
+      <!-- COLONNE GAUCHE : ZONE DE JEU COMMUNE -->
+      <section id="gameSection" class="lg:col-span-7 flex flex-col gap-2 min-h-0 h-full">
+
+        <!-- Mini-Cartes de Statistiques (masquées automatiquement quand le clavier s'ouvre) -->
+        <div id="statsRow" class="grid grid-cols-3 gap-2 shrink-0">
+          <div class="bg-slate-900/70 border border-slate-800/80 rounded-xl p-2 flex items-center justify-between">
+            <span class="text-[11px] text-slate-400">Total Mots</span>
+            <span id="statAttempts" class="font-mono-num text-sm font-bold text-white">0</span>
           </div>
-          <span class="text-[11px] text-slate-500">Indice = 750 pts</span>
+          <div class="bg-slate-900/70 border border-slate-800/80 rounded-xl p-2 flex items-center justify-between">
+            <span class="text-[11px] text-slate-400">Record Salon</span>
+            <span id="statBestTemp" class="font-mono-num text-sm font-bold text-sky-400">--°C</span>
+          </div>
+          <div class="bg-slate-900/70 border border-slate-800/80 rounded-xl p-2 flex items-center justify-between">
+            <span class="text-[11px] text-slate-400">Top 1000</span>
+            <span id="statTopWords" class="font-mono-num text-sm font-bold text-amber-400">0</span>
+          </div>
         </div>
-        <div id="liveFeed" class="flex-1 overflow-y-auto flex flex-col gap-1.5 pr-1 text-xs"></div>
-      </div>
 
-    </aside>
+        <!-- Barre de Saisie (Toujours en haut de l'écran même avec clavier ouvert) -->
+        <form id="guessForm" onsubmit="handleGuess(event)" class="relative flex gap-2 shrink-0">
+          <div class="relative flex-1">
+            <input id="wordInput" type="text" inputmode="text" enterkeyhint="send"
+              placeholder="Entrez un mot (ex: mer, adolescente, canidé)..." autocomplete="off" autocapitalize="none" spellcheck="false"
+              class="w-full bg-slate-900 border border-slate-700/90 focus:border-sky-500 rounded-xl pl-3.5 pr-9 py-2.5 text-base font-medium placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500/20 transition">
+            <button type="button" onclick="clearInput()" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 p-1">
+              <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+          </div>
+          <button type="submit"
+            class="bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 active:scale-[0.98] font-bold px-4 sm:px-6 rounded-xl text-sm transition shadow-lg shadow-sky-600/20 flex items-center gap-1.5 shrink-0">
+            <span>Valider</span>
+            <i data-lucide="corner-down-left" class="w-4 h-4 hidden sm:inline"></i>
+          </button>
+        </form>
 
-  </main>
+        <!-- Bannière de Fin de Manche -->
+        <div id="victoryBanner" class="hidden bg-gradient-to-r from-emerald-950/90 via-teal-950/90 to-slate-900 border border-emerald-500/40 rounded-xl p-3 animate-pop shrink-0">
+          <div class="flex items-center justify-between gap-3">
+            <div>
+              <span id="victoryBadge" class="text-[10px] font-bold uppercase tracking-wider text-emerald-400">Manche terminée</span>
+              <h3 id="victoryTitle" class="text-sm sm:text-base font-extrabold text-white">Mot secret trouvé !</h3>
+              <p id="victorySub" class="text-xs text-slate-300"></p>
+            </div>
+            <button onclick="triggerNextGame()" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs px-3.5 py-2 rounded-lg transition shrink-0">
+              Manche suivante
+            </button>
+          </div>
+        </div>
+
+        <!-- Dernier Mot Testé (Masqué sur mobile quand le clavier est ouvert pour laisser toute la place à la liste) -->
+        <div id="lastGuessBox" class="hidden bg-slate-900/95 border border-slate-800 rounded-xl p-2 shrink-0">
+          <div class="flex justify-between items-center text-[10px] text-slate-400 uppercase tracking-wider mb-1 px-0.5">
+            <span id="lastGuessAuthor">Dernier essai</span>
+            <span id="lastGuessPoints" class="text-sky-400 font-bold"></span>
+          </div>
+          <div id="lastGuessContent"></div>
+        </div>
+
+        <!-- Liste Commune des Mots (Toujours visible au-dessus du clavier mobile) -->
+        <div class="bg-slate-900/60 border border-slate-800/90 rounded-2xl p-2.5 sm:p-3 flex-1 flex flex-col min-h-0 overflow-hidden">
+          <div class="flex justify-between items-center text-[11px] text-slate-400 border-b border-slate-800 pb-1.5 mb-2 shrink-0">
+            <span class="font-semibold text-slate-300">🔥 Mots les plus chauds (Commun)</span>
+            <div class="flex items-center gap-1.5">
+              <span class="hidden sm:inline text-[10px] text-slate-500">Froid</span>
+              <div class="w-14 h-1.5 rounded-full thermal-spectrum"></div>
+              <span class="hidden sm:inline text-[10px] text-rose-400">Brûlant</span>
+            </div>
+          </div>
+          <div id="guessesList" class="flex-1 overflow-y-auto flex flex-col gap-1.5 pr-1">
+            <p class="text-slate-500 text-xs sm:text-sm text-center my-auto py-8">Chargement du dictionnaire...</p>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- COLONNE DROITE : CLASSEMENT & JOURNAL EN DIRECT -->
+      <aside id="socialSection" class="hidden lg:flex lg:col-span-5 flex-col gap-3 min-h-0 h-full">
+
+        <div class="bg-slate-900/60 border border-slate-800/90 rounded-2xl p-3.5 shrink-0">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-2.5 mb-2.5">
+            <div class="flex items-center gap-2">
+              <i data-lucide="trophy" class="w-4 h-4 text-amber-400"></i>
+              <h2 class="font-bold text-sm">Classement des Joueurs</h2>
+            </div>
+            <span id="playerCountBadge" class="text-[11px] bg-sky-500/15 text-sky-300 px-2.5 py-0.5 rounded-full font-medium">
+              1 joueur
+            </span>
+          </div>
+          <div id="leaderboardList" class="flex flex-col gap-1.5 max-h-48 overflow-y-auto pr-1"></div>
+        </div>
+
+        <div class="bg-slate-900/60 border border-slate-800/90 rounded-2xl p-3.5 flex-1 flex flex-col min-h-0 overflow-hidden">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-2.5 mb-2.5 shrink-0">
+            <div class="flex items-center gap-2">
+              <i data-lucide="radio" class="w-4 h-4 text-sky-400"></i>
+              <h2 class="font-bold text-sm">Direct & Percées</h2>
+            </div>
+            <span class="text-[11px] text-slate-500">Indice = 750 pts</span>
+          </div>
+          <div id="liveFeed" class="flex-1 overflow-y-auto flex flex-col gap-1.5 pr-1 text-xs"></div>
+        </div>
+
+      </aside>
+
+    </main>
+
+  </div>
 
   <script>
     // =========================================================================
-    // 1. CONSTANTES, ÉTAT & LOGIQUE DE POINTS (INDICE = 750 PTS)
+    // 1. CONFIGURATION & ÉTAT GLOBAL PARTAGÉ
     // =========================================================================
     const TOTAL_GAMES = 500;
-    const HINT_COST = 750; // Équivaut à ~3 parties avec plusieurs bons mots trouvés
-    const PEER_PREFIX = "zeroabsolu-fr-v1-";
+    const HINT_COST = 750;
+    const PEER_PREFIX = "zeroabsolu-fr-v2-";
 
     const FALLBACK_WORDS = {
       "océan": [100.0, 1000], "mer": [92.4, 999], "maritime": [86.1, 998], "atlantique": [84.5, 997],
@@ -350,10 +400,16 @@
       "côte": [64.0, 965], "île": [61.5, 950], "eau": [58.3, 920], "poisson": [55.1, 890],
       "tempête": [51.4, 840], "vent": [46.8, 760], "sable": [44.2, 710], "soleil": [32.1, 450],
       "voyage": [29.4, 320], "forêt": 18.5, "montagne": 21.0, "voiture": 9.4, "ordinateur": 4.2,
-      "pain": 6.1, "fromage": 5.8, "maison": 11.3, "musique": 8.7, "chat": 7.2, "chien": 8.9
+      "adolescent": 12.4, "chien": 8.9, "canidé": 9.1, "nouveau-né": 11.2
     };
 
-    let myId = "p_" + Math.random().toString(36).substring(2, 9);
+    // ID unique par onglet (sessionStorage évite les collisions entre 2 onglets)
+    let myId = sessionStorage.getItem("zeroabsolu_tab_id");
+    if (!myId) {
+      myId = "p_" + Math.random().toString(36).substring(2, 10);
+      sessionStorage.setItem("zeroabsolu_tab_id", myId);
+    }
+
     let myPseudo = localStorage.getItem("zeroabsolu_pseudo") || "";
     let savedPoints = parseInt(localStorage.getItem("zeroabsolu_points") || "0", 10);
     let savedWins = parseInt(localStorage.getItem("zeroabsolu_wins") || "0", 10);
@@ -361,17 +417,19 @@
     let roomCode = null;
     let isHost = true;
 
-    // Numéro de manche affiché (commence toujours à Manche #1 !)
     let roundNumber = 1;
     let playedGameIds = new Set();
     let currentGameId = pickUnplayedGameId();
 
     let gameDictionary = {};
-    let accentInsensitiveMap = {}; // Permet de taper "foret" et trouver "forêt"
+    let accentInsensitiveMap = {};
+
+    // LISTE COMMUNE DES ESSAIS DU SALON
     let guesses = [];
-    let attemptCount = 0;
     let roundFinished = false;
+    let roomBestTemp = null;
     let roomBestRank = 0;
+    let roomBestProximityPct = 0;
 
     let players = {};
 
@@ -394,7 +452,6 @@
         .replace(/'/g, "&#039;");
     }
 
-    // Retire les accents pour permettre une saisie ultra-rapide sur mobile
     function stripAccents(str) {
       return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase();
     }
@@ -406,10 +463,27 @@
     }
 
     // =========================================================================
-    // 2. INITIALISATION & ADAPTATION AU CLAVIER VIRTUEL MOBILE
+    // 2. GESTION DU CLAVIER MOBILE (VISUAL VIEWPORT LOCK)
     // =========================================================================
+    let initialScreenHeight = window.innerHeight;
+
+    function syncMobileViewport() {
+      const app = document.getElementById("appViewport");
+      if (!window.visualViewport) return;
+
+      const vv = window.visualViewport;
+      app.style.height = `${vv.height}px`;
+      app.style.top = `${vv.offsetTop}px`;
+
+      // Détecte si le clavier mange plus de 140px de hauteur d'écran
+      const isKeyboardUp = (initialScreenHeight - vv.height) > 140 && window.innerWidth < 1024;
+      document.body.classList.toggle("keyboard-active", isKeyboardUp);
+    }
+
     window.addEventListener("DOMContentLoaded", () => {
       lucide.createIcons();
+      initialScreenHeight = window.screen ? window.screen.availHeight : window.innerHeight;
+
       if (myPseudo) {
         document.getElementById("modalPseudo").value = myPseudo;
       }
@@ -420,24 +494,23 @@
         if (e.key === "Enter") startJoinRoom();
       });
 
-      // Détection du clavier virtuel sur mobile via visualViewport
       const inputEl = document.getElementById("wordInput");
       inputEl.addEventListener("focus", () => {
         if (window.innerWidth < 1024) {
-          document.body.classList.add("keyboard-open");
+          document.body.classList.add("keyboard-active");
+          setTimeout(syncMobileViewport, 80);
         }
       });
       inputEl.addEventListener("blur", () => {
-        setTimeout(() => document.body.classList.remove("keyboard-open"), 120);
+        setTimeout(() => {
+          document.body.classList.remove("keyboard-active");
+          syncMobileViewport();
+        }, 120);
       });
 
       if (window.visualViewport) {
-        window.visualViewport.addEventListener("resize", () => {
-          const isKeyboardVisible = window.visualViewport.height < window.innerHeight * 0.78;
-          if (window.innerWidth < 1024) {
-            document.body.classList.toggle("keyboard-open", isKeyboardVisible);
-          }
-        });
+        window.visualViewport.addEventListener("resize", syncMobileViewport);
+        window.visualViewport.addEventListener("scroll", syncMobileViewport);
       }
     });
 
@@ -464,25 +537,173 @@
       document.getElementById("headerPoints").textContent = me.points;
     }
 
+    // Correction du bug du 50e essai : ne détruit plus jamais de balise enfant requise
     function updateHintButtonUI() {
       const me = players[myId];
       const btn = document.getElementById("hintBtn");
-      const label = document.getElementById("hintLabel");
+      const content = document.getElementById("hintBtnContent");
+      if (!btn || !content) return;
+
       const canAfford = me && me.points >= HINT_COST && !roundFinished;
 
       if (canAfford) {
         btn.className = "flex items-center gap-1.5 bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 text-amber-300 text-xs font-bold px-2.5 py-1.5 rounded-xl transition shadow-sm";
-        label.textContent = `Indice (${HINT_COST})`;
-        btn.innerHTML = `<i data-lucide="lightbulb" class="w-3.5 h-3.5 text-amber-400"></i><span class="font-mono-num text-[11px]">Indice (${HINT_COST})</span>`;
+        content.innerHTML = `<i data-lucide="lightbulb" class="w-3.5 h-3.5 text-amber-400"></i><span class="font-mono-num text-[11px]">Indice (${HINT_COST})</span>`;
       } else {
         btn.className = "flex items-center gap-1.5 bg-slate-900/70 border border-slate-800 text-slate-500 text-xs font-semibold px-2.5 py-1.5 rounded-xl transition opacity-75";
-        btn.innerHTML = `<i data-lucide="lock" class="w-3.5 h-3.5 text-slate-500"></i><span class="font-mono-num text-[11px]">${HINT_COST} pts</span>`;
+        content.innerHTML = `<i data-lucide="lock" class="w-3.5 h-3.5 text-slate-500"></i><span class="font-mono-num text-[11px]">${HINT_COST} pts</span>`;
       }
       lucide.createIcons();
     }
 
     // =========================================================================
-    // 3. MODALE D'ACCUEIL & CODES DE SALON À 4 LETTRES
+    // 3. RECONNAISSANCE MORPHOLOGIQUE FRANÇAISE (FÉMININS, PLURIELS, TIRETS)
+    // =========================================================================
+    function buildAccentInsensitiveIndex() {
+      accentInsensitiveMap = {};
+      for (const word of Object.keys(gameDictionary)) {
+        const stripped = stripAccents(word);
+        if (!(stripped in accentInsensitiveMap) || word === stripped) {
+          accentInsensitiveMap[stripped] = word;
+        }
+        // Indexe aussi les mots à tiret sans leur tiret (ex: "nouveau-né" -> "nouveaune" / "nouveau ne")
+        if (word.includes("-")) {
+          const noHyphen = stripped.replace(/-/g, "");
+          accentInsensitiveMap[noHyphen] = word;
+        }
+      }
+    }
+
+    function tryDirectMatch(candidate) {
+      if (candidate in gameDictionary) return candidate;
+      const stripped = stripAccents(candidate);
+      if (stripped in accentInsensitiveMap) return accentInsensitiveMap[stripped];
+      return null;
+    }
+
+    // Convertit automatiquement "adolescente" -> "adolescent", "chevaux" -> "cheval", etc.
+    function resolveWordInDictionary(rawInput) {
+      const cleaned = rawInput.trim().toLowerCase().replace(/\s+/g, "-");
+
+      // 1. Recherche directe (avec ou sans accents/tirets)
+      let match = tryDirectMatch(cleaned);
+      if (match) return match;
+
+      // 2. Retrait du pluriel simple (-s ou -x) pour tester les règles de féminin ensuite
+      const baseForms = [cleaned];
+      if (cleaned.endsWith("s") && cleaned.length > 3) baseForms.push(cleaned.slice(0, -1));
+      if (cleaned.endsWith("x") && cleaned.length > 3) baseForms.push(cleaned.slice(0, -1));
+
+      // Règles de transformation Féminin / Pluriel / Conjugaison -> Lemme masculin singulier / Infinitif
+      const suffixRules = [
+        ["aux", "al"],       // chevaux -> cheval
+        ["euse", "eur"],     // chanteuse -> chanteur
+        ["rice", "eur"],     // actrice -> acteur
+        ["trice", "teur"],   // directrice -> directeur
+        ["ive", "if"],       // sportive -> sportif
+        ["ienne", "ien"],    // chienne -> chien, lycéenne -> lycéen
+        ["onne", "on"],      // lionne -> lion
+        ["elle", "el"],      // naturelle -> naturel
+        ["elle", "eau"],     // nouvelle -> nouveau, belle -> beau
+        ["ère", "er"],       // première -> premier, boulangère -> boulanger
+        ["ere", "er"],
+        ["ette", "et"],      // muette -> muet, cadette -> cadet
+        ["otte", "ot"],      // sotte -> sot
+        ["e", ""],           // adolescente -> adolescent, étudiante -> étudiant, amie -> ami
+        ["ée", "er"],        // mangée -> manger
+        ["é", "er"],         // mangé -> manger
+        ["és", "er"],        // mangés -> manger
+        ["ées", "er"],       // mangées -> manger
+        ["er", "e"]
+      ];
+
+      for (const form of baseForms) {
+        match = tryDirectMatch(form);
+        if (match) return match;
+
+        for (const [ending, replacement] of suffixRules) {
+          if (form.endsWith(ending) && form.length - ending.length >= 2) {
+            const stem = form.slice(0, form.length - ending.length) + replacement;
+            match = tryDirectMatch(stem);
+            if (match) return match;
+          }
+        }
+      }
+
+      return null;
+    }
+
+    // =========================================================================
+    // 4. CALCUL DU POURCENTAGE DE PROXIMITÉ & DÉTECTION « MONTÉE EN PUISSANCE »
+    // =========================================================================
+    // Convertit n'importe quel (temp, rank) en un pourcentage continu de 3% à 100%
+    function computeProximityPct(temp, rank) {
+      if (rank === 1000) return 100;
+      if (rank !== null && rank > 0) {
+        // Un mot dans le Top 1000 occupe la plage 38% -> 99.5% de la barre spectrale
+        return 38 + (rank / 1000) * 61.5;
+      }
+      // Un mot froid occupe la plage 4% -> 37% selon sa température (-10°C à +28°C)
+      const normalizedCold = Math.max(0, Math.min(1, (temp + 10) / 38));
+      return 4 + normalizedCold * 33;
+    }
+
+    // Détecte si un nouveau mot constitue une "Montée en puissance" (percée d'au moins ~20%)
+    function checkPowerSurge(temp, rank, newPct) {
+      if (rank === 1000) return null; // La victoire a déjà sa propre célébration
+
+      // S'il n'y a pas encore de base de référence significative, on enregistre simplement le record
+      if (guesses.length < 2 || roomBestTemp === null) {
+        return null;
+      }
+
+      const prevTemp = roomBestTemp;
+      const prevPct = roomBestProximityPct;
+      const prevRank = roomBestRank;
+
+      // Condition 1 : Le mot améliore la température record d'au moins +20% (et dépasse 18°C)
+      const relTempGain = prevTemp > 5 ? ((temp - prevTemp) / prevTemp) * 100 : (temp - prevTemp) * 4;
+      // Condition 2 : Bond d'au moins +14 points sur l'échelle de proximité globale (0-100%)
+      const pctJump = newPct - prevPct;
+      // Condition 3 : Entrée dans le Top 100 ou le Top 10 pour la première fois
+      const milestoneHit = (rank >= 990 && prevRank < 990) || (rank >= 900 && prevRank < 750);
+
+      if (temp > prevTemp && temp >= 18 && (relTempGain >= 20 || pctJump >= 14 || milestoneHit)) {
+        const displayedGain = Math.max(20, Math.min(99, Math.round(Math.max(relTempGain, pctJump * 1.5))));
+        return displayedGain;
+      }
+      return null;
+    }
+
+    function triggerSurgeAnimation(pseudo, word, temp, gainPct) {
+      const overlay = document.getElementById("surgeOverlay");
+      document.getElementById("surgePlayerName").textContent = `${pseudo} fait grimper la température !`;
+      document.getElementById("surgeWord").textContent = word;
+      document.getElementById("surgeTemp").textContent = `${temp.toFixed(2)}°C`;
+      document.getElementById("surgeDelta").textContent = `+${gainPct}% plus précis !`;
+
+      overlay.classList.remove("hidden", "animate-surge-banner");
+      void overlay.offsetWidth;
+      overlay.classList.add("animate-surge-banner");
+
+      vibrateDevice([40, 50, 90]);
+
+      if (typeof confetti === "function") {
+        confetti({
+          particleCount: 28,
+          spread: 65,
+          origin: { y: 0.55 },
+          colors: ["#38bdf8", "#a855f7", "#f59e0b", "#f43f5e"]
+        });
+      }
+
+      setTimeout(() => {
+        overlay.classList.add("hidden");
+      }, 2600);
+    }
+
+    // =========================================================================
+    // 5. MODALE & MULTIJOUEUR TEMPS RÉEL (LISTE COMMUNE SYNCHRONISÉE)
     // =========================================================================
     function validatePseudoInput() {
       const raw = document.getElementById("modalPseudo").value.trim();
@@ -528,9 +749,6 @@
       return code;
     }
 
-    // =========================================================================
-    // 4. MULTIJOUEUR TEMPS RÉEL (PEERJS 4 LETTRES)
-    // =========================================================================
     let peer = null;
     let hostConnections = [];
     let clientConnection = null;
@@ -563,7 +781,7 @@
         updateRoomHeaderUI();
         closeOnboardingModal();
         addFeedMessage(`Salon ${roomCode} créé ! Partagez ces 4 lettres.`, "sky");
-        updateLiveTicker(`Salon ${roomCode} actif • En attente de vos amis...`);
+        updateLiveTicker(`Salon ${roomCode} actif • Liste de mots commune activée !`);
         showToast(`Salon ${roomCode} créé !`, "sky");
       });
 
@@ -575,7 +793,16 @@
           if (conn.playerId && players[conn.playerId]) {
             const leftName = players[conn.playerId].pseudo;
             delete players[conn.playerId];
-            broadcastFromHost({ type: "STATE_SYNC", gameId: currentGameId, roundNumber, players, roomBestRank });
+            broadcastFromHost({
+              type: "STATE_SYNC",
+              gameId: currentGameId,
+              roundNumber,
+              players,
+              guesses,
+              roomBestTemp,
+              roomBestRank,
+              roomBestProximityPct
+            });
             addFeedMessage(`${leftName} a quitté le salon.`, "slate");
             renderLeaderboard();
           }
@@ -646,20 +873,24 @@
           bestRank: 0,
           attempts: 0
         };
-        const joinMsg = `👋 ${players[data.player.id].pseudo} a rejoint le salon !`;
+        const joinMsg = `👋 ${players[data.player.id].pseudo} a rejoint la partie !`;
         broadcastFromHost({
           type: "STATE_SYNC",
           gameId: currentGameId,
           roundNumber,
           players,
+          guesses,
+          roomBestTemp,
           roomBestRank,
+          roomBestProximityPct,
           feedEvent: { text: joinMsg, style: "sky" }
         });
         renderLeaderboard();
         addFeedMessage(joinMsg, "sky");
         updateLiveTicker(joinMsg);
-      } else if (data.type === "PLAYER_GUESS") {
-        processNetworkGuess(data);
+      } else if (data.type === "SHARED_GUESS") {
+        // L'hôte intègre le mot trouvé par l'invité et le relaie à tous les joueurs
+        applySharedGuess(data, false);
         broadcastFromHost(data);
       }
     }
@@ -667,12 +898,22 @@
     function handleClientReceivedData(data) {
       if (data.type === "STATE_SYNC") {
         players = data.players || players;
+        roomBestTemp = data.roomBestTemp ?? roomBestTemp;
         roomBestRank = data.roomBestRank || 0;
+        roomBestProximityPct = data.roomBestProximityPct || 0;
+
         if (data.gameId && data.gameId !== currentGameId) {
-          loadGame(data.gameId, data.roundNumber || roundNumber);
-        } else if (data.roundNumber) {
-          roundNumber = data.roundNumber;
-          document.getElementById("roundBadge").textContent = `Manche #${roundNumber}`;
+          loadGame(data.gameId, data.roundNumber || roundNumber, data.guesses || []);
+        } else {
+          if (data.roundNumber) {
+            roundNumber = data.roundNumber;
+            document.getElementById("roundBadge").textContent = `Manche #${roundNumber}`;
+          }
+          if (Array.isArray(data.guesses)) {
+            guesses = data.guesses;
+            renderGuesses();
+            updateStatsUI();
+          }
         }
         if (data.feedEvent) {
           addFeedMessage(data.feedEvent.text, data.feedEvent.style);
@@ -681,17 +922,16 @@
         renderLeaderboard();
       } else if (data.type === "NEW_ROUND") {
         players = data.players || players;
-        roomBestRank = 0;
-        loadGame(data.gameId, data.roundNumber);
+        loadGame(data.gameId, data.roundNumber, []);
         renderLeaderboard();
       } else if (data.type === "ROUND_GIVEN_UP") {
         roundFinished = true;
-        showVictoryBanner("Personne (Abandon)", data.secretWord, 0, true);
+        showVictoryBanner("Abandon", data.secretWord, guesses.length, true);
         addFeedMessage(`🏳️ Manche abandonnée ! Le mot était « ${data.secretWord.toUpperCase()} ».`, "rose");
         updateLiveTicker(`🏳️ Le mot secret était « ${data.secretWord.toUpperCase()} » !`);
-      } else if (data.type === "PLAYER_GUESS") {
+      } else if (data.type === "SHARED_GUESS") {
         if (data.playerId !== myId) {
-          processNetworkGuess(data);
+          applySharedGuess(data, false);
         }
       }
     }
@@ -709,43 +949,6 @@
       hostConnections.forEach(c => { if (c.open) c.send(payload); });
     }
 
-    function processNetworkGuess(data) {
-      const p = players[data.playerId] || { id: data.playerId, pseudo: data.pseudo, points: 0, wins: 0 };
-      p.points = data.totalPoints;
-      p.wins = data.totalWins;
-      p.bestTemp = data.bestTemp;
-      p.bestRank = data.bestRank;
-      p.attempts = data.attempt;
-      players[data.playerId] = p;
-
-      if (data.rank && data.rank > roomBestRank) {
-        roomBestRank = data.rank;
-      }
-
-      renderLeaderboard();
-
-      if (data.isWin) {
-        roundFinished = true;
-        triggerVictoryConfetti();
-        const winText = `🏆 ${p.pseudo} a trouvé « ${data.secretRevealed?.toUpperCase()} » en ${data.attempt} coups !`;
-        addFeedMessage(winText, "emerald");
-        updateLiveTicker(winText);
-        showVictoryBanner(p.pseudo, data.secretRevealed, data.attempt, false);
-      } else if (data.rank >= 990) {
-        const topPos = 1000 - data.rank;
-        const topText = `⚡ ${p.pseudo} entre dans le TOP ${topPos} (${data.temp.toFixed(2)}°C) !`;
-        addFeedMessage(topText, "amber");
-        updateLiveTicker(topText);
-      } else if (data.isNewRecord) {
-        const recText = `🔥 ${p.pseudo} prend la tête de la manche : ${data.temp.toFixed(2)}°C (${data.rank}‰) !`;
-        addFeedMessage(recText, "sky");
-        updateLiveTicker(recText);
-      } else {
-        const rankTxt = data.rank ? ` • 🔥 ${data.rank}‰` : "";
-        addFeedMessage(`${p.pseudo} : ${data.temp.toFixed(2)}°C${rankTxt} (Essai #${data.attempt})`, "slate");
-      }
-    }
-
     function updateRoomHeaderUI() {
       const pill = document.getElementById("roomCodePill");
       pill.classList.remove("hidden");
@@ -761,15 +964,16 @@
     }
 
     // =========================================================================
-    // 5. CHARGEMENT D'UNE MANCHE & INDEXATION SANS ACCENTS
+    // 6. CHARGEMENT D'UNE MANCHE & VALIDATION COMMUNE DES MOTS
     // =========================================================================
-    async function loadGame(gameId, displayRound = roundNumber) {
+    async function loadGame(gameId, displayRound = roundNumber, initialGuesses = []) {
       currentGameId = gameId;
       roundNumber = displayRound;
-      guesses = [];
-      attemptCount = 0;
+      guesses = initialGuesses;
       roundFinished = false;
+      roomBestTemp = null;
       roomBestRank = 0;
+      roomBestProximityPct = 0;
 
       Object.values(players).forEach(p => {
         p.bestTemp = null;
@@ -796,45 +1000,25 @@
         const data = await res.json();
         gameDictionary = data.words;
         buildAccentInsensitiveIndex();
-        document.getElementById("guessesList").innerHTML = `
-          <p class="text-slate-500 text-xs sm:text-sm text-center my-auto py-8">
-            <strong>Manche #${roundNumber} prête</strong> (${Object.keys(gameDictionary).length.toLocaleString('fr-FR')} mots).<br>
-            <span class="text-xs text-slate-600">Les mots les plus chauds resteront affichés ici en haut de liste.</span>
-          </p>`;
-        addFeedMessage(`🎯 Manche #${roundNumber} lancée !`, "sky");
-        updateLiveTicker(`🎯 Manche #${roundNumber} en cours — Qui trouvera le mot le plus proche ?`);
       } catch (err) {
         gameDictionary = FALLBACK_WORDS;
         buildAccentInsensitiveIndex();
+      }
+
+      if (guesses.length > 0) {
+        renderGuesses();
+        updateStatsUI();
+      } else {
         document.getElementById("guessesList").innerHTML = `
-          <p class="text-amber-300/90 text-xs text-center my-auto py-6 px-4 bg-amber-500/10 rounded-xl border border-amber-500/20">
-            <strong>Manche #${roundNumber} (Mode Démo)</strong><br>
-            Essayez : <em>mer, vague, bateau, plage, poisson, eau, ocean...</em>
+          <p class="text-slate-500 text-xs sm:text-sm text-center my-auto py-8">
+            <strong>Manche #${roundNumber} prête</strong> (${Object.keys(gameDictionary).length.toLocaleString('fr-FR')} mots).<br>
+            <span class="text-xs text-slate-600">Tous les mots proposés par le salon apparaîtront ici.</span>
           </p>`;
       }
+      addFeedMessage(`🎯 Manche #${roundNumber} lancée !`, "sky");
+      updateLiveTicker(`🎯 Manche #${roundNumber} en cours — Liste de mots commune !`);
     }
 
-    function buildAccentInsensitiveIndex() {
-      accentInsensitiveMap = {};
-      for (const word of Object.keys(gameDictionary)) {
-        const stripped = stripAccents(word);
-        if (!(stripped in accentInsensitiveMap) || word === stripped) {
-          accentInsensitiveMap[stripped] = word;
-        }
-      }
-    }
-
-    function resolveWordInDictionary(rawInput) {
-      const cleaned = rawInput.trim().toLowerCase();
-      if (cleaned in gameDictionary) return cleaned;
-      const stripped = stripAccents(cleaned);
-      if (stripped in accentInsensitiveMap) return accentInsensitiveMap[stripped];
-      return null;
-    }
-
-    // =========================================================================
-    // 6. VALIDATION D'UN MOT, POINTS & ANIMATIONS
-    // =========================================================================
     function handleGuess(e) {
       e.preventDefault();
       const input = document.getElementById("wordInput");
@@ -849,118 +1033,167 @@
       if (!resolvedWord) {
         vibrateDevice(40);
         triggerInputShake(form);
-        showToast(`Mot « ${rawText.toLowerCase()} » inconnu (essayez au singulier ou à l'infinitif).`, "rose");
+        showToast(`Mot « ${rawText.toLowerCase()} » inconnu.`, "rose");
         return;
       }
 
-      // 2. Mot déjà proposé (Secousse + Scroll + Surbrillance)
+      // 2. Mot déjà proposé (par soi-même OU par un autre joueur du salon !)
       const existing = guesses.find(g => g.word === resolvedWord);
       if (existing) {
         input.value = "";
         vibrateDevice([30, 50, 30]);
         triggerInputShake(form);
-        showToast(`« ${resolvedWord} » a déjà été testé (Essai #${existing.num}) !`, "rose");
-        renderLastGuess(existing, "Déjà trouvé");
+        const who = existing.finderId === myId ? "vous" : existing.finderPseudo;
+        showToast(`« ${resolvedWord} » a déjà été trouvé par ${who} (#${existing.num}) !`, "rose");
+        renderLastGuess(existing, `Déjà trouvé par ${who}`);
         highlightExistingWordRow(resolvedWord);
         return;
       }
 
       input.value = "";
-      attemptCount++;
 
       const entry = gameDictionary[resolvedWord];
       const temp = Array.isArray(entry) ? entry[0] : entry;
       const rank = Array.isArray(entry) ? entry[1] : null;
       const isWin = rank === 1000;
       const isTop10 = rank !== null && rank >= 990 && rank < 1000;
+      const proximityPct = computeProximityPct(temp, rank);
 
-      // 3. Calcul des points
+      // Détection de la « Montée en puissance » (+20% plus précis)
+      const surgeGain = checkPowerSurge(temp, rank, proximityPct);
+
+      // Calcul des points
       let pointsEarned = 0;
       let isNewRecord = false;
 
       if (!roundFinished) {
-        if (isWin) {
-          pointsEarned += 200;
-        } else if (isTop10) {
-          pointsEarned += 75;
-        } else if (rank >= 900) {
-          pointsEarned += 30;
-        } else if (rank !== null) {
-          pointsEarned += 10;
-        }
+        if (isWin) pointsEarned += 200;
+        else if (isTop10) pointsEarned += 75;
+        else if (rank >= 900) pointsEarned += 30;
+        else if (rank !== null) pointsEarned += 10;
 
-        if (rank !== null && rank > roomBestRank && !isWin) {
-          isNewRecord = true;
-          roomBestRank = rank;
-          pointsEarned += 25;
+        if ((rank !== null && rank > roomBestRank) || (roomBestRank === 0 && (roomBestTemp === null || temp > roomBestTemp))) {
+          if (!isWin) {
+            isNewRecord = true;
+            pointsEarned += 25;
+          }
         }
       }
 
       const me = players[myId];
-      me.attempts = attemptCount;
+      me.attempts = (me.attempts || 0) + 1;
       me.points += pointsEarned;
       if (me.bestTemp === null || temp > me.bestTemp) me.bestTemp = temp;
       if (rank && rank > me.bestRank) me.bestRank = rank;
       if (isWin && !roundFinished) {
         me.wins += 1;
-        roundFinished = true;
       }
 
       saveLocalProgress();
       updateHintButtonUI();
 
-      const guessObj = { num: attemptCount, word: resolvedWord, temp, rank, isWin, isTop10 };
-      guesses.push(guessObj);
-      guesses.sort((a, b) => b.temp - a.temp);
-
-      const ptsLabel = pointsEarned > 0 ? `+${pointsEarned} pts${isNewRecord ? " (Record 🔥)" : ""}` : "";
-      renderLastGuess(guessObj, ptsLabel);
-      renderGuesses(resolvedWord);
-      updateStatsUI();
-      renderLeaderboard();
-
-      // Remonte automatiquement en haut de la liste si l'utilisateur vient de trouver un mot dans son Top 3
-      if (guesses.indexOf(guessObj) < 3) {
-        document.getElementById("guessesList").scrollTop = 0;
-      }
-
-      // 4. Animations Top 10 & Victoire
-      if (isTop10) {
-        vibrateDevice([40, 60, 80]);
-        triggerTop10Animation(1000 - rank);
-      }
-
-      if (isWin) {
-        vibrateDevice([80, 50, 120]);
-        triggerVictoryConfetti();
-        showVictoryBanner(me.pseudo, resolvedWord, attemptCount, false);
-        const msg = `🎉 Vous avez trouvé « ${resolvedWord.toUpperCase()} » en ${attemptCount} essais (+${pointsEarned} pts) !`;
-        addFeedMessage(msg, "emerald");
-        updateLiveTicker(msg);
-      } else if (isNewRecord) {
-        updateLiveTicker(`🔥 Vous prenez la tête avec « ${resolvedWord} » (${temp.toFixed(2)}°C • ${rank}‰) !`);
-      }
-
-      sendGuessToNetwork({
-        type: "PLAYER_GUESS",
+      const sharedPayload = {
+        type: "SHARED_GUESS",
         playerId: myId,
         pseudo: me.pseudo,
+        word: resolvedWord,
         temp,
         rank,
+        proximityPct,
         isWin,
+        isTop10,
         isNewRecord,
+        surgeGain,
         pointsEarned,
         totalPoints: me.points,
         totalWins: me.wins,
         bestTemp: me.bestTemp,
         bestRank: me.bestRank,
-        attempt: attemptCount,
-        secretRevealed: isWin ? resolvedWord : null
-      });
+        playerAttempts: me.attempts
+      };
+
+      applySharedGuess(sharedPayload, true);
+      sendGuessToNetwork(sharedPayload);
+    }
+
+    // Applique un mot trouvé (qu'il vienne de nous ou d'un ami) dans la liste commune
+    function applySharedGuess(data, isLocal) {
+      // Évite tout doublon réseau éventuel
+      if (guesses.some(g => g.word === data.word)) return;
+
+      const p = players[data.playerId] || { id: data.playerId, pseudo: data.pseudo, points: 0, wins: 0 };
+      p.pseudo = data.pseudo;
+      p.points = data.totalPoints;
+      p.wins = data.totalWins;
+      p.bestTemp = data.bestTemp;
+      p.bestRank = data.bestRank;
+      p.attempts = data.playerAttempts;
+      players[data.playerId] = p;
+
+      if (roomBestTemp === null || data.temp > roomBestTemp) roomBestTemp = data.temp;
+      if (data.rank && data.rank > roomBestRank) roomBestRank = data.rank;
+      if (data.proximityPct > roomBestProximityPct) roomBestProximityPct = data.proximityPct;
+
+      const guessObj = {
+        num: guesses.length + 1,
+        word: data.word,
+        temp: data.temp,
+        rank: data.rank,
+        proximityPct: data.proximityPct,
+        isWin: data.isWin,
+        isTop10: data.isTop10,
+        finderId: data.playerId,
+        finderPseudo: data.pseudo
+      };
+
+      guesses.push(guessObj);
+      guesses.sort((a, b) => b.temp - a.temp);
+
+      const ptsLabel = data.pointsEarned > 0
+        ? `+${data.pointsEarned} pts (${data.pseudo})`
+        : `Par ${data.pseudo}`;
+
+      renderLastGuess(guessObj, ptsLabel);
+      renderGuesses(data.word);
+      updateStatsUI();
+      renderLeaderboard();
+
+      // Si le nouveau mot est dans les 4 plus chauds de la liste commune, on remonte en haut de liste
+      if (guesses.indexOf(guessObj) < 4) {
+        document.getElementById("guessesList").scrollTop = 0;
+      }
+
+      // 1. Animation de « Montée en puissance » pour TOUS les joueurs du salon !
+      if (data.surgeGain) {
+        triggerSurgeAnimation(data.pseudo, data.word, data.temp, data.surgeGain);
+        const surgeMsg = `🚀 Montée en puissance de ${data.pseudo} avec « ${data.word.toUpperCase()} » (${data.temp.toFixed(2)}°C • +${data.surgeGain}%) !`;
+        addFeedMessage(surgeMsg, "amber");
+        updateLiveTicker(surgeMsg);
+      } else if (data.isTop10 && isLocal) {
+        showToast(`🔥 TOP ${1000 - data.rank} trouvé !`, "amber");
+      }
+
+      // 2. Victoire
+      if (data.isWin) {
+        roundFinished = true;
+        updateHintButtonUI();
+        triggerVictoryConfetti();
+        showVictoryBanner(data.pseudo, data.word, guesses.length, false);
+        const winMsg = `🏆 ${data.pseudo} a trouvé « ${data.word.toUpperCase()} » (Essai #${guesses.length}) !`;
+        addFeedMessage(winMsg, "emerald");
+        updateLiveTicker(winMsg);
+      } else if (!data.surgeGain) {
+        const rankTxt = data.rank ? ` • 🔥 ${data.rank}‰` : "";
+        const feedTxt = `${data.pseudo} a trouvé « ${data.word} » : ${data.temp.toFixed(2)}°C${rankTxt}`;
+        addFeedMessage(feedTxt, data.isNewRecord ? "sky" : "slate");
+        if (data.isNewRecord) {
+          updateLiveTicker(`🔥 ${data.pseudo} prend la tête avec « ${data.word} » (${data.temp.toFixed(2)}°C) !`);
+        }
+      }
     }
 
     // =========================================================================
-    // 7. INDICE VERROUILLÉ À 750 PTS & ABANDON DE MANCHE
+    // 7. INDICE VERROUILLÉ À 750 PTS & ABANDON
     // =========================================================================
     function useHint() {
       if (roundFinished) {
@@ -977,9 +1210,7 @@
         return;
       }
 
-      const currentBest = me.bestRank || 0;
-      const targetRank = currentBest > 0 ? Math.min(998, Math.floor((currentBest + 1000) / 2)) : 600;
-
+      const targetRank = roomBestRank > 0 ? Math.min(998, Math.floor((roomBestRank + 1000) / 2)) : 600;
       const guessedSet = new Set(guesses.map(g => g.word));
       let bestCandidate = null;
       let minDiff = 9999;
@@ -1004,7 +1235,7 @@
       updateHintButtonUI();
 
       document.getElementById("wordInput").value = bestCandidate;
-      showToast(`💡 Indice acheté (-${HINT_COST} pts) : « ${bestCandidate} »`, "amber");
+      showToast(`💡 Indice débloqué (-${HINT_COST} pts) : « ${bestCandidate} »`, "amber");
       handleGuess(new Event("submit"));
     }
 
@@ -1024,7 +1255,7 @@
       const secret = findSecretWordInDict();
       roundFinished = true;
       updateHintButtonUI();
-      showVictoryBanner("Mot révélé", secret, attemptCount, true);
+      showVictoryBanner("Mot révélé", secret, guesses.length, true);
       addFeedMessage(`🏳️ Manche abandonnée. Le mot secret était « ${secret.toUpperCase()} ».`, "rose");
       updateLiveTicker(`🏳️ Mot secret révélé : « ${secret.toUpperCase()} »`);
 
@@ -1040,7 +1271,7 @@
       }
       const nextId = pickUnplayedGameId();
       const nextRound = roundNumber + 1;
-      loadGame(nextId, nextRound);
+      loadGame(nextId, nextRound, []);
       if (roomCode && isHost) {
         broadcastFromHost({
           type: "NEW_ROUND",
@@ -1052,9 +1283,10 @@
     }
 
     // =========================================================================
-    // 8. AFFICHAGE & ANIMATIONS
+    // 8. RENDU GRAPHIQUE & BARRE SPECTRALE PROGRESSIVE
     // =========================================================================
     function triggerInputShake(element) {
+      if (!element) return;
       element.classList.remove("animate-shake");
       void element.offsetWidth;
       element.classList.add("animate-shake");
@@ -1070,24 +1302,6 @@
       }
     }
 
-    function triggerTop10Animation(topPos) {
-      const lastBox = document.getElementById("lastGuessBox");
-      lastBox.classList.remove("animate-top10");
-      void lastBox.offsetWidth;
-      lastBox.classList.add("animate-top10");
-
-      showToast(`🔥 BRÛLANT ! Mot dans le TOP ${topPos} !`, "amber");
-
-      if (typeof confetti === "function") {
-        confetti({
-          particleCount: 35,
-          spread: 60,
-          origin: { y: 0.7 },
-          colors: ["#f59e0b", "#fbbf24", "#38bdf8"]
-        });
-      }
-    }
-
     function triggerVictoryConfetti() {
       if (typeof confetti !== "function") return;
       const duration = 2400;
@@ -1100,7 +1314,7 @@
       })();
     }
 
-    function showVictoryBanner(winnerPseudo, secretWord, attempts, isGiveUp = false) {
+    function showVictoryBanner(winnerPseudo, secretWord, totalAttempts, isGiveUp = false) {
       const banner = document.getElementById("victoryBanner");
       banner.classList.remove("hidden");
       document.getElementById("victoryBadge").textContent = isGiveUp ? "Mot révélé" : `Manche #${roundNumber} remportée`;
@@ -1109,32 +1323,29 @@
         : `Trouvé par ${winnerPseudo} !`;
       document.getElementById("victorySub").textContent = isGiveUp
         ? "Vous pouvez lancer la manche suivante."
-        : `Découvert par ${winnerPseudo} en ${attempts} essai${attempts > 1 ? "s" : ""}.`;
-    }
-
-    function getBarGradient(rank) {
-      if (rank === 1000) return "from-emerald-400 via-teal-400 to-cyan-400";
-      if (rank >= 990) return "from-amber-300 via-amber-500 to-rose-500";
-      if (rank >= 900) return "from-orange-400 to-pink-500";
-      if (rank !== null) return "from-sky-400 to-indigo-500";
-      return "from-slate-700 to-slate-600";
+        : `Trouvé par ${winnerPseudo} après ${totalAttempts} mot${totalAttempts > 1 ? "s" : ""} testés par le salon.`;
     }
 
     function renderRowHTML(g, isHighlighted = false) {
-      const width = g.rank ? Math.max(8, (g.rank / 1000) * 100) : 4;
-      let badgeHTML = `<span class="text-slate-500 text-[11px]">❄️ Froid</span>`;
+      // Largeur continue entre 4% et 100%
+      const width = Math.max(4, Math.min(100, g.proximityPct || computeProximityPct(g.temp, g.rank)));
+      const clipRight = (100 - width).toFixed(1);
 
+      let badgeHTML = `<span class="text-slate-500 text-[11px]">❄️</span>`;
       if (g.isWin) {
         badgeHTML = `<span class="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[11px] font-bold px-2 py-0.5 rounded-full">TROUVÉ 🏆</span>`;
       } else if (g.isTop10) {
         const topN = 1000 - g.rank;
-        badgeHTML = `<span class="bg-amber-500/25 text-amber-200 border border-amber-400/50 text-[11px] font-extrabold px-2 py-0.5 rounded-full">⚡ TOP ${topN} (${g.rank}‰)</span>`;
+        badgeHTML = `<span class="bg-rose-500/25 text-rose-200 border border-rose-400/50 text-[11px] font-extrabold px-2 py-0.5 rounded-full">🔥 TOP ${topN} (${g.rank}‰)</span>`;
       } else if (g.rank) {
-        badgeHTML = `<span class="bg-sky-500/15 text-sky-300 border border-sky-500/30 text-[11px] font-semibold px-2 py-0.5 rounded-full">🔥 ${g.rank}‰</span>`;
+        badgeHTML = `<span class="bg-purple-500/15 text-purple-300 border border-purple-500/30 text-[11px] font-semibold px-2 py-0.5 rounded-full">⚡ ${g.rank}‰</span>`;
       }
 
+      const isMe = g.finderId === myId;
+      const authorColor = isMe ? "bg-sky-500/15 text-sky-300 border-sky-500/30" : "bg-indigo-500/15 text-indigo-300 border-indigo-500/30";
+
       const borderClass = g.isTop10
-        ? "border-amber-500/50 bg-amber-950/20"
+        ? "border-rose-500/50 bg-rose-950/15"
         : g.isWin
           ? "border-emerald-500/50 bg-emerald-950/20"
           : isHighlighted
@@ -1142,19 +1353,22 @@
             : "border-slate-800/80 bg-slate-800/40";
 
       return `
-        <div data-word="${escapeHTML(g.word)}" class="rounded-xl p-2 border ${borderClass} flex flex-col gap-1 transition-all shrink-0">
-          <div class="flex justify-between items-center text-xs sm:text-sm">
-            <div class="flex items-center gap-2 min-w-0">
+        <div data-word="${escapeHTML(g.word)}" class="rounded-xl p-2 border ${borderClass} flex flex-col gap-1.5 transition-all shrink-0">
+          <div class="flex justify-between items-center text-xs sm:text-sm gap-2">
+            <div class="flex items-center gap-1.5 min-w-0">
               <span class="text-slate-500 font-mono-num text-[11px]">#${g.num}</span>
               <strong class="capitalize truncate text-slate-100">${escapeHTML(g.word)}</strong>
+              <span class="text-[10px] px-1.5 py-0.2 rounded border ${authorColor} truncate max-w-[85px]">${escapeHTML(g.finderPseudo || "Joueur")}</span>
             </div>
             <div class="flex items-center gap-1.5 shrink-0">
               <span class="font-mono-num font-bold text-xs">${g.temp.toFixed(2)}°C</span>
               ${badgeHTML}
             </div>
           </div>
-          <div class="w-full bg-slate-950 h-1.5 rounded-full overflow-hidden">
-            <div class="h-full bg-gradient-to-r ${getBarGradient(g.rank)} transition-all duration-500" style="width: ${width}%"></div>
+          <!-- Jauge spectrale progressive : dévoile Gris -> Bleu -> Vert -> Violet -> Rouge selon le % -->
+          <div class="w-full bg-slate-950 h-2 rounded-full overflow-hidden relative">
+            <div class="w-full h-full thermal-spectrum transition-all duration-500"
+                 style="clip-path: inset(0 ${clipRight}% 0 0 round 9999px);"></div>
           </div>
         </div>
       `;
@@ -1163,6 +1377,7 @@
     function renderLastGuess(g, ptsText = "") {
       const box = document.getElementById("lastGuessBox");
       box.classList.remove("hidden");
+      document.getElementById("lastGuessAuthor").textContent = `Dernier coup • ${g.finderPseudo || "Joueur"}`;
       document.getElementById("lastGuessPoints").textContent = ptsText;
       document.getElementById("lastGuessContent").innerHTML = renderRowHTML(g, true);
     }
@@ -1173,11 +1388,10 @@
     }
 
     function updateStatsUI() {
-      const me = players[myId];
-      document.getElementById("statAttempts").textContent = attemptCount;
-      document.getElementById("mobileAttemptCount").textContent = attemptCount;
-      document.getElementById("statBestTemp").textContent = me?.bestTemp !== null && me?.bestTemp !== undefined
-        ? `${me.bestTemp.toFixed(1)}°C`
+      document.getElementById("statAttempts").textContent = guesses.length;
+      document.getElementById("mobileAttemptCount").textContent = guesses.length;
+      document.getElementById("statBestTemp").textContent = roomBestTemp !== null
+        ? `${roomBestTemp.toFixed(1)}°C`
         : "--°C";
       const topCount = guesses.filter(g => g.rank !== null).length;
       document.getElementById("statTopWords").textContent = topCount;
@@ -1191,11 +1405,9 @@
       const list = document.getElementById("leaderboardList");
       const allPlayers = Object.values(players);
 
-      // Classement général par points et victoires
       const sortedByPoints = [...allPlayers].sort((a, b) => (b.points - a.points) || (b.wins - a.wins));
-
-      // Leader de la manche actuelle (celui qui est le plus proche du mot secret)
       const roundLeader = [...allPlayers].sort((a, b) => (b.bestRank - a.bestRank) || ((b.bestTemp ?? -999) - (a.bestTemp ?? -999)))[0];
+
       if (roundLeader && (roundLeader.bestRank > 0 || roundLeader.bestTemp !== null)) {
         const scoreStr = roundLeader.bestRank ? `${roundLeader.bestRank}‰` : `${roundLeader.bestTemp.toFixed(1)}°C`;
         document.getElementById("liveLeaderBadge").textContent = `🥇 ${roundLeader.pseudo} (${scoreStr})`;
@@ -1223,7 +1435,7 @@
                   <span class="font-bold text-xs text-white truncate">${escapeHTML(p.pseudo)}</span>
                   ${isMe ? `<span class="text-[10px] bg-sky-500/20 text-sky-300 px-1.5 rounded">Vous</span>` : ""}
                 </div>
-                <div class="text-[11px] text-slate-400">${bestInfo} • ${p.attempts || 0} essai${(p.attempts || 0) > 1 ? "s" : ""}</div>
+                <div class="text-[11px] text-slate-400">${bestInfo} • ${p.attempts || 0} mot${(p.attempts || 0) > 1 ? "s" : ""}</div>
               </div>
             </div>
             <div class="text-right shrink-0">
@@ -1270,7 +1482,7 @@
         toast.style.opacity = "0";
         toast.style.transition = "opacity 0.22s ease";
         setTimeout(() => toast.remove(), 220);
-      }, 2500);
+      }, 2400);
     }
 
     function clearInput() {
