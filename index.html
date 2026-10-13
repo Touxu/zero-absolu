@@ -31,26 +31,45 @@
       flex-direction: column;
       overflow: hidden;
       background-image:
-        radial-gradient(at 0% 0%, rgba(56, 189, 248, 0.10) 0px, transparent 50%),
-        radial-gradient(at 100% 0%, rgba(139, 92, 246, 0.10) 0px, transparent 50%);
+        radial-gradient(at 0% 0%, rgba(56, 189, 248, 0.09) 0px, transparent 50%),
+        radial-gradient(at 100% 0%, rgba(249, 115, 22, 0.08) 0px, transparent 50%);
     }
 
     .font-mono-num { font-family: 'JetBrains Mono', monospace; }
 
-    /* Spectre thermique progressif : Gris -> Bleu -> Vert -> Violet -> Orange -> Rouge */
+    /* Vrai spectre thermique sans vert : Glace -> Indigo -> Violet -> Rouge -> Magma -> Soleil */
     .thermal-spectrum {
       background: linear-gradient(
         90deg,
-        #64748b 0%,
-        #0ea5e9 22%,
-        #10b981 45%,
-        #8b5cf6 68%,
-        #f59e0b 85%,
-        #f43f5e 100%
+        #475569 0%,
+        #0ea5e9 20%,
+        #6366f1 42%,
+        #a855f7 62%,
+        #ef4444 80%,
+        #f97316 92%,
+        #facc15 100%
       );
     }
 
-    /* Animations */
+    /* Effet de lave / soleil en fusion pour le mot gagnant et le Top 10 */
+    @keyframes solarFlow {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    .solar-magma-bar {
+      background: linear-gradient(90deg, #dc2626, #ea580c, #facc15, #fef08a, #f97316, #dc2626);
+      background-size: 200% 200%;
+      animation: solarFlow 2.2s ease infinite;
+      box-shadow: 0 0 12px rgba(250, 204, 21, 0.6);
+    }
+    .solar-victory-card {
+      background: linear-gradient(135deg, rgba(127, 29, 29, 0.55), rgba(154, 52, 18, 0.55), rgba(161, 98, 7, 0.45));
+      border-color: rgba(250, 204, 21, 0.7) !important;
+      box-shadow: 0 0 24px -2px rgba(249, 115, 22, 0.45);
+    }
+
+    /* Animations fluides */
     @keyframes shake {
       0%, 100% { transform: translateX(0); }
       20%, 60% { transform: translateX(-6px); }
@@ -64,13 +83,12 @@
     }
     .animate-duplicate { animation: duplicatePulse 0.75s ease-in-out 2; }
 
-    /* Pulsation rapide quand un nouveau mot est ajouté */
     @keyframes newWordPulse {
-      0% { opacity: 0.4; transform: scale(0.96); box-shadow: 0 0 0 0 rgba(56, 189, 248, 0.55); }
-      55% { opacity: 1; transform: scale(1.015); box-shadow: 0 0 18px 2px rgba(56, 189, 248, 0.30); }
-      100% { opacity: 1; transform: scale(1); box-shadow: 0 0 0 0 rgba(56, 189, 248, 0); }
+      0% { opacity: 0.35; transform: translateY(-4px) scale(0.97); }
+      60% { opacity: 1; transform: translateY(0) scale(1.012); }
+      100% { opacity: 1; transform: translateY(0) scale(1); }
     }
-    .animate-word-entry { animation: newWordPulse 0.38s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+    .animate-word-entry { animation: newWordPulse 0.36s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
 
     @keyframes popIn {
       from { opacity: 0; transform: translateY(6px) scale(0.96); }
@@ -78,7 +96,11 @@
     }
     .animate-pop { animation: popIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
 
-    /* Défilement doux si un texte de bandeau est long sur petit écran */
+    /* Halo de retour thermique sur la barre de saisie */
+    .input-glow-cold { box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.35) !important; border-color: #38bdf8 !important; }
+    .input-glow-warm { box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.40) !important; border-color: #a855f7 !important; }
+    .input-glow-hot  { box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.50) !important; border-color: #facc15 !important; }
+
     @keyframes marqueeScroll {
       0%, 20% { transform: translateX(0%); }
       80%, 100% { transform: translateX(calc(-100% + 210px)); }
@@ -127,14 +149,14 @@
         </button>
 
         <div class="flex items-center gap-3 mb-4">
-          <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-sky-400 via-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-sky-500/20 shrink-0">
-            <i data-lucide="thermometer-snowflake" class="w-5 h-5 text-white"></i>
+          <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-sky-400 via-indigo-500 to-orange-500 flex items-center justify-center shadow-lg shadow-sky-500/20 shrink-0">
+            <i data-lucide="flame" class="w-5 h-5 text-white"></i>
           </div>
           <div>
-            <h1 class="text-xl font-extrabold tracking-tight bg-gradient-to-r from-sky-300 via-indigo-200 to-purple-300 bg-clip-text text-transparent">
+            <h1 class="text-xl font-extrabold tracking-tight bg-gradient-to-r from-sky-300 via-purple-300 to-amber-300 bg-clip-text text-transparent">
               ZéroAbsolu
             </h1>
-            <p class="text-[11px] text-slate-400">Trouvez le mot secret ensemble</p>
+            <p class="text-[11px] text-slate-400">Du froid polaire jusqu'à la fusion solaire</p>
           </div>
         </div>
 
@@ -194,14 +216,12 @@
           <i data-lucide="x" class="w-4 h-4"></i>
         </button>
 
-        <!-- Sélecteur rapide de joueur du salon -->
         <div id="statsPlayerTabs" class="flex items-center gap-1.5 overflow-x-auto pb-2 mb-3 border-b border-slate-800 pr-8 shrink-0"></div>
 
         <div class="overflow-y-auto pr-1 flex flex-col gap-4">
-          <!-- En-tête du Profil & Jauge XP -->
           <div class="bg-slate-950/70 border border-slate-800/90 rounded-2xl p-4">
             <div class="flex items-center gap-3">
-              <div id="profileLevelCircle" class="w-12 h-12 rounded-2xl bg-gradient-to-br from-sky-500 to-indigo-600 flex flex-col items-center justify-center shadow-lg shadow-sky-500/20 shrink-0">
+              <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-sky-500 via-indigo-600 to-orange-500 flex flex-col items-center justify-center shadow-lg shadow-sky-500/20 shrink-0">
                 <span class="text-[9px] uppercase font-bold text-sky-100 leading-none">Niv.</span>
                 <span id="profileLevelNum" class="font-mono-num text-lg font-extrabold text-white leading-tight">1</span>
               </div>
@@ -212,25 +232,23 @@
                     ❄️ Flocon Curieux
                   </span>
                 </div>
-                <!-- Barre de progression XP -->
                 <div class="mt-2">
                   <div class="flex justify-between text-[10px] font-mono-num text-slate-400 mb-1">
                     <span id="profileXpText">0 XP</span>
-                    <span id="profileNextLevelXp">500 XP</span>
+                    <span id="profileNextLevelXp">Niv. 2</span>
                   </div>
                   <div class="w-full bg-slate-900 h-2 rounded-full overflow-hidden border border-slate-800">
-                    <div id="profileXpBar" class="h-full bg-gradient-to-r from-sky-400 via-indigo-500 to-purple-500 transition-all duration-500" style="width: 10%"></div>
+                    <div id="profileXpBar" class="h-full thermal-spectrum transition-all duration-500" style="width: 10%"></div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- Grille des 6 Statistiques du Joueur -->
           <div class="grid grid-cols-3 gap-2">
             <div class="bg-slate-800/40 border border-slate-800 rounded-xl p-2.5 text-center">
-              <span class="text-[10px] text-slate-400 block">🏆 Victoires</span>
-              <strong id="statCardWins" class="font-mono-num text-base font-extrabold text-emerald-400">0</strong>
+              <span class="text-[10px] text-slate-400 block">☀️ Victoires</span>
+              <strong id="statCardWins" class="font-mono-num text-base font-extrabold text-amber-400">0</strong>
             </div>
             <div class="bg-slate-800/40 border border-slate-800 rounded-xl p-2.5 text-center">
               <span class="text-[10px] text-slate-400 block">🎯 Mots testés</span>
@@ -238,10 +256,10 @@
             </div>
             <div class="bg-slate-800/40 border border-slate-800 rounded-xl p-2.5 text-center">
               <span class="text-[10px] text-slate-400 block">🔥 Top 1000</span>
-              <strong id="statCardHot" class="font-mono-num text-base font-extrabold text-amber-400">0</strong>
+              <strong id="statCardHot" class="font-mono-num text-base font-extrabold text-orange-400">0</strong>
             </div>
             <div class="bg-slate-800/40 border border-slate-800 rounded-xl p-2.5 text-center">
-              <span class="text-[10px] text-slate-400 block">⚡ Top 10</span>
+              <span class="text-[10px] text-slate-400 block">🌋 Top 10</span>
               <strong id="statCardTop10" class="font-mono-num text-base font-extrabold text-rose-400">0</strong>
             </div>
             <div class="bg-slate-800/40 border border-slate-800 rounded-xl p-2.5 text-center">
@@ -254,11 +272,10 @@
             </div>
           </div>
 
-          <!-- Classement Général du Salon -->
           <div>
             <div class="flex items-center justify-between text-xs font-bold text-slate-300 mb-2 px-1">
               <span>🏅 Classement Général du Salon</span>
-              <span class="text-[10px] text-slate-500 font-normal">Cliquez sur un joueur</span>
+              <span class="text-[10px] text-slate-500 font-normal">Touchez un joueur</span>
             </div>
             <div id="modalLeaderboardList" class="flex flex-col gap-1.5"></div>
           </div>
@@ -267,45 +284,43 @@
     </div>
 
     <!-- ===================================================================== -->
-    <!-- 3. NOTIFICATION « PERCÉE MAJEURE » (LONGUE DURÉE + FERMABLE AU CLIC)  -->
+    <!-- 3. NOTIFICATION « PERCÉE MAJEURE » (6,5s + FERMABLE AU CLIC)          -->
     <!-- ===================================================================== -->
     <div id="surgeOverlay" onclick="handleSurgeBackdropClick(event)"
-      class="hidden fixed inset-0 z-40 bg-slate-950/55 backdrop-blur-[2px] flex items-center justify-center p-4 cursor-pointer">
-      <div class="relative bg-slate-950/95 border-2 border-amber-400/80 rounded-3xl p-5 shadow-[0_0_50px_rgba(245,158,11,0.45)] text-center max-w-xs w-full animate-pop cursor-default">
+      class="hidden fixed inset-0 z-40 bg-slate-950/60 backdrop-blur-[2px] flex items-center justify-center p-4 cursor-pointer">
+      <div class="relative bg-slate-950/95 border-2 border-amber-400/90 rounded-3xl p-5 shadow-[0_0_55px_rgba(249,115,22,0.5)] text-center max-w-xs w-full animate-pop cursor-default">
 
-        <!-- Croix pour fermer immédiatement -->
         <button onclick="dismissSurgeOverlay()" title="Fermer"
           class="absolute top-3 right-3 w-7 h-7 rounded-full bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center transition">
           <i data-lucide="x" class="w-4 h-4"></i>
         </button>
 
-        <div class="inline-flex items-center gap-1 bg-amber-500/20 border border-amber-400/40 text-amber-300 text-[10px] font-extrabold uppercase tracking-widest px-2.5 py-0.5 rounded-full mb-2">
-          <span>🚀 Percée majeure</span>
+        <div class="inline-flex items-center gap-1 bg-gradient-to-r from-red-500/25 to-amber-500/25 border border-amber-400/50 text-amber-300 text-[10px] font-extrabold uppercase tracking-widest px-2.5 py-0.5 rounded-full mb-2">
+          <span>🌋 Montée en fusion</span>
         </div>
         <div id="surgePlayerName" class="text-xs font-bold text-sky-300">Pierre</div>
         <div id="surgeWord" class="text-2xl font-extrabold text-white uppercase tracking-wide my-1">BATEAU</div>
         <div class="flex items-center justify-center gap-2 mt-1.5">
-          <span id="surgeTemp" class="font-mono-num text-base font-extrabold text-amber-400">70.5°C</span>
-          <span id="surgeDelta" class="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-mono-num text-xs font-bold px-2 py-0.5 rounded-lg">+28%</span>
+          <span id="surgeScore" class="font-mono-num text-base font-extrabold text-amber-400">99.0%</span>
+          <span id="surgeBadge" class="bg-orange-500/25 text-amber-200 border border-amber-400/40 font-mono-num text-xs font-bold px-2 py-0.5 rounded-lg">Top 10</span>
         </div>
         <p class="text-[10px] text-slate-500 mt-3">Touchez n'importe où pour fermer</p>
       </div>
     </div>
 
     <!-- ===================================================================== -->
-    <!-- 4. TOAST DE NOTIFICATION FLOTTANT (FERMABLE AU CLIC)                  -->
+    <!-- 4. TOAST DE NOTIFICATION FLOTTANT                                     -->
     <!-- ===================================================================== -->
     <div id="toastContainer" class="fixed top-2.5 left-1/2 -translate-x-1/2 z-40 flex flex-col items-center gap-1.5 pointer-events-none w-full max-w-xs px-4"></div>
 
     <!-- ===================================================================== -->
-    <!-- 5. EN-TÊTE ULTRA-COMPACT (SANS TEXTE "ZÉROABSOLU" POUR ZÉRO OVERFLOW) -->
+    <!-- 5. EN-TÊTE ULTRA-COMPACT (ZÉRO DÉBORDEMENT MOBILE)                    -->
     <!-- ===================================================================== -->
     <header id="mainHeader" class="w-full max-w-6xl mx-auto px-2.5 sm:px-4 pt-2 pb-1.5 flex items-center justify-between gap-1.5 border-b border-slate-800/80 shrink-0 overflow-hidden">
-      <!-- Gauche : Menu + Manche # + Code Salon -->
       <div class="flex items-center gap-1.5 min-w-0 shrink-0">
         <button onclick="openOnboardingModal()" title="Menu Salon / Pseudo"
-          class="w-8 h-8 rounded-xl bg-gradient-to-br from-sky-500 to-indigo-600 flex items-center justify-center shadow-md shadow-sky-500/10 hover:opacity-90 transition shrink-0">
-          <i data-lucide="thermometer-snowflake" class="w-4 h-4 text-white"></i>
+          class="w-8 h-8 rounded-xl bg-gradient-to-br from-sky-500 via-indigo-600 to-orange-500 flex items-center justify-center shadow-md shadow-sky-500/10 hover:opacity-90 transition shrink-0">
+          <i data-lucide="flame" class="w-4 h-4 text-white"></i>
         </button>
 
         <span id="roundBadge" class="text-xs font-mono-num bg-sky-500/15 text-sky-300 px-2 py-1 rounded-lg border border-sky-500/30 font-bold shrink-0">
@@ -319,9 +334,7 @@
         </button>
       </div>
 
-      <!-- Droite : Profil/Points + Indice (taille fixe) + Abandon + Suivant -->
       <div class="flex items-center gap-1.5 shrink-0">
-        <!-- Bouton Profil / Niveau / Points -->
         <button onclick="openStatsModal(myId)" title="Voir mon profil et mes statistiques"
           class="flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 px-2 py-1 rounded-lg transition shrink-0">
           <span id="headerLevelBadge" class="text-[10px] font-extrabold bg-sky-500/20 text-sky-300 px-1.5 py-0.2 rounded">N1</span>
@@ -329,7 +342,6 @@
           <span id="headerPoints" class="font-mono-num text-xs font-extrabold text-amber-400">0</span>
         </button>
 
-        <!-- Bouton Indice (Largeur fixe pour ne JAMAIS pousser les autres boutons hors de l'écran) -->
         <button id="hintBtn" onclick="useHint()" title="Indice (750 pts)"
           class="flex items-center justify-center gap-1 bg-slate-900/70 border border-slate-800 text-slate-500 text-xs font-semibold px-2 py-1 rounded-lg transition opacity-75 shrink-0">
           <span id="hintBtnContent" class="flex items-center gap-1">
@@ -338,13 +350,11 @@
           </span>
         </button>
 
-        <!-- Bouton Abandonner / Révéler -->
         <button id="giveUpBtn" onclick="giveUpRound()" title="Révéler le mot secret"
           class="w-8 h-8 flex items-center justify-center bg-slate-900 hover:bg-rose-950/50 border border-slate-800 text-slate-400 hover:text-rose-300 rounded-lg transition shrink-0">
           <i data-lucide="flag" class="w-3.5 h-3.5"></i>
         </button>
 
-        <!-- Bouton Manche Suivante -->
         <button id="nextGameBtn" onclick="triggerNextGame()" title="Manche suivante"
           class="w-8 h-8 flex items-center justify-center bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 rounded-lg transition shrink-0">
           <i data-lucide="skip-forward" class="w-3.5 h-3.5"></i>
@@ -358,9 +368,9 @@
     <div class="w-full max-w-6xl mx-auto px-3 sm:px-4 pt-1.5 shrink-0">
       <div class="bg-slate-900/90 border border-slate-800/90 rounded-xl px-2.5 py-1 flex items-center justify-between gap-2 text-xs">
         <div class="flex items-center gap-2 min-w-0 flex-1 overflow-hidden">
-          <span class="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0"></span>
+          <span class="inline-block w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse shrink-0"></span>
           <div class="overflow-hidden w-full">
-            <span id="liveTickerText" class="text-slate-300 font-medium text-[11px] block truncate">Prêt — Proposez un mot !</span>
+            <span id="liveTickerText" class="text-slate-300 font-medium text-[11px] block truncate">Atteignez 100% pour entrer en fusion !</span>
           </div>
         </div>
         <button onclick="openStatsModal(myId)" id="liveLeaderBadge" class="shrink-0 font-mono-num text-[10px] text-amber-400 font-bold bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 px-1.5 py-0.5 rounded transition">
@@ -375,7 +385,7 @@
     <div id="mobileTabsWrapper" class="lg:hidden w-full max-w-6xl mx-auto px-3 sm:px-4 pt-1.5 shrink-0">
       <div class="grid grid-cols-2 bg-slate-900/90 p-0.5 rounded-xl border border-slate-800 text-xs font-bold">
         <button id="tabGameBtn" onclick="switchMobileTab('game')" class="py-1 rounded-lg bg-slate-800 text-white transition flex items-center justify-center gap-1.5">
-          <i data-lucide="flame" class="w-3.5 h-3.5 text-sky-400"></i>
+          <i data-lucide="flame" class="w-3.5 h-3.5 text-orange-400"></i>
           <span>Mots (<span id="mobileAttemptCount">0</span>)</span>
         </button>
         <button id="tabSocialBtn" onclick="switchMobileTab('social')" class="py-1 rounded-lg text-slate-400 transition flex items-center justify-center gap-1.5 relative">
@@ -403,48 +413,48 @@
             </div>
             <div class="bg-slate-900/70 border border-slate-800/80 rounded-xl px-2.5 py-1.5 flex items-center justify-between">
               <span class="text-[10px] text-slate-400">Record</span>
-              <span id="statBestTemp" class="font-mono-num text-xs font-bold text-sky-400">--°C</span>
+              <span id="statBestScore" class="font-mono-num text-xs font-bold text-amber-400">0%</span>
             </div>
             <div class="bg-slate-900/70 border border-slate-800/80 rounded-xl px-2.5 py-1.5 flex items-center justify-between">
               <span class="text-[10px] text-slate-400">Top 1000</span>
-              <span id="statTopWords" class="font-mono-num text-xs font-bold text-amber-400">0</span>
+              <span id="statTopWords" class="font-mono-num text-xs font-bold text-orange-400">0</span>
             </div>
           </div>
           <div id="statsCollapsed" class="hidden bg-slate-900/50 border border-slate-800/60 rounded-lg px-2.5 py-1 flex items-center justify-between text-[11px] text-slate-400">
             <div class="flex items-center gap-3 font-mono-num">
               <span>Mots: <strong id="miniAttempts" class="text-slate-200">0</strong></span>
-              <span>Record: <strong id="miniBestTemp" class="text-sky-400">--°C</strong></span>
-              <span>Top: <strong id="miniTopWords" class="text-amber-400">0</strong></span>
+              <span>Record: <strong id="miniBestScore" class="text-amber-400">0%</strong></span>
+              <span>Top: <strong id="miniTopWords" class="text-orange-400">0</strong></span>
             </div>
             <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-500"></i>
           </div>
         </div>
 
-        <!-- Barre de Saisie -->
+        <!-- Barre de Saisie avec retour lumineux thermique -->
         <form id="guessForm" onsubmit="handleGuess(event)" class="relative flex gap-1.5 shrink-0">
           <div class="relative flex-1">
             <input id="wordInput" type="text" inputmode="text" enterkeyhint="send"
               placeholder="Proposer un mot..." autocomplete="off" autocapitalize="none" spellcheck="false"
-              class="w-full bg-slate-900 border border-slate-700/90 focus:border-sky-500 rounded-xl pl-3 pr-8 py-2 text-base font-medium placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500/20 transition">
+              class="w-full bg-slate-900 border border-slate-700/90 focus:border-sky-500 rounded-xl pl-3 pr-8 py-2 text-base font-medium placeholder:text-slate-500 focus:outline-none transition-all duration-300">
             <button type="button" onclick="clearInput()" class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 p-1">
               <i data-lucide="x" class="w-4 h-4"></i>
             </button>
           </div>
           <button type="submit"
-            class="bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 active:scale-[0.98] font-bold px-4 sm:px-5 rounded-xl text-sm transition shadow-lg shadow-sky-600/20 flex items-center gap-1 shrink-0">
+            class="bg-gradient-to-r from-sky-500 via-indigo-600 to-purple-600 hover:from-sky-400 hover:to-purple-500 active:scale-[0.97] font-bold px-4 sm:px-5 rounded-xl text-sm transition shadow-lg shadow-indigo-600/20 flex items-center gap-1 shrink-0">
             <span>OK</span>
             <i data-lucide="corner-down-left" class="w-3.5 h-3.5 hidden sm:inline"></i>
           </button>
         </form>
 
-        <!-- Bannière de Fin de Manche -->
-        <div id="victoryBanner" class="hidden bg-gradient-to-r from-emerald-950/90 via-teal-950/90 to-slate-900 border border-emerald-500/40 rounded-xl p-2.5 animate-pop shrink-0">
+        <!-- Bannière de Fin de Manche (Thème Magma / Soleil cohérent avec le 100%) -->
+        <div id="victoryBanner" class="hidden solar-victory-card border rounded-xl p-2.5 animate-pop shrink-0">
           <div class="flex items-center justify-between gap-2">
             <div class="min-w-0">
-              <h3 id="victoryTitle" class="text-xs sm:text-sm font-extrabold text-white truncate">Mot trouvé !</h3>
-              <p id="victorySub" class="text-[11px] text-slate-300 truncate"></p>
+              <h3 id="victoryTitle" class="text-xs sm:text-sm font-extrabold text-amber-200 truncate">☀️ Fusion atteinte !</h3>
+              <p id="victorySub" class="text-[11px] text-amber-100/90 truncate"></p>
             </div>
-            <button onclick="triggerNextGame()" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs px-3 py-1.5 rounded-lg transition shrink-0">
+            <button onclick="triggerNextGame()" class="bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-300 hover:to-orange-400 text-slate-950 font-extrabold text-xs px-3 py-1.5 rounded-lg transition shrink-0 shadow-md">
               Suivant
             </button>
           </div>
@@ -460,8 +470,9 @@
           <div class="flex justify-between items-center text-[11px] text-slate-400 border-b border-slate-800 pb-1.5 mb-1.5 shrink-0 px-0.5">
             <span class="font-bold text-slate-300">🔥 Mots chauds</span>
             <div class="flex items-center gap-1.5">
-              <div class="w-12 h-1.5 rounded-full thermal-spectrum"></div>
-              <span class="text-[10px] text-slate-500">Temp.</span>
+              <span class="text-[10px] text-sky-400">0%</span>
+              <div class="w-14 h-1.5 rounded-full thermal-spectrum"></div>
+              <span class="text-[10px] text-amber-400 font-bold">100%</span>
             </div>
           </div>
           <div id="guessesList" class="flex-1 overflow-y-auto flex flex-col gap-1 pr-0.5">
@@ -471,10 +482,9 @@
 
       </section>
 
-      <!-- COLONNE DROITE : JOUEURS (CLIQUABLES) & DIRECT -->
+      <!-- COLONNE DROITE : JOUEURS & DIRECT -->
       <aside id="socialSection" class="hidden lg:flex lg:col-span-5 flex-col gap-2.5 min-h-0 h-full">
 
-        <!-- Classement des joueurs (Cliquer sur un joueur ouvre ses statistiques) -->
         <div class="bg-slate-900/60 border border-slate-800/90 rounded-2xl p-3 shrink-0">
           <div class="flex items-center justify-between border-b border-slate-800 pb-2 mb-2">
             <div class="flex items-center gap-1.5">
@@ -489,16 +499,17 @@
           <div id="leaderboardList" class="flex flex-col gap-1.5 max-h-40 overflow-y-auto pr-0.5"></div>
         </div>
 
-        <!-- Journal Direct (Vidé automatiquement à chaque nouvelle manche) -->
+        <!-- Journal Direct avec Bouton Filtre Inversé (Affiche l'action à effectuer) -->
         <div class="bg-slate-900/60 border border-slate-800/90 rounded-2xl p-3 flex-1 flex flex-col min-h-0 overflow-hidden">
           <div class="flex items-center justify-between border-b border-slate-800 pb-2 mb-2 shrink-0">
             <div class="flex items-center gap-1.5">
-              <i data-lucide="radio" class="w-3.5 h-3.5 text-sky-400"></i>
+              <i data-lucide="radio" class="w-3.5 h-3.5 text-orange-400"></i>
               <h2 class="font-bold text-xs uppercase tracking-wider text-slate-300">Direct (Manche)</h2>
             </div>
+            <!-- Quand tout est affiché, le bouton propose l'action "🔥 Chauds seuls" -->
             <button id="feedFilterBtn" onclick="toggleFeedFilter()"
-              class="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-slate-800 text-slate-300 hover:bg-slate-700 transition">
-              Tout afficher
+              class="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-slate-800 text-amber-300 hover:bg-slate-700 border border-slate-700 transition">
+              🔥 Chauds seuls
             </button>
           </div>
           <div id="liveFeed" class="flex-1 overflow-y-auto flex flex-col gap-1 pr-0.5 text-xs"></div>
@@ -512,7 +523,7 @@
 
   <script>
     // =========================================================================
-    // 1. CONFIGURATION, GAMIFICATION (XP / NIVEAUX) & ÉTAT GLOBAL
+    // 1. CONFIGURATION, ÉCHELLE UNIQUE EN % & GAMIFICATION
     // =========================================================================
     const TOTAL_GAMES = 500;
     const HINT_COST = 750;
@@ -551,9 +562,8 @@
 
     let guesses = [];
     let roundFinished = false;
-    let roomBestTemp = null;
+    let roomBestScorePct = 0; // Score record du salon en % (0 à 100%)
     let roomBestRank = 0;
-    let roomBestProximityPct = 0;
 
     let players = {};
     let selectedStatsPlayerId = myId;
@@ -564,7 +574,6 @@
     let feedOnlyHot = false;
     let feedEvents = [];
 
-    // Calcul du niveau et du titre honorifique à partir de l'XP cumulée
     function getLevelInfo(xp = 0) {
       const safeXp = Math.max(0, Number(xp) || 0);
       const level = Math.floor(safeXp / XP_PER_LEVEL) + 1;
@@ -572,13 +581,48 @@
       const progressPct = Math.min(100, Math.round((currentLevelXp / XP_PER_LEVEL) * 100));
 
       let title = "❄️ Flocon Curieux";
-      if (level >= 20) title = "👑 Seigneur du Zéro Absolu";
-      else if (level >= 14) title = "☀️ Maître du Plasma";
-      else if (level >= 9) title = "⚡ Oracle Sémantique";
-      else if (level >= 5) title = "🔥 Chasseur Thermique";
+      if (level >= 20) title = "☀️ Cœur Solaire";
+      else if (level >= 14) title = "🌋 Maître du Magma";
+      else if (level >= 9) title = "⚡ Oracle Thermique";
+      else if (level >= 5) title = "🔥 Chasseur de Braises";
       else if (level >= 3) title = "🧊 Sondeur Polaire";
 
       return { level, currentLevelXp, nextLevelXp: XP_PER_LEVEL, progressPct, title };
+    }
+
+    // =========================================================================
+    // 2. ÉCHELLE UNIFIÉE DE CHALEUR EN % (FINI LES °C ET LES ‰ CONFUS)
+    // =========================================================================
+    // Convertit n'importe quel mot en un pourcentage limpide de 1.0% à 100% :
+    // - Hors Top 1000 (froid) : 1.0% à 39.9%
+    // - Top 1000 (rang 1 à 899) : 40.0% à 89.9%
+    // - Top 100 (rang 900 à 989) : 90.0% à 98.9%
+    // - Top 10 (rang 990 à 999) : 99.0% à 99.9% (ex: 99.9% = Top 1)
+    // - Mot secret (rang 1000) : 100%
+    function computeUnifiedScorePct(temp, rank) {
+      if (rank === 1000) return 100;
+      if (rank !== null && rank >= 900) {
+        return Number((rank / 10).toFixed(1)); // 90.0% à 99.9%
+      }
+      if (rank !== null && rank > 0) {
+        const mapped = 40 + (rank / 900) * 49.9;
+        return Number(mapped.toFixed(1)); // 40.0% à 89.9%
+      }
+      const normCold = Math.max(0, Math.min(1, (temp + 12) / 40));
+      return Number((1 + normCold * 38.5).toFixed(1)); // 1.0% à 39.5%
+    }
+
+    // Donne le rang humainement lisible ("Top 1" = le plus proche, "Top 15" = 15e plus proche)
+    function getReadableTopLabel(rank) {
+      if (rank === 1000) return "☀️ FUSION";
+      if (!rank) return null;
+      const topPosition = 1000 - rank; // rank 999 -> Top 1, rank 990 -> Top 10
+      return `Top ${topPosition}`;
+    }
+
+    function formatPct(scorePct) {
+      if (scorePct >= 100) return "100%";
+      return `${Number(scorePct).toFixed(1)}%`;
     }
 
     function pickUnplayedGameId() {
@@ -611,7 +655,7 @@
     }
 
     // =========================================================================
-    // 2. CLAVIER MOBILE & MINIMISATION AUTO DES STATS (10 SECONDES)
+    // 3. CLAVIER MOBILE & MINIMISATION AUTO DES STATS (10 SECONDES)
     // =========================================================================
     let initialScreenHeight = window.innerHeight;
 
@@ -695,7 +739,7 @@
         totalAttempts: players[myId]?.totalAttempts ?? savedStats.totalAttempts ?? 0,
         hotWordsFound: players[myId]?.hotWordsFound ?? savedStats.hotWordsFound ?? 0,
         top10Found: players[myId]?.top10Found ?? savedStats.top10Found ?? 0,
-        bestTemp: players[myId]?.bestTemp ?? null,
+        bestScorePct: players[myId]?.bestScorePct ?? 0,
         bestRank: players[myId]?.bestRank ?? 0,
         attempts: players[myId]?.attempts ?? 0
       };
@@ -724,7 +768,6 @@
       document.getElementById("headerLevelBadge").textContent = `N${lvlInfo.level}`;
     }
 
-    // Bouton Indice à largeur strictement constante (icône + 750) pour ne jamais déborder sur mobile
     function updateHintButtonUI() {
       const me = players[myId];
       const btn = document.getElementById("hintBtn");
@@ -744,7 +787,7 @@
     }
 
     // =========================================================================
-    // 3. MODALE PROFIL JOUEUR, STATISTIQUES & CLASSEMENT
+    // 4. MODALE PROFIL JOUEUR, STATISTIQUES & CLASSEMENT
     // =========================================================================
     function openStatsModal(targetPlayerId = myId) {
       selectedStatsPlayerId = players[targetPlayerId] ? targetPlayerId : myId;
@@ -766,7 +809,6 @@
       const p = players[selectedStatsPlayerId] || players[myId];
       if (!p) return;
 
-      // Onglets pour passer d'un joueur à l'autre dans le salon
       const tabsContainer = document.getElementById("statsPlayerTabs");
       tabsContainer.innerHTML = sorted.map(player => {
         const active = player.id === p.id;
@@ -797,7 +839,6 @@
       document.getElementById("statCardPrecision").textContent = `${precision}%`;
       document.getElementById("statCardPoints").textContent = p.points || 0;
 
-      // Classement complet dans la modale
       const modalList = document.getElementById("modalLeaderboardList");
       modalList.innerHTML = sorted.map((pl, idx) => {
         const plLvl = getLevelInfo(pl.xp || 0);
@@ -811,7 +852,7 @@
               <span class="text-[10px] font-extrabold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-1.5 py-0.5 rounded">Niv.${plLvl.level}</span>
               <div class="min-w-0">
                 <span class="font-bold text-xs text-white truncate block">${escapeHTML(pl.pseudo)}</span>
-                <span class="text-[10px] text-slate-400">🏆 ${pl.wins || 0} vict. • 🎯 ${pl.totalAttempts || 0} mots</span>
+                <span class="text-[10px] text-slate-400">☀️ ${pl.wins || 0} vict. • 🎯 ${pl.totalAttempts || 0} mots</span>
               </div>
             </div>
             <div class="text-right shrink-0 font-mono-num">
@@ -824,7 +865,7 @@
     }
 
     // =========================================================================
-    // 4. RECONNAISSANCE MORPHOLOGIQUE (FÉMININS, PLURIELS, TIRETS)
+    // 5. RECONNAISSANCE MORPHOLOGIQUE (FÉMININS, PLURIELS, TIRETS)
     // =========================================================================
     function buildAccentInsensitiveIndex() {
       accentInsensitiveMap = {};
@@ -879,40 +920,28 @@
     }
 
     // =========================================================================
-    // 5. PROXIMITÉ & NOTIFICATION « PERCÉE MAJEURE » (6,5s + FERMABLE AU CLIC)
+    // 6. DÉTECTION « MONTÉE EN FUSION » (SUR ÉCHELLE UNIQUE %)
     // =========================================================================
-    function computeProximityPct(temp, rank) {
-      if (rank === 1000) return 100;
-      if (rank !== null && rank > 0) {
-        return 38 + (rank / 1000) * 61.5;
-      }
-      const normalizedCold = Math.max(0, Math.min(1, (temp + 10) / 38));
-      return 4 + normalizedCold * 33;
-    }
+    function checkPowerSurge(rank, newScorePct) {
+      if (rank === 1000 || guesses.length < 2 || roomBestScorePct <= 0) return null;
 
-    function checkPowerSurge(temp, rank, newPct) {
-      if (rank === 1000 || guesses.length < 2 || roomBestTemp === null) return null;
+      const pctJump = newScorePct - roomBestScorePct;
+      const milestoneHit = (rank >= 990 && roomBestRank < 990) || (rank >= 900 && roomBestRank < 750);
 
-      const prevTemp = roomBestTemp;
-      const prevPct = roomBestProximityPct;
-      const prevRank = roomBestRank;
-
-      const relTempGain = prevTemp > 5 ? ((temp - prevTemp) / prevTemp) * 100 : (temp - prevTemp) * 4;
-      const pctJump = newPct - prevPct;
-      const milestoneHit = (rank >= 990 && prevRank < 990) || (rank >= 900 && prevRank < 750);
-
-      if (temp > prevTemp && temp >= 18 && (relTempGain >= 20 || pctJump >= 14 || milestoneHit)) {
-        return Math.max(20, Math.min(99, Math.round(Math.max(relTempGain, pctJump * 1.5))));
+      // Si le joueur fait bondir le record du salon d'au moins +15% ou entre dans le Top 10 / Top 100
+      if (newScorePct > roomBestScorePct && newScorePct >= 45 && (pctJump >= 15 || milestoneHit)) {
+        return Math.max(15, Math.round(pctJump));
       }
       return null;
     }
 
-    function triggerSurgeAnimation(pseudo, word, temp, gainPct) {
+    function triggerSurgeAnimation(pseudo, word, scorePct, rank, gainPct) {
       const overlay = document.getElementById("surgeOverlay");
       document.getElementById("surgePlayerName").textContent = pseudo;
       document.getElementById("surgeWord").textContent = word;
-      document.getElementById("surgeTemp").textContent = `${temp.toFixed(1)}°C`;
-      document.getElementById("surgeDelta").textContent = `+${gainPct}%`;
+      document.getElementById("surgeScore").textContent = formatPct(scorePct);
+      const topLbl = getReadableTopLabel(rank);
+      document.getElementById("surgeBadge").textContent = topLbl ? `🔥 ${topLbl}` : `+${gainPct}%`;
 
       overlay.classList.remove("hidden");
       lucide.createIcons();
@@ -920,17 +949,17 @@
 
       if (typeof confetti === "function") {
         confetti({
-          particleCount: 25,
+          particleCount: 28,
           spread: 60,
           origin: { y: 0.55 },
-          colors: ["#38bdf8", "#a855f7", "#f59e0b", "#f43f5e"]
+          colors: ["#dc2626", "#f97316", "#facc15", "#fef08a"]
         });
       }
 
       if (surgeHideTimer) clearTimeout(surgeHideTimer);
       surgeHideTimer = setTimeout(() => {
         dismissSurgeOverlay();
-      }, 6500); // Durée doublée à 6,5 secondes pour laisser le temps de lire
+      }, 6500);
     }
 
     function dismissSurgeOverlay() {
@@ -945,7 +974,7 @@
     }
 
     // =========================================================================
-    // 6. MODALE D'ACCUEIL & MULTIJOUEUR
+    // 7. MODALE D'ACCUEIL & MULTIJOUEUR
     // =========================================================================
     function handleRoomCodeInput(input) {
       const cleaned = input.value.replace(/[^a-zA-Z]/g, "").toUpperCase().slice(0, 4);
@@ -1057,7 +1086,7 @@
         }
         addSystemFeedEvent(`Salon ${roomCode} créé (code copié)`);
         updateLiveTicker(`Salon ${roomCode} actif • Code copié !`);
-        showToast(`📋 Salon ${roomCode} créé et copié !`, "emerald");
+        showToast(`📋 Salon ${roomCode} créé et copié !`, "amber");
       });
 
       peer.on("connection", (conn) => {
@@ -1074,9 +1103,8 @@
               roundNumber,
               players,
               guesses,
-              roomBestTemp,
-              roomBestRank,
-              roomBestProximityPct
+              roomBestScorePct,
+              roomBestRank
             });
             addSystemFeedEvent(`${leftName} a quitté`);
             renderLeaderboard();
@@ -1143,7 +1171,7 @@
           totalAttempts: Number(data.player.totalAttempts) || 0,
           hotWordsFound: Number(data.player.hotWordsFound) || 0,
           top10Found: Number(data.player.top10Found) || 0,
-          bestTemp: null,
+          bestScorePct: 0,
           bestRank: 0,
           attempts: 0
         };
@@ -1154,9 +1182,8 @@
           roundNumber,
           players,
           guesses,
-          roomBestTemp,
+          roomBestScorePct,
           roomBestRank,
-          roomBestProximityPct,
           joinText: joinMsg
         });
         renderLeaderboard();
@@ -1171,9 +1198,8 @@
     function handleClientReceivedData(data) {
       if (data.type === "STATE_SYNC") {
         players = data.players || players;
-        roomBestTemp = data.roomBestTemp ?? roomBestTemp;
+        roomBestScorePct = data.roomBestScorePct || 0;
         roomBestRank = data.roomBestRank || 0;
-        roomBestProximityPct = data.roomBestProximityPct || 0;
 
         if (data.gameId && data.gameId !== currentGameId) {
           loadGame(data.gameId, data.roundNumber || roundNumber, data.guesses || []);
@@ -1233,24 +1259,22 @@
     }
 
     // =========================================================================
-    // 7. CHARGEMENT DE MANCHE (PURGE DU DIRECT) & VALIDATION DES MOTS
+    // 8. CHARGEMENT DE MANCHE & VALIDATION DES MOTS
     // =========================================================================
     async function loadGame(gameId, displayRound = roundNumber, initialGuesses = []) {
       currentGameId = gameId;
       roundNumber = displayRound;
       guesses = initialGuesses;
       roundFinished = false;
-      roomBestTemp = null;
+      roomBestScorePct = 0;
       roomBestRank = 0;
-      roomBestProximityPct = 0;
 
-      // Vider les messages des manches précédentes dans l'écran Direct
       feedEvents = [];
       renderFeed();
       dismissSurgeOverlay();
 
       Object.values(players).forEach(p => {
-        p.bestTemp = null;
+        p.bestScorePct = 0;
         p.bestRank = 0;
         p.attempts = 0;
       });
@@ -1285,11 +1309,18 @@
       } else {
         document.getElementById("guessesList").innerHTML = `
           <p class="text-slate-500 text-xs text-center my-auto py-8">
-            Manche #${roundNumber} prête • Proposez un mot !
+            Manche #${roundNumber} prête • Montez jusqu'à 100% !
           </p>`;
       }
       addSystemFeedEvent(`🎯 Manche #${roundNumber} lancée`);
       updateLiveTicker(roomCode ? `Salon ${roomCode} • Manche #${roundNumber}` : `Manche #${roundNumber} en cours`);
+    }
+
+    function flashInputThermalGlow(scorePct) {
+      const input = document.getElementById("wordInput");
+      const cls = scorePct >= 90 ? "input-glow-hot" : scorePct >= 40 ? "input-glow-warm" : "input-glow-cold";
+      input.classList.add(cls);
+      setTimeout(() => input.classList.remove(cls), 420);
     }
 
     function handleGuess(e) {
@@ -1328,12 +1359,14 @@
       const rank = Array.isArray(entry) ? entry[1] : null;
       const isWin = rank === 1000;
       const isTop10 = rank !== null && rank >= 990 && rank < 1000;
-      const proximityPct = computeProximityPct(temp, rank);
+      const scorePct = computeUnifiedScorePct(temp, rank);
 
-      const surgeGain = checkPowerSurge(temp, rank, proximityPct);
+      flashInputThermalGlow(scorePct);
+
+      const surgeGain = checkPowerSurge(rank, scorePct);
 
       let pointsEarned = 0;
-      let xpEarned = 15; // Chaque mot valide donne au minimum 15 XP de progression
+      let xpEarned = 15;
       let isNewRecord = false;
 
       if (!roundFinished) {
@@ -1342,11 +1375,9 @@
         else if (rank >= 900) pointsEarned += 30;
         else if (rank !== null) pointsEarned += 10;
 
-        if ((rank !== null && rank > roomBestRank) || (roomBestRank === 0 && (roomBestTemp === null || temp > roomBestTemp))) {
-          if (!isWin) {
-            isNewRecord = true;
-            pointsEarned += 25;
-          }
+        if (scorePct > roomBestScorePct && !isWin) {
+          isNewRecord = true;
+          pointsEarned += 25;
         }
         xpEarned += pointsEarned;
       }
@@ -1362,13 +1393,13 @@
       me.points += pointsEarned;
       me.xp = (me.xp || 0) + xpEarned;
 
-      if (me.bestTemp === null || temp > me.bestTemp) me.bestTemp = temp;
+      if (scorePct > (me.bestScorePct || 0)) me.bestScorePct = scorePct;
       if (rank && rank > me.bestRank) me.bestRank = rank;
       if (isWin && !roundFinished) me.wins += 1;
 
       const newLevelInfo = getLevelInfo(me.xp);
       if (newLevelInfo.level > prevLevel) {
-        showToast(`🆙 Niveau ${newLevelInfo.level} atteint (${newLevelInfo.title}) !`, "emerald");
+        showToast(`🆙 Niveau ${newLevelInfo.level} (${newLevelInfo.title}) !`, "amber");
       }
 
       saveLocalProgress();
@@ -1381,7 +1412,7 @@
         word: resolvedWord,
         temp,
         rank,
-        proximityPct,
+        scorePct,
         isWin,
         isTop10,
         isNewRecord,
@@ -1393,7 +1424,7 @@
         totalAttempts: me.totalAttempts,
         hotWordsFound: me.hotWordsFound,
         top10Found: me.top10Found,
-        bestTemp: me.bestTemp,
+        bestScorePct: me.bestScorePct,
         bestRank: me.bestRank,
         playerAttempts: me.attempts
       };
@@ -1405,6 +1436,8 @@
     function applySharedGuess(data, isLocal) {
       if (guesses.some(g => g.word === data.word)) return;
 
+      const scorePct = data.scorePct ?? computeUnifiedScorePct(data.temp, data.rank);
+
       const p = players[data.playerId] || { id: data.playerId, pseudo: data.pseudo, points: 0, xp: 0, wins: 0 };
       p.pseudo = data.pseudo;
       p.points = data.totalPoints;
@@ -1413,21 +1446,20 @@
       p.totalAttempts = data.totalAttempts ?? data.playerAttempts;
       p.hotWordsFound = data.hotWordsFound ?? p.hotWordsFound ?? 0;
       p.top10Found = data.top10Found ?? p.top10Found ?? 0;
-      p.bestTemp = data.bestTemp;
+      p.bestScorePct = data.bestScorePct ?? scorePct;
       p.bestRank = data.bestRank;
       p.attempts = data.playerAttempts;
       players[data.playerId] = p;
 
-      if (roomBestTemp === null || data.temp > roomBestTemp) roomBestTemp = data.temp;
+      if (scorePct > roomBestScorePct) roomBestScorePct = scorePct;
       if (data.rank && data.rank > roomBestRank) roomBestRank = data.rank;
-      if (data.proximityPct > roomBestProximityPct) roomBestProximityPct = data.proximityPct;
 
       const guessObj = {
         num: guesses.length + 1,
         word: data.word,
         temp: data.temp,
         rank: data.rank,
-        proximityPct: data.proximityPct,
+        scorePct,
         isWin: data.isWin,
         isTop10: data.isTop10,
         finderId: data.playerId,
@@ -1435,7 +1467,8 @@
       };
 
       guesses.push(guessObj);
-      guesses.sort((a, b) => b.temp - a.temp);
+      // Tri du plus proche (100%) au plus froid
+      guesses.sort((a, b) => (b.scorePct - a.scorePct) || (b.temp - a.temp));
 
       renderLastGuess(guessObj, true);
       renderGuesses(data.word);
@@ -1450,25 +1483,26 @@
       addWordFeedEvent(guessObj, data.surgeGain, data.isNewRecord);
 
       if (data.surgeGain) {
-        triggerSurgeAnimation(data.pseudo, data.word, data.temp, data.surgeGain);
-        updateLiveTicker(`🚀 ${data.pseudo} : ${data.word.toUpperCase()} (${data.temp.toFixed(1)}°C • +${data.surgeGain}%)`);
+        triggerSurgeAnimation(data.pseudo, data.word, scorePct, data.rank, data.surgeGain);
+        updateLiveTicker(`🌋 ${data.pseudo} : ${data.word.toUpperCase()} (${formatPct(scorePct)})`);
       } else if (data.isTop10 && isLocal) {
-        showToast(`🔥 TOP ${1000 - data.rank} !`, "amber");
+        showToast(`🌋 ${getReadableTopLabel(data.rank)} (${formatPct(scorePct)}) !`, "amber");
       }
 
       if (data.isWin) {
         roundFinished = true;
         updateHintButtonUI();
-        triggerVictoryConfetti();
+        triggerSolarVictoryConfetti();
         showVictoryBanner(data.pseudo, data.word, guesses.length, false);
-        updateLiveTicker(`🏆 ${data.pseudo} a trouvé ${data.word.toUpperCase()} !`);
+        updateLiveTicker(`☀️ ${data.pseudo} a trouvé ${data.word.toUpperCase()} (100%) !`);
       } else if (data.isNewRecord && !data.surgeGain) {
-        updateLiveTicker(`🔥 Record par ${data.pseudo} : ${data.word} (${data.temp.toFixed(1)}°C)`);
+        const topInfo = data.rank ? ` (${getReadableTopLabel(data.rank)})` : "";
+        updateLiveTicker(`🔥 Record par ${data.pseudo} : ${data.word} • ${formatPct(scorePct)}${topInfo}`);
       }
     }
 
     // =========================================================================
-    // 8. INDICE & ABANDON
+    // 9. INDICE & ABANDON
     // =========================================================================
     function useHint() {
       if (roundFinished) return;
@@ -1552,7 +1586,7 @@
     }
 
     // =========================================================================
-    // 9. RENDU DES MOTS & ANIMATION DE BARRE DEPUIS 0%
+    // 10. RENDU DES MOTS, EFFET MAGMA/SOLEIL & COMPTEUR % ANIMÉ
     // =========================================================================
     function triggerInputShake(element) {
       if (!element) return;
@@ -1571,14 +1605,16 @@
       }
     }
 
-    function triggerVictoryConfetti() {
+    // Confettis aux couleurs du Soleil / Magma lors de la victoire
+    function triggerSolarVictoryConfetti() {
       if (typeof confetti !== "function") return;
-      const duration = 2200;
+      const duration = 2300;
       const end = Date.now() + duration;
+      const solarColors = ["#dc2626", "#ea580c", "#facc15", "#fef08a", "#ffffff"];
 
       (function frame() {
-        confetti({ particleCount: 5, angle: 60, spread: 55, origin: { x: 0, y: 0.65 } });
-        confetti({ particleCount: 5, angle: 120, spread: 55, origin: { x: 1, y: 0.65 } });
+        confetti({ particleCount: 5, angle: 60, spread: 55, origin: { x: 0, y: 0.65 }, colors: solarColors });
+        confetti({ particleCount: 5, angle: 120, spread: 55, origin: { x: 1, y: 0.65 }, colors: solarColors });
         if (Date.now() < end) requestAnimationFrame(frame);
       })();
     }
@@ -1586,40 +1622,60 @@
     function showVictoryBanner(winnerPseudo, secretWord, totalAttempts, isGiveUp = false) {
       const banner = document.getElementById("victoryBanner");
       banner.classList.remove("hidden");
-      document.getElementById("victoryTitle").textContent = `Réponse : ${secretWord.toUpperCase()}`;
+      document.getElementById("victoryTitle").textContent = `☀️ Réponse : ${secretWord.toUpperCase()} (100%)`;
       document.getElementById("victorySub").textContent = isGiveUp
         ? "Manche révélée"
-        : `Trouvé par ${winnerPseudo} (${totalAttempts} mots)`;
+        : `Fusion atteinte par ${winnerPseudo} (${totalAttempts} mots)`;
     }
 
     function renderRowHTML(g, isNewWord = false) {
-      const width = Math.max(4, Math.min(100, g.proximityPct || computeProximityPct(g.temp, g.rank)));
+      const width = Math.max(4, Math.min(100, g.scorePct));
       const targetClipRight = (100 - width).toFixed(1);
-      // Si c'est le nouveau mot qui vient d'être entré, sa barre commence à 0% (clip 100%) puis se remplit rapidement
       const initialClipRight = isNewWord ? "100" : targetClipRight;
 
+      const topLabel = getReadableTopLabel(g.rank);
       let badgeHTML = "";
+
       if (g.isWin) {
-        badgeHTML = `<span class="bg-emerald-500/20 text-emerald-300 text-[10px] font-bold px-1.5 py-0.2 rounded">🏆</span>`;
+        badgeHTML = `<span class="bg-amber-400/25 text-amber-200 border border-amber-300/60 text-[10px] font-extrabold px-1.5 py-0.2 rounded shadow-sm">☀️ FUSION</span>`;
       } else if (g.isTop10) {
-        badgeHTML = `<span class="bg-rose-500/25 text-rose-200 text-[10px] font-extrabold px-1.5 py-0.2 rounded">TOP ${1000 - g.rank}</span>`;
+        badgeHTML = `<span class="bg-orange-500/30 text-amber-200 border border-amber-400/60 text-[10px] font-extrabold px-1.5 py-0.2 rounded">🌋 ${topLabel}</span>`;
+      } else if (g.rank >= 900) {
+        badgeHTML = `<span class="bg-rose-500/20 text-rose-200 border border-rose-400/40 text-[10px] font-bold px-1.5 py-0.2 rounded">🔥 ${topLabel}</span>`;
       } else if (g.rank) {
-        badgeHTML = `<span class="bg-purple-500/15 text-purple-300 text-[10px] font-semibold px-1.5 py-0.2 rounded">${g.rank}‰</span>`;
+        badgeHTML = `<span class="bg-purple-500/15 text-purple-300 border border-purple-500/30 text-[10px] font-semibold px-1.5 py-0.2 rounded">${topLabel}</span>`;
       }
 
       const isMe = g.finderId === myId;
       const authorColor = isMe ? "text-sky-400" : "text-indigo-300";
 
-      const borderClass = g.isTop10
-        ? "border-rose-500/50 bg-rose-950/15"
-        : g.isWin
-          ? "border-emerald-500/50 bg-emerald-950/20"
-          : isNewWord
-            ? "border-sky-500/50 bg-slate-800/85 animate-word-entry"
-            : "border-slate-800/70 bg-slate-800/35";
+      // Couleur de la carte et de la barre (Magma/Soleil pour 100% et Top 10, plus aucun vert incohérent)
+      let cardStyle = "border-slate-800/70 bg-slate-800/35";
+      if (g.isWin) {
+        cardStyle = "solar-victory-card";
+      } else if (g.isTop10) {
+        cardStyle = "border-amber-500/60 bg-gradient-to-r from-red-950/35 via-orange-950/35 to-amber-950/30 shadow-[0_0_15px_rgba(249,115,22,0.18)]";
+      } else if (g.rank >= 900) {
+        cardStyle = "border-rose-500/40 bg-rose-950/15";
+      }
+
+      if (isNewWord) {
+        cardStyle += " animate-word-entry";
+      }
+
+      const barClass = (g.isWin || g.isTop10) ? "solar-magma-bar" : "thermal-spectrum";
+      const pctColor = g.isWin
+        ? "text-amber-300"
+        : g.isTop10
+          ? "text-amber-400"
+          : g.rank >= 900
+            ? "text-orange-400"
+            : g.rank
+              ? "text-purple-300"
+              : "text-slate-300";
 
       return `
-        <div data-word="${escapeHTML(g.word)}" class="rounded-xl px-2.5 py-1.5 border ${borderClass} flex flex-col gap-1 transition-all shrink-0">
+        <div data-word="${escapeHTML(g.word)}" class="rounded-xl px-2.5 py-1.5 border ${cardStyle} flex flex-col gap-1 transition-all shrink-0">
           <div class="flex justify-between items-center text-xs gap-2">
             <div class="flex items-center gap-1.5 min-w-0">
               <span class="text-slate-500 font-mono-num text-[10px]">#${g.num}</span>
@@ -1628,11 +1684,14 @@
             </div>
             <div class="flex items-center gap-1.5 shrink-0">
               ${badgeHTML}
-              <span class="font-mono-num font-bold text-xs">${g.temp.toFixed(1)}°C</span>
+              <span class="font-mono-num font-extrabold text-xs ${pctColor} ${isNewWord ? 'pct-counter-anim' : ''}"
+                    data-target-pct="${g.scorePct}">
+                ${isNewWord ? '0.0%' : formatPct(g.scorePct)}
+              </span>
             </div>
           </div>
           <div class="w-full bg-slate-950 h-1.5 rounded-full overflow-hidden">
-            <div class="w-full h-full thermal-spectrum thermal-bar-fill transition-[clip-path] duration-[450ms] ease-out"
+            <div class="w-full h-full ${barClass} thermal-bar-fill transition-[clip-path] duration-[440ms] ease-out"
                  data-target-clip="${targetClipRight}"
                  style="clip-path: inset(0 ${initialClipRight}% 0 0 round 9999px);"></div>
           </div>
@@ -1640,12 +1699,29 @@
       `;
     }
 
+    // Anime simultanément le remplissage de la barre de 0% à X% et le compteur chiffré (420ms)
     function animateNewWordBars() {
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
           document.querySelectorAll(".thermal-bar-fill[data-target-clip]").forEach(bar => {
             const target = bar.getAttribute("data-target-clip");
             bar.style.clipPath = `inset(0 ${target}% 0 0 round 9999px)`;
+          });
+
+          document.querySelectorAll(".pct-counter-anim[data-target-pct]").forEach(el => {
+            const targetVal = parseFloat(el.getAttribute("data-target-pct")) || 0;
+            el.classList.remove("pct-counter-anim");
+            const duration = 400;
+            const startTime = performance.now();
+
+            function step(now) {
+              const progress = Math.min(1, (now - startTime) / duration);
+              const eased = 1 - Math.pow(1 - progress, 3); // Ease-out cubic
+              const current = targetVal * eased;
+              el.textContent = targetVal >= 100 && progress === 1 ? "100%" : `${current.toFixed(1)}%`;
+              if (progress < 1) requestAnimationFrame(step);
+            }
+            requestAnimationFrame(step);
           });
         });
       });
@@ -1666,16 +1742,16 @@
 
     function updateStatsUI() {
       const total = guesses.length;
-      const bestStr = roomBestTemp !== null ? `${roomBestTemp.toFixed(1)}°C` : "--°C";
+      const bestStr = roomBestScorePct > 0 ? formatPct(roomBestScorePct) : "0%";
       const topCount = guesses.filter(g => g.rank !== null).length;
 
       document.getElementById("statAttempts").textContent = total;
       document.getElementById("mobileAttemptCount").textContent = total;
-      document.getElementById("statBestTemp").textContent = bestStr;
+      document.getElementById("statBestScore").textContent = bestStr;
       document.getElementById("statTopWords").textContent = topCount;
 
       document.getElementById("miniAttempts").textContent = total;
-      document.getElementById("miniBestTemp").textContent = bestStr;
+      document.getElementById("miniBestScore").textContent = bestStr;
       document.getElementById("miniTopWords").textContent = topCount;
     }
 
@@ -1694,11 +1770,10 @@
       const allPlayers = Object.values(players);
 
       const sortedByPoints = [...allPlayers].sort((a, b) => (b.points - a.points) || (b.wins - a.wins));
-      const roundLeader = [...allPlayers].sort((a, b) => (b.bestRank - a.bestRank) || ((b.bestTemp ?? -999) - (a.bestTemp ?? -999)))[0];
+      const roundLeader = [...allPlayers].sort((a, b) => (b.bestScorePct || 0) - (a.bestScorePct || 0))[0];
 
-      if (roundLeader && (roundLeader.bestRank > 0 || roundLeader.bestTemp !== null)) {
-        const scoreStr = roundLeader.bestRank ? `${roundLeader.bestRank}‰` : `${roundLeader.bestTemp.toFixed(1)}°C`;
-        document.getElementById("liveLeaderBadge").textContent = `🥇 ${roundLeader.pseudo} (${scoreStr})`;
+      if (roundLeader && roundLeader.bestScorePct > 0) {
+        document.getElementById("liveLeaderBadge").textContent = `🥇 ${roundLeader.pseudo} (${formatPct(roundLeader.bestScorePct)})`;
       } else {
         document.getElementById("liveLeaderBadge").textContent = `🥇 ${sortedByPoints[0]?.pseudo || "--"}`;
       }
@@ -1708,13 +1783,13 @@
         const lvlInfo = getLevelInfo(p.xp || 0);
         const medal = idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : `${idx + 1}.`;
         const bestInfo = p.bestRank
-          ? `🔥 ${p.bestRank}‰`
-          : p.bestTemp !== null && p.bestTemp !== undefined
-            ? `${p.bestTemp.toFixed(1)}°C`
+          ? `🔥 ${getReadableTopLabel(p.bestRank)} (${formatPct(p.bestScorePct)})`
+          : p.bestScorePct > 0
+            ? formatPct(p.bestScorePct)
             : "--";
 
         return `
-          <div onclick="openStatsModal('${escapeHTML(p.id)}')" title="Cliquez pour voir les statistiques de ${escapeHTML(p.pseudo)}"
+          <div onclick="openStatsModal('${escapeHTML(p.id)}')" title="Voir les statistiques de ${escapeHTML(p.pseudo)}"
             class="cursor-pointer flex items-center justify-between px-2.5 py-1.5 rounded-xl border transition hover:border-sky-500/50 ${isMe ? "bg-sky-950/30 border-sky-500/40" : "bg-slate-800/40 border-slate-800"}">
             <div class="flex items-center gap-2 min-w-0">
               <span class="text-xs font-bold w-4 text-center">${medal}</span>
@@ -1726,28 +1801,30 @@
             </div>
             <div class="text-right shrink-0">
               <div class="font-mono-num text-xs font-extrabold text-amber-400">${p.points} pts</div>
-              <div class="text-[10px] text-slate-400">🏆 ${p.wins}</div>
+              <div class="text-[10px] text-slate-400">☀️ ${p.wins}</div>
             </div>
           </div>
         `;
       }).join("");
 
-      // Met aussi à jour la modale de stats si elle est actuellement ouverte
       if (!document.getElementById("statsModal").classList.contains("hidden")) {
         renderStatsModalContent();
       }
     }
 
     // =========================================================================
-    // 10. JOURNAL DIRECT ULTRA-LISIBLE & FILTRABLE
+    // 11. JOURNAL DIRECT (BOUTON FILTRE INVERSÉ LOGIQUE + SCORE %)
     // =========================================================================
     function toggleFeedFilter() {
       feedOnlyHot = !feedOnlyHot;
       const btn = document.getElementById("feedFilterBtn");
-      btn.textContent = feedOnlyHot ? "🔥 Chauds seuls" : "Tout afficher";
+      // Affiche l'action que le clic va déclencher :
+      // - Si tout est affiché (feedOnlyHot = false) -> bouton propose "🔥 Chauds seuls"
+      // - Si seuls les chauds sont affichés (feedOnlyHot = true) -> bouton propose "📋 Tout afficher"
+      btn.textContent = feedOnlyHot ? "📋 Tout afficher" : "🔥 Chauds seuls";
       btn.className = feedOnlyHot
-        ? "text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/30 transition"
-        : "text-[10px] font-semibold px-2 py-0.5 rounded-md bg-slate-800 text-slate-300 hover:bg-slate-700 transition";
+        ? "text-[10px] font-bold px-2 py-0.5 rounded-md bg-sky-500/20 text-sky-300 border border-sky-500/40 transition"
+        : "text-[10px] font-semibold px-2 py-0.5 rounded-md bg-slate-800 text-amber-300 hover:bg-slate-700 border border-slate-700 transition";
       renderFeed();
     }
 
@@ -1757,7 +1834,7 @@
         kind: "word",
         word: g.word,
         pseudo: g.finderPseudo,
-        temp: g.temp,
+        scorePct: g.scorePct,
         rank: g.rank,
         isWin: g.isWin,
         surgeGain,
@@ -1782,7 +1859,7 @@
       const filtered = feedOnlyHot ? feedEvents.filter(e => e.isHot) : feedEvents;
 
       if (filtered.length === 0) {
-        feed.innerHTML = `<p class="text-slate-500 text-[11px] text-center my-auto py-6">Aucun événement sur cette manche.</p>`;
+        feed.innerHTML = `<p class="text-slate-500 text-[11px] text-center my-auto py-6">Aucun événement.</p>`;
         return;
       }
 
@@ -1791,18 +1868,17 @@
           return `<div class="px-2.5 py-1.5 rounded-lg bg-slate-800/40 border border-slate-800 text-[11px] text-sky-300 font-medium">${escapeHTML(ev.text)}</div>`;
         }
 
+        const topLbl = getReadableTopLabel(ev.rank);
         const badge = ev.isWin
-          ? `<span class="text-emerald-300 font-bold">🏆</span>`
-          : ev.surgeGain
-            ? `<span class="text-amber-300 font-bold">+${ev.surgeGain}%</span>`
-            : ev.rank
-              ? `<span class="text-purple-300">${ev.rank}‰</span>`
-              : "";
+          ? `<span class="text-amber-300 font-extrabold">☀️ FUSION</span>`
+          : topLbl
+            ? `<span class="text-orange-300 font-bold">${topLbl}</span>`
+            : "";
 
         const rowStyle = ev.isWin
-          ? "bg-emerald-950/40 border-emerald-500/40"
-          : ev.surgeGain
-            ? "bg-amber-950/35 border-amber-500/40"
+          ? "solar-victory-card"
+          : ev.rank >= 900
+            ? "bg-orange-950/35 border-orange-500/40"
             : ev.rank
               ? "bg-purple-950/25 border-purple-500/30"
               : "bg-slate-800/30 border-slate-800/70";
@@ -1815,7 +1891,7 @@
             </div>
             <div class="flex items-center gap-1.5 font-mono-num shrink-0">
               ${badge}
-              <span class="font-bold text-slate-200">${ev.temp.toFixed(1)}°C</span>
+              <span class="font-bold text-slate-200">${formatPct(ev.scorePct)}</span>
             </div>
           </div>
         `;
@@ -1827,8 +1903,7 @@
       const colors = {
         sky: "bg-sky-950/95 border-sky-500/50 text-sky-100",
         amber: "bg-amber-950/95 border-amber-500/60 text-amber-100",
-        rose: "bg-rose-950/95 border-rose-500/60 text-rose-100",
-        emerald: "bg-emerald-950/95 border-emerald-500/60 text-emerald-100"
+        rose: "bg-rose-950/95 border-rose-500/60 text-rose-100"
       };
       const toast = document.createElement("div");
       toast.className = `pointer-events-auto cursor-pointer px-3.5 py-2 rounded-xl border shadow-xl backdrop-blur-md text-xs font-semibold text-center animate-pop ${colors[color] || colors.sky}`;
@@ -1840,7 +1915,7 @@
         toast.style.opacity = "0";
         toast.style.transition = "opacity 0.25s ease";
         setTimeout(() => toast.remove(), 250);
-      }, 3800);
+      }, 3600);
     }
 
     function clearInput() {
