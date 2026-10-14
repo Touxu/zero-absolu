@@ -11,7 +11,7 @@ html, body {
 }
 .font-mono-num { font-family: 'JetBrains Mono', monospace; }
 
-/* Barres thermiques : Standard (0-99.0%), Magma Rouge (Top 2-10), Fusion Solaire (100%) */
+/* Barres thermiques */
 .thermal-spectrum {
   background: linear-gradient(90deg, #475569 0%, #0ea5e9 22%, #6366f1 45%, #a855f7 68%, #ec4899 84%, #f97316 100%);
 }
@@ -27,7 +27,7 @@ html, body {
   box-shadow: 0 0 16px rgba(254, 240, 138, 0.95);
 }
 
-/* Cartes thématiques : Flamme (Top 11-100), Magma (Top 2-10), Fusion Solaire (100%) */
+/* Cartes thématiques */
 @keyframes flameFlicker {
   0%, 100% { box-shadow: 0 0 10px -2px rgba(249,115,22,0.35), inset 0 0 8px rgba(249,115,22,0.12); border-color: rgba(249,115,22,0.55); }
   50% { box-shadow: 0 0 16px 1px rgba(234,88,12,0.55), inset 0 0 12px rgba(251,146,60,0.22); border-color: rgba(251,146,60,0.85); }

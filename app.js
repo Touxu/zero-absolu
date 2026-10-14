@@ -1,20 +1,19 @@
 // =========================================================================
-// 1. CONFIGURATION, SUPABASE CLOUD & CONSTANTES (v0.9)
+// 1. CONFIGURATION, SUPABASE CLOUD & CONSTANTES (v1.0)
 // =========================================================================
-const APP_VERSION = "v0.9";
+const APP_VERSION = "v1.0";
 const APP_EDITION = "Édition Solaire";
 const $ = id => document.getElementById(id);
 
-// 👉 Collez ici votre URL et votre clé "anon public" Supabase (voir guide ci-dessous)
-const SUPABASE_URL = "https://ellvombxmcjdmfxivldt.supabase.co/rest/v1/"; 
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVsbHZvbWJ4bWNqZG1meGl2bGR0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE5ODA4NzUsImV4cCI6MjEwNzU1Njg3NX0.P06lAQrHhoaQf5zBxNiIfCbhxfD0eyA93ybfsW7dTvM";
+const SUPABASE_URL = window.SUPABASE_URL || "";
+const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || "";
 
 const sbClient = (SUPABASE_URL && SUPABASE_ANON_KEY && window.supabase)
   ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
   : null;
 
 const TOTAL_GAMES = 500, HINT_COST = 35, XP_PER_LEVEL = 100;
-const TOPIC_ROOT = "zeroabsolu/v09/rooms/";
+const TOPIC_ROOT = "zeroabsolu/v10/rooms/";
 
 const WSS_BROKERS = [
   "wss://broker.emqx.io:8084/mqtt",
@@ -41,7 +40,11 @@ let myId = sessionStorage.getItem("za_tab_id") || ("p_" + Math.random().toString
 sessionStorage.setItem("za_tab_id", myId);
 
 let myPseudo = localStorage.getItem("zeroabsolu_pseudo") || "";
-let myPin = localStorage.getItem("zeroabsolu_pin") || "";
+let myPassword = localStorage.getItem("zeroabsolu_pwd") || "";
+let isAuthenticated = false;
+let authMode = "login"; // "login" ou "register"
+let currentTutoSlide = 0;
+
 let savedStats = JSON.parse(localStorage.getItem("zeroabsolu_profile_v2") || "{}");
 
 let hasStartedSession = false, roomCode = null, isHost = true;
@@ -53,15 +56,12 @@ let players = {}, globalLeaderboardCache = [], leaderboardScope = "room";
 let selectedStatsPlayerId = myId, showingGradesCatalog = false;
 let statsMinimized = false, statsIdleTimer = null, surgeHideTimer = null, levelUpTimer = null, feedOnlyHot = false, feedEvents = [];
 
-// Compteur secret : Code XXXX + 3 clics sur le logo
 let secretClickCount = 0, secretClickTimer = null;
 
 const escapeHTML = s => String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 const stripAccents = s => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase();
 const vibrateDevice = p => { try { navigator.vibrate?.(p); } catch (_) {} };
 const formatPct = v => v >= 100 ? "100%" : `${Number(v).toFixed(1)}%`;
-
-// Le mot secret (1000) est n°1 ("FUSION"), donc le mot à 999 s'affiche désormais "Top 2" (1001 - r) !
 const getReadableTopLabel = r => r === 1000 ? "FUSION" : r ? `Top ${1001 - r}` : null;
 const toggleModal = (id, show) => $(id).classList.toggle("hidden", !show);
 
@@ -124,12 +124,316 @@ function getTierVisuals(g) {
 }
 
 // =========================================================================
-// 2. MENU SECRET SANDBOX (CODE "XXXX" + 3 CLICS SUR LE LOGO) & CONFIRMATIONS
+// 2. AUTHENTIFICATION SUPABASE (CONNEXION / INSCRIPTION) & BIENVENUE / TUTO
+// =========================================================================
+function switchAuthMode(mode) {
+  authMode = mode;
+  $("authError").textContent = "";
+  const isLogin = mode === "login";
+  $("tabLoginBtn").className = isLogin
+    ? "py-1.5 rounded-lg bg-sky-500 text-slate-950 transition"
+    : "py-1.5 rounded-lg text-slate-400 hover:text-white transition";
+  $("tabRegisterBtn").className = !isLogin
+    ? "py-1.5 rounded-lg bg-amber-400 text-slate-950 transition"
+    : "py-1.5 rounded-lg text-slate-400 hover:text-white transition";
+  $("authSubmitText").textContent = isLogin ? "Se connecter" : "Créer mon compte";
+}
+
+function togglePasswordVisibility() {
+  const inp = $("authPassword");
+  const isPwd = inp.type === "password";
+  inp.type = isPwd ? "text" : "password";
+  $("eyeIcon").className = isPwd ? "ph-duotone ph-eye-slash text-base text-sky-400" : "ph-duotone ph-eye text-base";
+}
+
+async function handleAuthSubmit(e) {
+  e.preventDefault();
+  const pseudo = $("authPseudo").value.trim();
+  const pwd = $("authPassword").value.trim();
+  const errEl = $("authError");
+
+  if (pseudo.length < 2) {
+    errEl.textContent = "Le pseudo doit contenir au moins 2 caractères.";
+    triggerInputShake($("authPseudo"));
+    return;
+  }
+  if (pwd.length < 4) {
+    errEl.textContent = "Le mot de passe doit contenir au moins 4 caractères.";
+    triggerInputShake($("authPassword"));
+    return;
+  }
+
+  errEl.textContent = "Vérification Cloud en cours...";
+  $("authSubmitBtn").disabled = true;
+
+  const cleanKey = pseudo.toLowerCase();
+
+  if (!sbClient) {
+    $("authSubmitBtn").disabled = false;
+    errEl.textContent = "Clés Supabase absentes dans config.js !";
+    return;
+  }
+
+  try {
+    const { data: existing, error: selErr } = await sbClient
+      .from("players")
+      .select("*")
+      .eq("pseudo_lower", cleanKey)
+      .maybeSingle();
+
+    if (selErr) {
+      $("authSubmitBtn").disabled = false;
+      errEl.textContent = `Erreur Supabase (${selErr.code || 'SQL'}) : exécutez le script SQL des droits !`;
+      return;
+    }
+
+    let isNewAccount = false;
+
+    if (authMode === "register") {
+      if (existing) {
+        $("authSubmitBtn").disabled = false;
+        errEl.textContent = `Le pseudo "${pseudo}" est déjà pris ! Choisissez-en un autre ou cliquez sur Connexion.`;
+        triggerInputShake($("authPseudo"));
+        return;
+      }
+
+      const newRow = {
+        pseudo_lower: cleanKey,
+        pseudo_display: pseudo,
+        pin_code: pwd,
+        points: 0,
+        xp: 0,
+        wins: 0,
+        total_attempts: 0,
+        hot_words: 0,
+        top10_words: 0,
+        updated_at: new Date().toISOString()
+      };
+
+      const { error: insErr } = await sbClient.from("players").insert(newRow);
+      if (insErr) {
+        $("authSubmitBtn").disabled = false;
+        errEl.textContent = `Création refusée par Supabase : ${insErr.message}`;
+        return;
+      }
+
+      isNewAccount = true;
+      applyCloudProfileToSelf(pseudo, pwd, newRow);
+    } else {
+      // Mode Connexion
+      if (!existing) {
+        $("authSubmitBtn").disabled = false;
+        errEl.textContent = `Aucun compte "${pseudo}" trouvé. Cliquez sur l'onglet Inscription !`;
+        triggerInputShake($("tabRegisterBtn"));
+        return;
+      }
+      if (existing.pin_code !== pwd) {
+        $("authSubmitBtn").disabled = false;
+        errEl.textContent = "Mot de passe incorrect pour ce pseudo.";
+        triggerInputShake($("authPassword"));
+        return;
+      }
+
+      applyCloudProfileToSelf(existing.pseudo_display || pseudo, pwd, existing);
+    }
+
+    $("authSubmitBtn").disabled = false;
+    errEl.textContent = "";
+    isAuthenticated = true;
+    updateLobbyHeaderUI();
+    $("authView").classList.add("hidden");
+    $("lobbyView").classList.remove("hidden");
+
+    // Ouvre la pop-up de Bienvenue personnalisée
+    openWelcomeModal(isNewAccount);
+
+  } catch (err) {
+    $("authSubmitBtn").disabled = false;
+    errEl.textContent = "Erreur réseau : impossible de joindre Supabase.";
+  }
+}
+
+function applyCloudProfileToSelf(pseudo, pwd, row) {
+  myPseudo = pseudo;
+  myPassword = pwd;
+  localStorage.setItem("zeroabsolu_pseudo", myPseudo);
+  localStorage.setItem("zeroabsolu_pwd", myPassword);
+
+  players[myId] = {
+    id: myId,
+    pseudo: myPseudo,
+    points: Number(row.points) || 0,
+    xp: Number(row.xp) || 0,
+    wins: Number(row.wins) || 0,
+    totalAttempts: Number(row.total_attempts) || 0,
+    hotWordsFound: Number(row.hot_words) || 0,
+    top10Found: Number(row.top10_words) || 0,
+    bestScorePct: players[myId]?.bestScorePct || 0,
+    bestRank: players[myId]?.bestRank || 0,
+    attempts: players[myId]?.attempts || 0
+  };
+  saveLocalProgress();
+  updateHintButtonUI();
+  renderLeaderboard();
+}
+
+function updateLobbyHeaderUI() {
+  const me = players[myId] || {};
+  const lvl = getLevelInfo(me.xp || 0);
+  $("lobbyLevelBadge").textContent = `N${lvl.level}`;
+  $("lobbyPseudoDisplay").textContent = me.pseudo || myPseudo;
+  $("lobbyStatsDisplay").textContent = `${me.points || 0} ⚡ • ${me.xp || 0} XP (${lvl.title})`;
+}
+
+function logoutAccount() {
+  isAuthenticated = false;
+  localStorage.removeItem("zeroabsolu_pwd");
+  $("authPassword").value = "";
+  $("lobbyView").classList.add("hidden");
+  $("authView").classList.remove("hidden");
+  switchAuthMode("login");
+}
+
+function openWelcomeModal(isNewUser) {
+  const me = players[myId] || {};
+  const lvl = getLevelInfo(me.xp || 0);
+  const isExperienced = !isNewUser && ((me.xp || 0) > 0 || (me.totalAttempts || 0) > 0);
+
+  $("welcomeTitle").textContent = `Bienvenue ${me.pseudo} !`;
+  $("welcomeSub").textContent = isExperienced
+    ? "Votre profil Cloud est synchronisé."
+    : "Votre compte est prêt ! Découvrez comment faire monter la température.";
+
+  $("welcomeLevel").textContent = `Niv. ${lvl.level}`;
+  $("welcomeGrade").textContent = lvl.title;
+  $("welcomePoints").textContent = `${me.points || 0} ⚡`;
+
+  if (isExperienced) {
+    $("welcomeButtons").innerHTML = `
+      <button id="welcomePlayBtn" onclick="closeWelcomeModal()" class="w-full py-2.5 rounded-xl text-xs font-extrabold bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white shadow-lg transition">
+        Continuer vers le salon
+      </button>
+      <button id="welcomeTutoBtn" onclick="closeWelcomeModal(); openTutorialModal();" class="w-full py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-sky-300 transition flex items-center justify-center gap-1.5">
+        <i class="ph-duotone ph-compass-tool text-sm"></i> Revoir le tutoriel
+      </button>
+    `;
+  } else {
+    $("welcomeButtons").innerHTML = `
+      <button id="welcomeTutoBtn" onclick="closeWelcomeModal(); openTutorialModal();" class="w-full py-2.5 rounded-xl text-xs font-extrabold bg-gradient-to-r from-amber-400 to-orange-500 text-slate-950 shadow-lg transition flex items-center justify-center gap-1.5">
+        <i class="ph-bold ph-sparkle text-sm"></i> Découvrir le tutoriel (30s)
+      </button>
+      <button id="welcomePlayBtn" onclick="closeWelcomeModal()" class="w-full py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 transition">
+        Passer directement au salon
+      </button>
+    `;
+  }
+
+  toggleModal("welcomeModal", true);
+}
+
+function closeWelcomeModal() {
+  toggleModal("welcomeModal", false);
+}
+
+// Carrousel du Tutoriel (3 slides)
+function openTutorialModal() {
+  currentTutoSlide = 0;
+  updateTutorialCarousel();
+  toggleModal("tutorialModal", true);
+}
+
+function closeTutorialModal() {
+  toggleModal("tutorialModal", false);
+}
+
+function stepTutorial(delta) {
+  if (currentTutoSlide + delta >= 3) {
+    closeTutorialModal();
+    return;
+  }
+  currentTutoSlide = Math.max(0, Math.min(2, currentTutoSlide + delta));
+  updateTutorialCarousel();
+}
+
+function updateTutorialCarousel() {
+  $("tutorialTrack").style.transform = `translateX(-${currentTutoSlide * 100}%)`;
+  $("tutoPrevBtn").classList.toggle("invisible", currentTutoSlide === 0);
+  $("tutoNextBtn").textContent = currentTutoSlide === 2 ? "C'est parti !" : "Suivant →";
+
+  const dots = $("tutoDots").children;
+  for (let i = 0; i < dots.length; i++) {
+    dots[i].className = i === currentTutoSlide
+      ? "w-5 h-1.5 rounded-full bg-sky-400 transition-all"
+      : "w-1.5 h-1.5 rounded-full bg-slate-700 transition-all";
+  }
+}
+
+async function syncProfileToSupabase() {
+  if (!sbClient || !isAuthenticated || !myPseudo || !myPassword) return;
+  const me = players[myId];
+  if (!me) return;
+  try {
+    const { error } = await sbClient.from("players").upsert({
+      pseudo_lower: myPseudo.toLowerCase(),
+      pseudo_display: myPseudo,
+      pin_code: myPassword,
+      points: me.points || 0,
+      xp: me.xp || 0,
+      wins: me.wins || 0,
+      total_attempts: me.totalAttempts || 0,
+      hot_words: me.hotWordsFound || 0,
+      top10_words: me.top10Found || 0,
+      updated_at: new Date().toISOString()
+    }, { onConflict: "pseudo_lower" });
+
+    if (!error) updateLobbyHeaderUI();
+  } catch (_) {}
+}
+
+async function fetchGlobalLeaderboard() {
+  if (!sbClient) return;
+  try {
+    const { data } = await sbClient
+      .from("players")
+      .select("pseudo_display, points, xp, wins, total_attempts, hot_words, top10_words")
+      .order("xp", { ascending: false })
+      .limit(30);
+    if (data) {
+      globalLeaderboardCache = data.map((row, idx) => ({
+        id: `cloud_${idx}`,
+        pseudo: row.pseudo_display,
+        points: row.points || 0,
+        xp: row.xp || 0,
+        wins: row.wins || 0,
+        totalAttempts: row.total_attempts || 0,
+        hotWordsFound: row.hot_words || 0,
+        top10Found: row.top10_words || 0
+      }));
+      renderStatsModalContent();
+    }
+  } catch (_) {}
+}
+
+function switchLeaderboardScope(scope) {
+  leaderboardScope = scope;
+  $("btnRankRoom").className = scope === "room"
+    ? "px-2 py-0.5 rounded-md bg-sky-500/20 text-sky-300 border border-sky-500/40 text-[10px] font-bold"
+    : "px-2 py-0.5 rounded-md bg-slate-800 text-slate-400 hover:text-white text-[10px] font-bold";
+  $("btnRankGlobal").className = scope === "global"
+    ? "px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px] font-bold"
+    : "px-2 py-0.5 rounded-md bg-slate-800 text-slate-400 hover:text-white text-[10px] font-bold";
+  if (scope === "global") fetchGlobalLeaderboard();
+  renderStatsModalContent();
+}
+
+// =========================================================================
+// 3. MENU SECRET SANDBOX (CODE "XXXX" + 3 CLICS SUR LE LOGO) & CONFIRMATIONS
 // =========================================================================
 function isSecretCodeEntered() {
   const codeModal = ($("modalRoomCode")?.value || "").trim().toUpperCase();
   const codeInput = ($("wordInput")?.value || "").trim().toUpperCase();
-  return codeModal === "XXXX" || codeInput === "XXXX";
+  const codeAuth = ($("authPseudo")?.value || "").trim().toUpperCase();
+  return codeModal === "XXXX" || codeInput === "XXXX" || codeAuth === "XXXX";
 }
 
 function handleLogoSecretClick() {
@@ -189,7 +493,6 @@ async function debugResetAllScores() {
   showToast("Scores et niveau remis à zéro !", "rose");
 }
 
-// Modale de confirmation générique (Abandonner / Passer)
 let pendingConfirmAction = null;
 
 function openConfirmModal({ icon, colorCls, title, desc, btnText, onConfirm }) {
@@ -210,114 +513,6 @@ function openConfirmModal({ icon, colorCls, title, desc, btnText, onConfirm }) {
 function closeConfirmModal() {
   pendingConfirmAction = null;
   toggleModal("confirmModal", false);
-}
-
-// =========================================================================
-// 3. SAUVEGARDE CLOUD SUPABASE & UNICITÉ DU PSEUDO
-// =========================================================================
-async function claimOrLoadSupabaseProfile(pseudo, pin) {
-  if (!sbClient) return { ok: true }; // Mode hors-ligne si clés non configurées
-  const cleanPseudoKey = pseudo.toLowerCase();
-
-  try {
-    const { data: existing, error } = await sbClient
-      .from("players")
-      .select("*")
-      .eq("pseudo_lower", cleanPseudoKey)
-      .maybeSingle();
-
-    if (error) return { ok: true }; // Tolérance si table non créée
-
-    if (existing) {
-      // Vérifie le PIN si ce pseudo existe déjà dans la base Cloud
-      if (existing.pin_code && existing.pin_code !== pin) {
-        return { ok: false, msg: `Ce pseudo est déjà pris ! Entrez son PIN à 4 chiffres si c'est le vôtre.` };
-      }
-      // Charge les stats Cloud du joueur
-      const me = players[myId];
-      me.points = Math.max(me.points || 0, existing.points || 0);
-      me.xp = Math.max(me.xp || 0, existing.xp || 0);
-      me.wins = Math.max(me.wins || 0, existing.wins || 0);
-      me.totalAttempts = Math.max(me.totalAttempts || 0, existing.total_attempts || 0);
-      me.hotWordsFound = Math.max(me.hotWordsFound || 0, existing.hot_words || 0);
-      me.top10Found = Math.max(me.top10Found || 0, existing.top10_words || 0);
-      saveLocalProgress();
-      return { ok: true };
-    } else {
-      // Crée et réserve le pseudo dans Supabase
-      const me = players[myId];
-      await sbClient.from("players").insert({
-        pseudo_lower: cleanPseudoKey,
-        pseudo_display: pseudo,
-        pin_code: pin || "0000",
-        points: me.points || 0,
-        xp: me.xp || 0,
-        wins: me.wins || 0,
-        total_attempts: me.totalAttempts || 0,
-        hot_words: me.hotWordsFound || 0,
-        top10_words: me.top10Found || 0
-      });
-      return { ok: true };
-    }
-  } catch (_) {
-    return { ok: true };
-  }
-}
-
-async function syncProfileToSupabase() {
-  if (!sbClient || !myPseudo) return;
-  const me = players[myId];
-  if (!me) return;
-  try {
-    await sbClient.from("players").upsert({
-      pseudo_lower: myPseudo.toLowerCase(),
-      pseudo_display: myPseudo,
-      pin_code: myPin || "0000",
-      points: me.points || 0,
-      xp: me.xp || 0,
-      wins: me.wins || 0,
-      total_attempts: me.totalAttempts || 0,
-      hot_words: me.hotWordsFound || 0,
-      top10_words: me.top10Found || 0,
-      updated_at: new Date().toISOString()
-    }, { onConflict: "pseudo_lower" });
-  } catch (_) {}
-}
-
-async function fetchGlobalLeaderboard() {
-  if (!sbClient) return;
-  try {
-    const { data } = await sbClient
-      .from("players")
-      .select("pseudo_display, points, xp, wins, total_attempts, hot_words, top10_words")
-      .order("xp", { ascending: false })
-      .limit(30);
-    if (data) {
-      globalLeaderboardCache = data.map((row, idx) => ({
-        id: `cloud_${idx}`,
-        pseudo: row.pseudo_display,
-        points: row.points || 0,
-        xp: row.xp || 0,
-        wins: row.wins || 0,
-        totalAttempts: row.total_attempts || 0,
-        hotWordsFound: row.hot_words || 0,
-        top10Found: row.top10_words || 0
-      }));
-      renderStatsModalContent();
-    }
-  } catch (_) {}
-}
-
-function switchLeaderboardScope(scope) {
-  leaderboardScope = scope;
-  $("btnRankRoom").className = scope === "room"
-    ? "px-2 py-0.5 rounded-md bg-sky-500/20 text-sky-300 border border-sky-500/40 text-[10px] font-bold"
-    : "px-2 py-0.5 rounded-md bg-slate-800 text-slate-400 hover:text-white text-[10px] font-bold";
-  $("btnRankGlobal").className = scope === "global"
-    ? "px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px] font-bold"
-    : "px-2 py-0.5 rounded-md bg-slate-800 text-slate-400 hover:text-white text-[10px] font-bold";
-  if (scope === "global") fetchGlobalLeaderboard();
-  renderStatsModalContent();
 }
 
 // =========================================================================
@@ -384,10 +579,13 @@ function setStatsMinimized(min) {
 window.addEventListener("DOMContentLoaded", () => {
   $("versionBadgeTop").textContent = APP_VERSION;
   $("versionBadgeFooter").textContent = `${APP_VERSION} • ${APP_EDITION}`;
-  $("cloudStatusText").textContent = sbClient ? "Supabase Cloud Actif" : "Sauvegarde Locale Active";
+  $("cloudStatusText").textContent = sbClient ? "Supabase Cloud Actif" : "Clés Supabase manquantes";
+  $("cloudStatusDot").className = sbClient ? "w-1.5 h-1.5 rounded-full bg-emerald-400" : "w-1.5 h-1.5 rounded-full bg-rose-500";
   initialScreenHeight = window.screen?.availHeight || window.innerHeight;
-  if (myPseudo) $("modalPseudo").value = myPseudo;
-  if (myPin) $("modalPin").value = myPin;
+
+  if (myPseudo) $("authPseudo").value = myPseudo;
+  if (myPassword) $("authPassword").value = myPassword;
+
   initSelfPlayer();
   loadGame(currentGameId, 1);
   resetStatsIdleTimer();
@@ -402,7 +600,7 @@ window.addEventListener("DOMContentLoaded", () => {
 function initSelfPlayer() {
   const cur = players[myId] || {};
   players[myId] = {
-    id: myId, pseudo: myPseudo || "Pierre",
+    id: myId, pseudo: myPseudo || "Joueur",
     points: cur.points ?? savedStats.points ?? 0,
     xp: cur.xp ?? savedStats.xp ?? 0,
     wins: cur.wins ?? savedStats.wins ?? 0,
@@ -593,7 +791,7 @@ function triggerSolarFusionExplosion() {
 }
 
 // =========================================================================
-// 8. MULTIJOUEUR CLOUD WSS & VÉRIFICATION D'UNICITÉ DU PSEUDO
+// 8. MULTIJOUEUR CLOUD WSS
 // =========================================================================
 let mqttClients = [];
 let seenMsgIds = new Set();
@@ -610,38 +808,19 @@ function handleRoomCodeInput(input) {
     : "w-full py-2.5 rounded-xl text-sm font-bold transition flex items-center justify-center gap-2 bg-slate-800 text-slate-500 cursor-not-allowed opacity-60";
 }
 
-async function validatePseudoInput() {
-  const raw = $("modalPseudo").value.trim();
-  const pin = $("modalPin").value.trim() || "0000";
-  if (raw.length < 2) {
-    $("modalError").textContent = "Pseudo trop court (2 lettres min).";
-    triggerInputShake($("modalPseudo"));
-    return null;
-  }
-  $("modalError").textContent = "Vérification du pseudo...";
-  myPseudo = raw.slice(0, 16);
-  myPin = pin;
-  localStorage.setItem("zeroabsolu_pseudo", myPseudo);
-  localStorage.setItem("zeroabsolu_pin", myPin);
-  initSelfPlayer();
-
-  const res = await claimOrLoadSupabaseProfile(myPseudo, myPin);
-  if (!res.ok) {
-    $("modalError").textContent = res.msg;
-    triggerInputShake($("modalPin"));
-    return null;
-  }
-  $("modalError").textContent = "";
-  return myPseudo;
-}
-
 function closeOnboardingModal() {
+  if (!isAuthenticated) return;
   hasStartedSession = true;
   $("closeModalBtn").classList.remove("hidden");
   toggleModal("onboardingModal", false);
 }
 function openOnboardingModal() {
   $("modalError").textContent = "";
+  if (isAuthenticated) {
+    updateLobbyHeaderUI();
+    $("authView").classList.add("hidden");
+    $("lobbyView").classList.remove("hidden");
+  }
   if (hasStartedSession) $("closeModalBtn").classList.remove("hidden");
   toggleModal("onboardingModal", true);
 }
@@ -726,8 +905,8 @@ function publishRetainedRoomSnapshot() {
   }, true);
 }
 
-async function startSoloMode() {
-  if (!(await validatePseudoInput())) return;
+function startSoloMode() {
+  if (!isAuthenticated) return;
   disconnectMultiplayer();
   isHost = true; roomCode = null;
   $("roomCodePill").classList.add("hidden");
@@ -736,8 +915,8 @@ async function startSoloMode() {
   showToast("Mode Solo activé", "sky");
 }
 
-async function startCreateRoom() {
-  if (!(await validatePseudoInput())) return;
+function startCreateRoom() {
+  if (!isAuthenticated) return;
   disconnectMultiplayer();
 
   isHost = true; roundNumber = 1;
@@ -761,13 +940,13 @@ async function startCreateRoom() {
   });
 }
 
-async function startJoinRoom() {
+function startJoinRoom() {
+  if (!isAuthenticated) return;
   const rawCode = $("modalRoomCode").value.trim().toUpperCase();
   if (rawCode === "XXXX") {
     $("modalError").textContent = "Astuce : Cliquez 3 fois sur le logo flamme en haut à gauche !";
     return;
   }
-  if (!(await validatePseudoInput())) return;
   if (!/^[A-Z]{4}$/.test(rawCode)) return;
 
   disconnectMultiplayer();
@@ -797,7 +976,6 @@ async function startJoinRoom() {
 function completeJoinSuccess(snapshot) {
   if (joinResolved) return;
 
-  // Vérifie si le pseudo est déjà utilisé par un autre joueur dans ce salon
   const existingPlayers = Object.values(snapshot.players || {});
   const duplicateInRoom = existingPlayers.find(p => p.id !== myId && p.pseudo.toLowerCase() === myPseudo.toLowerCase());
   if (duplicateInRoom) {
@@ -806,8 +984,7 @@ function completeJoinSuccess(snapshot) {
     roomCode = null;
     $("joinRoomBtnText").textContent = "Rejoindre le salon";
     $("joinRoomBtn").disabled = false;
-    $("modalError").textContent = `Le pseudo "${myPseudo}" est déjà utilisé dans ce salon !`;
-    triggerInputShake($("modalPseudo"));
+    $("modalError").textContent = `Le compte "${myPseudo}" est déjà présent dans ce salon !`;
     return;
   }
 
