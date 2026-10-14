@@ -1,0 +1,14 @@
+=== RAPPORT COMPLET DU BOT D'AUDIT (v1.0) ===
+• Version en ligne : v1.0 | Statut Cloud : Supabase Cloud Actif
+• Compte BotTesteur inexistant -> Passage automatique sur l'onglet Inscription
+• Authentification Cloud : ✅ Réussie
+• Pop-up Bienvenue : 'Bienvenue BotTesteur !' (Niv. 1)
+• Carrousel Tutoriel (3 slides) : ✅ Fluide | Slides=['translateX(0%)', 'translateX(-100%)', 'translateX(-200%)']
+• Sécurité mauvais mot de passe : ✅ Bloqué (Mot de passe incorrect pour ce pseudo.)
+• Test Mots ('plante' + doublon 'plantes' + 3 mots) : 4/4 validés (Attendu: 4)
+• Modale de confirmation (Abandon/Suivant) : ✅ OK
+• Ouverture Laboratoire Secret (XXXX + 3 clics) : ✅ OK
+• Mot secret lu dans le Labo : SALON
+• Durée animation Explosion Fusion Solaire : 1609 ms (Attendu: ~1550 ms)
+• Débordements d'écran mobile (390px) : 0
+• Erreurs JavaScript : 0

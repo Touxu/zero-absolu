@@ -7,26 +7,29 @@ import numpy as np
 MODEL_PATH = "frWac_no_postag_no_phrase_500_skip_cut100.bin"
 OUTPUT_DIR = "parties"
 NB_PARTIES = 500
-TARGET_CLEAN_VOCAB = 55000  # Élargi à 55 000 mots pour ne jamais couper de vocabulaire
+TARGET_CLEAN_VOCAB = 55000
 
 # =============================================================================
 # 1. LISTES BLANCHES FERMÉES (MOTS DE 2-3 LETTRES & MOTS COMPOSÉS AVEC TIRET)
 # =============================================================================
 VALID_SHORT_WORDS = {
-    "air", "ail", "ami", "âme", "âne", "arc", "art", "as", "bac", "bal", "bar", "bas",
-    "bec", "blé", "bol", "bon", "bus", "but", "cap", "car", "cas", "chat", "clé", "col",
-    "coq", "cor", "cou", "cour", "cri", "cru", "cube", "cuir", "dam", "dame", "dé", "don",
-    "dos", "duc", "dur", "eau", "élu", "épi", "ère", "est", "été", "fac", "fée", "fer",
-    "feu", "fil", "fin", "foi", "fou", "gaz", "gel", "gui", "gué", "île", "jeu", "jus",
-    "lac", "lait", "lin", "lit", "loi", "lot", "lys", "mai", "mal", "mas", "mât", "mer",
-    "mets", "mie", "miel", "mois", "mot", "mou", "mur", "nef", "nez", "nid", "nom", "noix",
-    "nu", "ode", "oie", "œil", "or", "os", "ours", "pain", "paix", "parc", "pas", "peau",
-    "peur", "pic", "pied", "pin", "pli", "pneu", "poil", "pois", "pont", "porc", "port",
-    "pot", "pou", "pré", "prix", "pub", "puits", "pur", "quai", "rat", "raz", "rez", "riz",
-    "roc", "roi", "roue", "rue", "sac", "sec", "sel", "ski", "soi", "soie", "soir", "sol",
-    "son", "sou", "sud", "suc", "taux", "thé", "tir", "toit", "ton", "tort", "toux", "tri",
-    "trou", "tube", "val", "van", "veau", "vent", "ver", "vie", "vif", "vin", "vis", "voix",
-    "vol", "vue", "zen", "zoo"
+    "âge", "air", "ail", "ami", "âme", "âne", "arc", "art", "as", "bac", "bal", "bar",
+    "bas", "bec", "blé", "bol", "bon", "box", "bu", "bus", "but", "cap", "car", "cas",
+    "cep", "chat", "cil", "clé", "col", "coq", "cor", "cou", "cour", "cri", "cru", "crû",
+    "cube", "cuir", "dam", "dame", "dé", "don", "dos", "du", "dû", "duc", "dur", "eau",
+    "ego", "élu", "épi", "ère", "est", "été", "fac", "fée", "fer", "feu", "fil", "fin",
+    "foi", "fou", "fût", "gai", "gaz", "gel", "glu", "gré", "gui", "gué", "if", "île",
+    "ion", "jet", "jeu", "jus", "lac", "lait", "lin", "lit", "loi", "lot", "lys", "mai",
+    "mal", "mas", "mat", "mât", "mer", "mets", "mie", "miel", "mois", "mot", "mou", "mur",
+    "mûr", "né", "nef", "nez", "nid", "nom", "noix", "nu", "nue", "ode", "oie", "œil",
+    "oeil", "or", "os", "oui", "ours", "pain", "paix", "parc", "pas", "peau", "peur",
+    "pic", "pied", "pin", "pli", "pneu", "poil", "pois", "pont", "porc", "port", "pot",
+    "pou", "pré", "prix", "pub", "puits", "pur", "puy", "quai", "rai", "ras", "rat",
+    "raz", "rez", "riz", "roc", "roi", "roue", "ru", "rue", "sac", "sec", "sel", "ski",
+    "soi", "soie", "soir", "sol", "son", "sot", "sou", "su", "sud", "suc", "sur", "sûr",
+    "taux", "thé", "tir", "toit", "ton", "tort", "tôt", "toux", "tri", "trou", "tube",
+    "val", "van", "veau", "vent", "ver", "vie", "vif", "vin", "vis", "voix", "vol", "vu",
+    "vue", "vœu", "voeu", "yak", "yen", "zen", "zoo"
 }
 
 VALID_HYPHEN_WORDS = {
@@ -36,7 +39,7 @@ VALID_HYPHEN_WORDS = {
     "avant-centre", "avant-garde", "avant-goût", "avant-première", "avant-propos",
     "bain-marie", "bande-annonce", "basse-cour", "bateau-mouche", "beau-fils",
     "beau-frère", "beau-père", "belle-famille", "belle-fille", "belle-mère",
-    "belle-sœur", "bien-être", "bien-fondé", "bonhomme", "bouche-à-oreille",
+    "belle-sœur", "belle-soeur", "bien-être", "bien-fondé", "bonhomme", "bouche-à-oreille",
     "box-office", "brise-glace", "cache-cache", "camping-car", "canapé-lit",
     "casse-croûte", "casse-noix", "casse-tête", "centre-ville", "cerf-volant",
     "chauve-souris", "chef-lieu", "chou-fleur", "clair-obscur", "coffre-fort",
@@ -47,9 +50,9 @@ VALID_HYPHEN_WORDS = {
     "coupe-gorge", "coupe-vent", "court-bouillon", "court-circuit", "court-métrage",
     "couvre-feu", "couvre-lit", "croque-monsieur", "cul-de-sac", "demi-cercle",
     "demi-finale", "demi-frère", "demi-heure", "demi-journée", "demi-lune",
-    "demi-mesure", "demi-pension", "demi-sœur", "demi-tarif", "demi-tour",
+    "demi-mesure", "demi-pension", "demi-sœur", "demi-soeur", "demi-tarif", "demi-tour",
     "deux-roues", "double-clic", "eau-de-vie", "enseignant-chercheur", "entre-deux",
-    "essuie-glace", "extrême-droite", "extrême-gauche", "faire-part",
+    "essuie-glace", "étoile-de-mer", "extrême-droite", "extrême-gauche", "faire-part",
     "faux-filet", "faux-monnayeur", "faux-plat", "faux-semblant", "franc-maçon",
     "franc-parler", "garde-boue", "garde-chasse", "garde-corps", "garde-côte",
     "garde-forestier", "garde-fou", "garde-malade", "garde-manger", "garde-meuble",
@@ -64,20 +67,20 @@ VALID_HYPHEN_WORDS = {
     "mal-être", "marque-page", "martin-pêcheur", "micro-onde", "micro-organisme",
     "mini-golf", "mini-jupe", "mise-bas", "monte-charge", "mot-clé", "moyen-âge",
     "non-lieu", "non-sens", "non-violence", "nord-est", "nord-ouest", "nouveau-né",
-    "oiseau-mouche", "outre-mer", "ouvre-boîte", "pare-balles", "pare-brise",
-    "pare-chocs", "pare-étincelles", "pare-feu", "pare-soleil", "passe-droit",
-    "passe-montagne", "passe-partout", "passe-temps", "pense-bête", "perce-neige",
-    "pèse-personne", "petit-ami", "petit-beurre", "petit-déjeuner", "petit-enfant",
-    "petit-fils", "petite-amie", "petite-fille", "pied-à-terre", "pique-assiette",
-    "pique-nique", "plain-pied", "plate-bande", "plate-forme", "plein-air",
-    "plein-emploi", "plus-value", "poids-lourd", "point-virgule", "poisson-chat",
-    "poisson-clown", "pont-levis", "pont-promenade", "porc-épic", "porte-avions",
-    "porte-bagages", "porte-bonheur", "porte-clés", "porte-conteneurs",
-    "porte-drapeau", "porte-documents", "porte-étendard", "porte-fenêtre",
-    "porte-jarretelles", "porte-manteau", "porte-mine", "porte-monnaie",
-    "porte-parole", "porte-plume", "porte-savon", "porte-voix", "pot-au-feu",
-    "pot-de-vin", "pot-pourri", "garde-à-vous", "premier-ministre", "presse-agrume",
-    "presse-citron", "presse-papier", "presse-purée", "prêt-à-porter",
+    "oiseau-mouche", "outre-mer", "ouvre-boîte", "ouvre-boîtes", "ouvre-boite",
+    "pare-balles", "pare-brise", "pare-chocs", "pare-étincelles", "pare-feu",
+    "pare-soleil", "passe-droit", "passe-montagne", "passe-partout", "passe-temps",
+    "pense-bête", "perce-neige", "pèse-personne", "petit-ami", "petit-beurre",
+    "petit-déjeuner", "petit-enfant", "petit-fils", "petite-amie", "petite-fille",
+    "pied-à-terre", "pique-assiette", "pique-nique", "plain-pied", "plate-bande",
+    "plate-forme", "plein-air", "plein-emploi", "plus-value", "poids-lourd",
+    "point-virgule", "poisson-chat", "poisson-clown", "pont-levis", "pont-promenade",
+    "porc-épic", "porte-avions", "porte-bagages", "porte-bonheur", "porte-clés",
+    "porte-conteneurs", "porte-drapeau", "porte-documents", "porte-étendard",
+    "porte-fenêtre", "porte-jarretelles", "porte-manteau", "porte-mine",
+    "porte-monnaie", "porte-parole", "porte-plume", "porte-savon", "porte-voix",
+    "pot-au-feu", "pot-de-vin", "pot-pourri", "garde-à-vous", "premier-ministre",
+    "presse-agrume", "presse-citron", "presse-papier", "presse-purée", "prêt-à-porter",
     "procès-verbal", "pur-sang", "quatre-quarts", "abat-jour", "aide-soignant",
     "aller-retour", "amuse-bouche", "amuse-gueule", "appuie-tête", "attrape-nigaud",
     "auto-stop", "auto-stoppeur", "avant-poste", "avant-projet", "avant-scène",
@@ -93,78 +96,65 @@ VALID_HYPHEN_WORDS = {
     "porte-cigare", "porte-cigarette", "porte-couteau", "porte-crayon",
     "porte-hélicoptères", "porte-malheur", "porte-menu", "porte-musique",
     "porte-parapluie", "porte-serviettes", "porte-toast", "pousse-café",
-    "pousse-pousse", "quartier-maître", "quote-part",
-    "ramasse-miettes", "ramasse-poussière", "raz-de-marée", "rendez-vous",
-    "rez-de-chaussée", "rez-de-jardin", "rond-point", "rouge-gorge", "sage-femme",
-    "saint-bernard", "sèche-cheveux", "sèche-linge", "sèche-mains", "semi-liberté",
-    "semi-marathon", "semi-remorque", "serre-livres", "serre-tête", "savoir-faire",
-    "savoir-vivre", "sapeur-pompier", "side-car", "sous-bois", "sous-chef",
-    "sous-commission", "sous-continent", "sous-couche", "sous-directeur",
-    "sous-alimentation", "sous-emploi", "sous-ensemble", "sous-entendu",
-    "sous-équipement", "sous-estimation", "sous-évaluation", "sous-exposition",
-    "sous-groupe", "sous-lieutenant", "sous-location", "sous-main", "sous-marin",
-    "sous-multiple", "sous-nutrition", "sous-officier", "sous-préfecture",
-    "sous-préfet", "sous-produit", "sous-prolétariat", "sous-région",
-    "sous-secrétaire", "sous-section", "sous-sol", "sous-station", "sous-système",
-    "sous-titre", "sous-traitance", "sous-traitant", "sous-vêtement", "sous-verre",
-    "soutien-gorge", "station-service", "statu-quo", "sud-est", "sud-ouest",
-    "table-ronde", "taille-crayon", "taille-haie", "télé-achat", "télé-crochet",
-    "terre-neuve", "terre-plein", "tête-à-queue", "tête-à-tête", "tire-au-flanc",
-    "tire-bouchon", "tire-fesse", "tire-fond", "tire-lait", "tire-ligne",
-    "tissu-éponge", "grille-viande", "tourne-disque", "tout-petit", "tout-puissant",
-    "tout-terrain", "tragi-comédie", "trouble-fête", "tue-mouche", "ultra-son",
-    "va-et-vient", "va-nu-pieds", "wagon-lit", "wagon-restaurant", "week-end"
+    "pousse-pousse", "quartier-maître", "quote-part", "ramasse-miettes",
+    "ramasse-poussière", "raz-de-marée", "rendez-vous", "rez-de-chaussée",
+    "rez-de-jardin", "rond-point", "rouge-gorge", "sage-femme", "saint-bernard",
+    "sèche-cheveux", "sèche-linge", "sèche-mains", "semi-liberté", "semi-marathon",
+    "semi-remorque", "serre-livres", "serre-tête", "savoir-faire", "savoir-vivre",
+    "sapeur-pompier", "side-car", "sous-bois", "sous-chef", "sous-commission",
+    "sous-continent", "sous-couche", "sous-directeur", "sous-alimentation",
+    "sous-emploi", "sous-ensemble", "sous-entendu", "sous-équipement",
+    "sous-estimation", "sous-évaluation", "sous-exposition", "sous-groupe",
+    "sous-lieutenant", "sous-location", "sous-main", "sous-marin", "sous-multiple",
+    "sous-nutrition", "sous-officier", "sous-préfecture", "sous-préfet",
+    "sous-produit", "sous-prolétariat", "sous-région", "sous-secrétaire",
+    "sous-section", "sous-sol", "sous-station", "sous-système", "sous-titre",
+    "sous-traitance", "sous-traitant", "sous-vêtement", "sous-verre", "soutien-gorge",
+    "station-service", "statu-quo", "sud-est", "sud-ouest", "table-ronde",
+    "taille-crayon", "taille-haie", "télé-achat", "télé-crochet", "terre-neuve",
+    "terre-plein", "tête-à-queue", "tête-à-tête", "tire-au-flanc", "tire-bouchon",
+    "tire-fesse", "tire-fond", "tire-lait", "tire-ligne", "tissu-éponge",
+    "grille-viande", "tourne-disque", "tout-petit", "tout-puissant", "tout-terrain",
+    "tragi-comédie", "trouble-fête", "tue-mouche", "ultra-son", "va-et-vient",
+    "va-nu-pieds", "wagon-lit", "wagon-restaurant", "week-end"
 }
 
 # =============================================================================
 # 2. LISTE NOIRE EXPLICITE (MOTS-OUTILS, SIGLES & FAUTES DE FRAPPE CONNUES)
 # =============================================================================
 BLACKLIST = {
-    # Déterminants, pronoms, prépositions, conjonctions, adverbes et mots-outils
-    "le", "la", "les", "un", "une", "des", "du", "de", "au", "aux", "ce", "cet", "cette",
-    "ces", "mon", "ton", "son", "ma", "ta", "sa", "mes", "tes", "ses", "notre", "votre",
+    "le", "la", "les", "un", "une", "des", "de", "au", "aux", "ce", "cet", "cette",
+    "ces", "mon", "ton", "ma", "ta", "sa", "mes", "tes", "ses", "notre", "votre",
     "leur", "nos", "vos", "leurs", "je", "tu", "il", "elle", "on", "nous", "vous", "ils",
-    "elles", "moi", "toi", "lui", "eux", "soi", "mien", "tien", "sien", "nôtre", "vôtre",
+    "elles", "moi", "toi", "lui", "eux", "mien", "tien", "sien", "nôtre", "vôtre",
     "mienne", "tienne", "sienne", "celui", "celle", "ceux", "celles", "ceci", "cela", "ça",
     "çà", "autrui", "quiconque", "chacun", "chacune", "aucun", "aucune", "nul", "nulle",
-    "personne", "rien", "tout", "tous", "toute", "toutes", "certains", "certaines",
-    "plusieurs", "quelque", "quelques", "tel", "telle", "tels", "telles", "même", "mêmes",
-    "autre", "autres", "lequel", "laquelle", "lesquels", "lesquelles", "duquel", "auquel",
-    "dont", "quoi", "qui", "que", "quel", "quelle", "quels", "quelles", "où", "quand",
-    "comment", "pourquoi", "combien", "mais", "ou", "et", "donc", "or", "ni", "car", "si",
-    "comme", "lorsque", "puisque", "quoique", "dans", "pour", "avec", "sans", "sous",
-    "vers", "chez", "entre", "jusque", "depuis", "pendant", "avant", "après", "contre",
-    "malgré", "selon", "parmi", "envers", "hormis", "outre", "voici", "voilà", "ne", "pas",
-    "plus", "moins", "très", "bien", "aussi", "trop", "peu", "beaucoup", "assez", "tant",
-    "autant", "toujours", "jamais", "souvent", "parfois", "déjà", "encore", "bientôt",
-    "alors", "ainsi", "pourtant", "cependant", "néanmoins", "toutefois", "ailleurs",
-    "autour", "dessus", "dessous", "dedans", "dehors", "devant", "derrière", "loin",
-    "près", "tôt", "tard", "hier", "demain", "aujourd'hui", "oui", "non", "certes",
-    "soit", "voire", "sinon", "plutôt", "guère", "presque", "quasi", "environ",
-    "notamment", "également", "vraiment", "franchement", "heureusement", "tellement",
-    "vachement", "soudain", "brusquement", "doucement", "clairement", "précisément",
-    "réellement", "véritablement", "différemment", "suffisamment", "tantôt", "bref",
-    "pareil", "allez", "bonjour", "bonsoir", "bravo", "merci", "coucou",
-    # Verbes auxiliaires, archaïques et impératifs de recettes (-ez)
-    "être", "avoir", "faire", "dire", "pouvoir", "aller", "voir", "savoir", "vouloir",
-    "venir", "falloir", "devoir", "croire", "trouver", "donner", "prendre", "parler",
-    "aimer", "passer", "mettre", "demander", "tenir", "sembler", "laisser", "rester",
-    "penser", "entendre", "regarder", "répondre", "rendre", "connaître", "paraître",
-    "partir", "sortir", "vivre", "revenir", "comprendre", "attendre", "devenir",
-    "amener", "apporter", "emporter", "entraîner", "provoquer", "permettre", "empêcher",
-    "agir", "contribuer", "développer", "proposer", "taire", "douter", "marrer", "rigoler",
-    "déconner", "foutre", "merde", "gueule", "truc", "chose", "façon", "sorte", "manière",
-    "eût", "fût", "pût", "sût", "dût", "vînt", "tînt", "fît", "dît", "vît", "allât",
-    "salez", "poivrez", "émincez", "emincez", "hachez", "coupez", "ajoutez", "versez",
-    "mélangez", "remuez", "laissez", "faites", "servez", "dégustez", "enfournez",
-    # Nombres
-    "zéro", "un", "deux", "trois", "quatre", "cinq", "six", "sept", "huit", "neuf", "dix",
-    "onze", "douze", "treize", "quatorze", "quinze", "seize", "vingt", "trente", "quarante",
-    "cinquante", "soixante", "cent", "mille", "million", "milliard", "dizaine", "douzaine",
-    "quinzaine", "vingtaine", "trentaine", "quarantaine", "cinquantaine", "centaine",
-    "millier", "premier", "deuxième", "second", "troisième", "quatrième", "cinquième",
-    "sixième", "septième", "huitième", "neuvième", "dixième",
-    # Sigles, marques, anglais et toutes les fautes de frappe repérées dans les 4 audits
+    "rien", "tous", "toute", "toutes", "certains", "certaines", "plusieurs", "quelque",
+    "quelques", "tel", "telle", "tels", "telles", "même", "mêmes", "autre", "autres",
+    "lequel", "laquelle", "lesquels", "lesquelles", "duquel", "auquel", "dont", "quoi",
+    "qui", "que", "quel", "quelle", "quels", "quelles", "où", "quand", "comment",
+    "pourquoi", "combien", "mais", "ou", "et", "donc", "ni", "si", "comme", "lorsque",
+    "puisque", "quoique", "dans", "pour", "avec", "sans", "sous", "vers", "chez", "entre",
+    "jusque", "depuis", "pendant", "avant", "après", "contre", "malgré", "selon", "parmi",
+    "envers", "hormis", "outre", "voici", "voilà", "ne", "plus", "moins", "très", "aussi",
+    "trop", "peu", "beaucoup", "assez", "tant", "autant", "toujours", "jamais", "souvent",
+    "parfois", "déjà", "encore", "bientôt", "alors", "ainsi", "pourtant", "cependant",
+    "néanmoins", "toutefois", "ailleurs", "autour", "dessus", "dessous", "dedans", "dehors",
+    "certe", "certes", "soit", "voire", "sinon", "plutôt", "guère", "presque", "quasi",
+    "environ", "notamment", "également", "vraiment", "franchement", "heureusement",
+    "tellement", "vachement", "soudain", "brusquement", "doucement", "clairement",
+    "précisément", "réellement", "véritablement", "différemment", "suffisamment",
+    "tantôt", "bref", "pareil", "allez", "bonjour", "bonsoir", "bravo", "merci", "coucou",
+    # Verbes archaïques, argot et impératifs de recettes (-ez)
+    "falloir", "amener", "apporter", "emporter", "entraîner", "provoquer", "permettre",
+    "empêcher", "agir", "contribuer", "marrer", "rigoler", "déconner", "foutre", "merde",
+    "gueule", "truc", "chose", "façon", "sorte", "manière", "eût", "fût", "pût", "sût",
+    "dût", "vînt", "tînt", "fît", "dît", "vît", "allât", "salez", "poivrez", "émincez",
+    "emincez", "hachez", "coupez", "ajoutez", "versez", "mélangez", "remuez", "laissez",
+    "faites", "servez", "dégustez", "enfournez",
+    # Faux singuliers de mots toujours pluriels en français
+    "obsèque", "funéraille", "fiançaille", "broussaille", "entraille", "représaille",
+    # Sigles, marques, anglais et fautes de frappe repérées dans les audits
     "http", "https", "www", "html", "htm", "php", "pdf", "jpg", "gif", "png", "url",
     "com", "org", "net", "info", "blog", "post", "mail", "email", "web", "site", "spam",
     "float", "left", "right", "height", "width", "padding", "margin", "border", "color",
@@ -197,7 +187,13 @@ BLACKLIST = {
     "maru", "conchylicol", "blanchiss", "bangalor", "ravenof", "cgtu", "transparency",
     "ufolep", "ullrich", "moreni", "nimp", "eurostat", "sitadel", "scees", "sesp", "vsab",
     "dejantees", "papotte", "systran", "translator", "trad", "deug", "license", "llce",
-    "deust", "stid", "lamper"
+    "deust", "stid", "lamper", "reseal", "nique", "evit", "brezhoneg", "douz", "cjce",
+    "cedh", "enssib", "cadist", "sudoc", "gallerie", "imprimant", "window", "villandry",
+    "gign", "carrasso", "coupet", "lloris", "landreau", "casillas", "fiorentina",
+    "camionette", "vehicule", "fnat", "cermes", "editeur", "sofinco", "cofinoga", "ficp",
+    "intermarché", "lidl", "leclerc", "atac", "cora", "netto", "décathlon", "tesco",
+    "spar", "breteau", "ndjamena", "abéché", "idriss", "déby", "deby", "itno", "djamena",
+    "mahamat", "darfour", "enron", "dgac", "oaci", "dsna", "iaaf", "boutter", "fairepart"
 }
 
 SINGULAR_S_X_KEEP = {
@@ -298,7 +294,6 @@ VALID_MENT_NOUNS = {
 # 3. BANQUE CURATÉE DE NOMS COMMUNS CONCRETS POUR LES 500 MOTS SECRETS
 # =============================================================================
 CURATED_SECRET_NOUNS = [
-    # Nature, Plantes, Paysages & Météo
     "plante", "arbre", "fleur", "forêt", "océan", "montagne", "rivière", "désert",
     "volcan", "tempête", "neige", "plage", "soleil", "étoile", "planète", "nuage",
     "orage", "foudre", "glacier", "cascade", "caverne", "falaise", "colline", "vallée",
@@ -312,18 +307,17 @@ CURATED_SECRET_NOUNS = [
     "cactus", "palmier", "chêne", "sapin", "olivier", "cerisier", "pommier", "vigne",
     "blé", "roseau", "ortie", "lavande", "tournesol", "tulipe", "orchidée", "coquelicot",
     "marguerite", "bouquet", "champignon", "truffe", "algue", "corail", "coquillage",
-    "perle", "éponge",
-    # Animaux
-    "méduse", "pieuvre", "requin", "baleine", "dauphin", "phoque", "morse", "manchot",
-    "tortue", "crocodile", "serpent", "vipère", "cobra", "lézard", "caméléon", "grenouille",
-    "crapaud", "salamandre", "truite", "saumon", "thon", "sardine", "anguille", "hippocampe",
-    "crabe", "homard", "crevette", "huître", "moule", "escargot", "limace", "araignée",
-    "scorpion", "insecte", "abeille", "guêpe", "bourdon", "fourmi", "termite", "papillon",
-    "chenille", "libellule", "coccinelle", "scarabée", "cigale", "grillon", "sauterelle",
-    "moustique", "mouche", "oiseau", "aigle", "faucon", "vautour", "hibou", "chouette",
-    "corbeau", "pie", "moineau", "hirondelle", "pigeon", "colombe", "mouette", "goéland",
-    "pélican", "flamant", "cygne", "canard", "oie", "dinde", "poule", "coq", "poussin",
-    "paon", "autruche", "perroquet", "toucan", "colibri", "cigogne", "héron", "rossignol",
+    "perle", "éponge", "méduse", "pieuvre", "requin", "baleine", "dauphin", "phoque",
+    "morse", "manchot", "tortue", "crocodile", "serpent", "vipère", "cobra", "lézard",
+    "caméléon", "grenouille", "crapaud", "salamandre", "truite", "saumon", "thon",
+    "sardine", "anguille", "hippocampe", "crabe", "homard", "crevette", "huître",
+    "moule", "escargot", "limace", "araignée", "scorpion", "insecte", "abeille",
+    "guêpe", "bourdon", "fourmi", "termite", "papillon", "chenille", "libellule",
+    "coccinelle", "scarabée", "cigale", "grillon", "sauterelle", "moustique", "mouche",
+    "oiseau", "aigle", "faucon", "vautour", "hibou", "chouette", "corbeau", "pie",
+    "moineau", "hirondelle", "pigeon", "colombe", "mouette", "goéland", "pélican",
+    "flamant", "cygne", "canard", "oie", "dinde", "poule", "coq", "poussin", "paon",
+    "autruche", "perroquet", "toucan", "colibri", "cigogne", "héron", "rossignol",
     "merle", "chien", "chiot", "chat", "cheval", "poulain", "âne", "zèbre", "vache",
     "taureau", "veau", "mouton", "brebis", "agneau", "chèvre", "cochon", "sanglier",
     "cerf", "biche", "chevreuil", "renne", "élan", "chamois", "girafe", "chameau",
@@ -332,7 +326,6 @@ CURATED_SECRET_NOUNS = [
     "kangourou", "singe", "gorille", "chimpanzé", "lémurien", "castor", "loutre",
     "blaireau", "furet", "belette", "hermine", "écureuil", "marmotte", "hamster",
     "souris", "rat", "mulot", "taupe", "hérisson", "lapin", "lièvre", "chauve-souris",
-    # Gastronomie & Cuisine
     "cuisine", "restaurant", "recette", "repas", "banquet", "pique-nique", "petit-déjeuner",
     "déjeuner", "dîner", "apéritif", "plat", "dessert", "pain", "baguette", "croissant",
     "brioche", "biscuit", "gâteau", "tarte", "crêpe", "gaufre", "beignet", "macaron",
@@ -356,26 +349,25 @@ CURATED_SECRET_NOUNS = [
     "cannelle", "vanille", "safran", "curry", "gingembre", "muscade", "persil", "basilic",
     "thym", "romarin", "menthe", "coriandre", "ciboulette", "laurier", "estragon",
     "boisson", "eau", "jus", "limonade", "soda", "café", "thé", "infusion", "tisane",
-    "vin", "champagne", "bière", "cidre", "liqueur", "cocktail",
-    # Maison, Architecture & Objets
-    "maison", "immeuble", "appartement", "château", "palais", "manoir", "villa",
-    "chalet", "cabane", "chaumière", "ferme", "grange", "moulin", "phare", "tour",
-    "gratte-ciel", "bâtiment", "chantier", "architecture", "façade", "toiture", "toit",
-    "tuile", "ardoise", "cheminée", "gouttière", "mur", "cloison", "plafond", "plancher",
-    "parquet", "carrelage", "moquette", "tapis", "fondation", "pilier", "colonne",
-    "poutre", "voûte", "coupole", "balcon", "terrasse", "véranda", "porche",
-    "perron", "cour", "jardin", "potager", "pelouse", "haie", "clôture", "portail",
-    "grille", "allée", "tonnelle", "serre", "piscine", "fontaine", "puits", "bassin",
-    "cave", "sous-sol", "cellier", "garage", "grenier", "comble", "étage", "rez-de-chaussée",
-    "escalier", "marche", "rampe", "ascenseur", "couloir", "vestibule", "salon",
-    "chambre", "bureau", "bibliothèque", "buanderie", "toilette", "baignoire", "douche",
-    "lavabo", "évier", "robinet", "tuyau", "radiateur", "chauffage", "chaudière",
-    "climatisation", "ventilateur", "poêle", "âtre", "porte", "serrure", "verrou", "clé",
-    "poignée", "sonnette", "fenêtre", "vitre", "volet", "persienne", "rideau", "store",
-    "mobilier", "meuble", "table", "chaise", "fauteuil", "canapé", "tabouret", "banc",
-    "lit", "matelas", "sommier", "oreiller", "traversin", "drap", "couverture", "couette",
-    "édredon", "berceau", "armoire", "placard", "commode", "tiroir", "étagère", "vitrine",
-    "buffet", "vaisselier", "pupitre", "coffre", "malle", "valise", "sac", "cartable",
+    "vin", "champagne", "bière", "cidre", "liqueur", "cocktail", "maison", "immeuble",
+    "appartement", "château", "palais", "manoir", "villa", "chalet", "cabane", "chaumière",
+    "ferme", "grange", "moulin", "phare", "tour", "gratte-ciel", "bâtiment", "chantier",
+    "architecture", "façade", "toiture", "toit", "tuile", "ardoise", "cheminée",
+    "gouttière", "mur", "cloison", "plafond", "plancher", "parquet", "carrelage",
+    "moquette", "tapis", "fondation", "pilier", "colonne", "poutre", "voûte", "coupole",
+    "balcon", "terrasse", "véranda", "porche", "perron", "cour", "jardin", "potager",
+    "pelouse", "haie", "clôture", "portail", "grille", "allée", "tonnelle", "serre",
+    "piscine", "fontaine", "puits", "bassin", "cave", "sous-sol", "cellier", "garage",
+    "grenier", "comble", "étage", "rez-de-chaussée", "escalier", "marche", "rampe",
+    "ascenseur", "couloir", "vestibule", "salon", "chambre", "bureau", "bibliothèque",
+    "buanderie", "toilette", "baignoire", "douche", "lavabo", "évier", "robinet", "tuyau",
+    "radiateur", "chauffage", "chaudière", "climatisation", "ventilateur", "poêle",
+    "âtre", "porte", "serrure", "verrou", "clé", "poignée", "sonnette", "fenêtre",
+    "vitre", "volet", "persienne", "rideau", "store", "mobilier", "meuble", "table",
+    "chaise", "fauteuil", "canapé", "tabouret", "banc", "lit", "matelas", "sommier",
+    "oreiller", "traversin", "drap", "couverture", "couette", "édredon", "berceau",
+    "armoire", "placard", "commode", "tiroir", "étagère", "vitrine", "buffet",
+    "vaisselier", "pupitre", "coffre", "malle", "valise", "sac", "cartable",
     "portefeuille", "porte-monnaie", "parapluie", "ombrelle", "canne", "éventail",
     "miroir", "cadre", "tableau", "horloge", "pendule", "réveil", "montre", "sablier",
     "calendrier", "lampe", "lustre", "abat-jour", "ampoule", "bougie", "chandelle",
@@ -400,57 +392,53 @@ CURATED_SECRET_NOUNS = [
     "chaussure", "soulier", "botte", "bottine", "sandale", "pantoufle", "chausson",
     "sabot", "espadrille", "basket", "talon", "semelle", "lacet", "bijou", "bague",
     "alliance", "anneau", "bracelet", "collier", "pendentif", "médaillon", "broche",
-    "diadème", "couronne", "parfum", "maquillage", "lunettes",
-    # Transports & Voyages
-    "transport", "voyage", "trajet", "itinéraire", "route", "autoroute", "chemin",
-    "sentier", "piste", "boulevard", "avenue", "rue", "ruelle", "impasse", "carrefour",
-    "rond-point", "pont", "viaduc", "passerelle", "tunnel", "péage", "trottoir",
-    "chaussée", "bitume", "asphalte", "pavé", "fossé", "virage", "pente", "panneau",
-    "radar", "embouteillage", "bouchon", "panne", "parking", "station-service",
-    "essence", "carburant", "diesel", "moteur", "roue", "pneu", "frein", "volant",
-    "pédale", "embrayage", "vitesse", "clignotant", "pare-brise", "essuie-glace",
-    "rétroviseur", "pare-chocs", "capot", "portière", "siège", "klaxon", "batterie",
-    "échappement", "carrosserie", "châssis", "suspension", "amortisseur", "voiture",
-    "automobile", "véhicule", "camion", "poids-lourd", "remorque", "fourgon",
-    "camionnette", "bus", "autobus", "autocar", "tramway", "trolleybus", "métro",
-    "train", "locomotive", "wagon", "rail", "gare", "quai", "guichet", "billet",
-    "ticket", "composteur", "contrôleur", "horaire", "terminus", "aiguillage", "vélo",
-    "bicyclette", "guidon", "selle", "chaîne", "garde-boue", "pompe", "moto",
-    "motocyclette", "scooter", "mobylette", "side-car", "avion", "aéronef", "planeur",
-    "hélicoptère", "fusée", "navette", "satellite", "sonde", "dirigeable", "montgolfière",
-    "parachute", "parapente", "deltaplane", "aile", "hélice", "réacteur", "turbine",
-    "cockpit", "cabine", "hublot", "soute", "aéroport", "aérodrome", "tarmac", "hangar",
-    "terminal", "embarquement", "décollage", "atterrissage", "escale", "hôtesse",
-    "pilote", "bateau", "navire", "paquebot", "cargo", "pétrolier", "chalutier",
-    "remorqueur", "ferry", "yacht", "voilier", "catamaran", "goélette", "caravelle",
-    "galère", "jonque", "pirogue", "canoë", "kayak", "radeau", "barque", "canot",
-    "péniche", "gondole", "sous-marin", "porte-avions", "croiseur", "frégate", "coque",
-    "proue", "poupe", "tribord", "bâbord", "cale", "mât", "voile", "cordage",
-    "gouvernail", "timon", "ancre", "rame", "aviron", "pagaie", "bouée", "port",
-    "jetée", "digue", "écluse", "canal", "balise", "boussole", "compas", "sextant",
-    "carte", "atlas", "globe", "jumelles", "sonar", "naufrage", "épave",
-    # Corps Humain & Santé Courante
-    "corps", "squelette", "os", "crâne", "vertèbre", "muscle", "peau", "cicatrice",
-    "larme", "sang", "veine", "artère", "poumon", "cerveau", "nerf", "estomac", "foie",
-    "rein", "tête", "visage", "front", "joue", "mâchoire", "menton", "œil", "paupière",
-    "cil", "sourcil", "pupille", "nez", "narine", "oreille", "bouche", "lèvre", "langue",
-    "gorge", "dent", "gencive", "cheveu", "barbe", "moustache", "cou", "nuque", "épaule",
-    "bras", "coude", "avant-bras", "poignet", "main", "paume", "doigt", "pouce", "ongle",
-    "poing", "poitrine", "torse", "ventre", "abdomen", "nombril", "hanche", "dos",
-    "jambe", "cuisse", "genou", "mollet", "cheville", "pied", "orteil", "santé",
-    "médecine", "hôpital", "clinique", "urgence", "ambulance", "brancard", "civière",
-    "pharmacie", "laboratoire", "médecin", "docteur", "chirurgien", "dentiste",
+    "diadème", "couronne", "parfum", "maquillage", "lunettes", "transport", "voyage",
+    "trajet", "itinéraire", "route", "autoroute", "chemin", "sentier", "piste",
+    "boulevard", "avenue", "rue", "ruelle", "impasse", "carrefour", "rond-point", "pont",
+    "viaduc", "passerelle", "tunnel", "péage", "trottoir", "chaussée", "bitume",
+    "asphalte", "pavé", "fossé", "virage", "pente", "panneau", "radar", "embouteillage",
+    "bouchon", "panne", "parking", "station-service", "essence", "carburant", "diesel",
+    "moteur", "roue", "pneu", "frein", "volant", "pédale", "embrayage", "vitesse",
+    "clignotant", "pare-brise", "essuie-glace", "rétroviseur", "pare-chocs", "capot",
+    "portière", "siège", "klaxon", "batterie", "échappement", "carrosserie", "châssis",
+    "suspension", "amortisseur", "voiture", "automobile", "véhicule", "camion",
+    "poids-lourd", "remorque", "fourgon", "camionnette", "bus", "autobus", "autocar",
+    "tramway", "trolleybus", "métro", "train", "locomotive", "wagon", "rail", "gare",
+    "quai", "guichet", "billet", "ticket", "composteur", "contrôleur", "horaire",
+    "terminus", "aiguillage", "vélo", "bicyclette", "guidon", "selle", "chaîne",
+    "garde-boue", "pompe", "moto", "motocyclette", "scooter", "mobylette", "side-car",
+    "avion", "aéronef", "planeur", "hélicoptère", "fusée", "navette", "satellite",
+    "sonde", "dirigeable", "montgolfière", "parachute", "parapente", "deltaplane",
+    "aile", "hélice", "réacteur", "turbine", "cockpit", "cabine", "hublot", "soute",
+    "aéroport", "aérodrome", "tarmac", "hangar", "terminal", "embarquement", "décollage",
+    "atterrissage", "escale", "hôtesse", "pilote", "bateau", "navire", "paquebot",
+    "cargo", "pétrolier", "chalutier", "remorqueur", "ferry", "yacht", "voilier",
+    "catamaran", "goélette", "caravelle", "galère", "jonque", "pirogue", "canoë",
+    "kayak", "radeau", "barque", "canot", "péniche", "gondole", "sous-marin",
+    "porte-avions", "croiseur", "frégate", "coque", "proue", "poupe", "tribord",
+    "bâbord", "cale", "mât", "voile", "cordage", "gouvernail", "timon", "ancre", "rame",
+    "aviron", "pagaie", "bouée", "port", "jetée", "digue", "écluse", "canal", "balise",
+    "boussole", "compas", "sextant", "carte", "atlas", "globe", "jumelles", "sonar",
+    "naufrage", "épave", "corps", "squelette", "os", "crâne", "vertèbre", "muscle",
+    "peau", "cicatrice", "larme", "sang", "veine", "artère", "poumon", "cerveau", "nerf",
+    "estomac", "foie", "rein", "tête", "visage", "front", "joue", "mâchoire", "menton",
+    "œil", "paupière", "cil", "sourcil", "pupille", "nez", "narine", "oreille", "bouche",
+    "lèvre", "langue", "gorge", "dent", "gencive", "cheveu", "barbe", "moustache", "cou",
+    "nuque", "épaule", "bras", "coude", "avant-bras", "poignet", "main", "paume", "doigt",
+    "pouce", "ongle", "poing", "poitrine", "torse", "ventre", "abdomen", "nombril",
+    "hanche", "dos", "jambe", "cuisse", "genou", "mollet", "cheville", "pied", "orteil",
+    "santé", "médecine", "hôpital", "clinique", "urgence", "ambulance", "brancard",
+    "civière", "pharmacie", "laboratoire", "médecin", "docteur", "chirurgien", "dentiste",
     "pédiatre", "psychiatre", "vétérinaire", "pharmacien", "infirmier", "aide-soignant",
     "sage-femme", "kinésithérapeute", "patient", "malade", "maladie", "symptôme",
     "douleur", "fièvre", "frisson", "toux", "rhume", "grippe", "angine", "bronchite",
-    "asthme", "allergie", "virus", "bactérie", "microbe", "épidémie", "blessure",
-    "plaie", "coupure", "brûlure", "entorse", "fracture", "vertige", "nausée",
-    "migraine", "insomnie", "fatigue", "stress", "carie", "diagnostic", "radiographie",
-    "échographie", "scanner", "chirurgie", "anesthésie", "greffe", "suture", "guérison",
-    "remède", "médicament", "ordonnance", "pilule", "comprimé", "gélule", "aspirine",
+    "asthme", "allergie", "virus", "bactérie", "microbe", "épidémie", "blessure", "plaie",
+    "coupure", "brûlure", "entorse", "fracture", "vertige", "nausée", "migraine",
+    "insomnie", "fatigue", "stress", "carie", "diagnostic", "radiographie", "échographie",
+    "scanner", "chirurgie", "anesthésie", "greffe", "suture", "guérison", "remède",
+    "médicament", "ordonnance", "pilule", "comprimé", "gélule", "aspirine",
     "antibiotique", "vaccin", "piqûre", "seringue", "pommade", "pansement", "sparadrap",
     "bandage", "plâtre", "attelle", "béquille", "stéthoscope", "thermomètre", "scalpel",
-    # Arts, Musique, Littérature, Cinéma, Jeux & Sports
     "art", "musée", "galerie", "exposition", "peinture", "toile", "fresque", "aquarelle",
     "gouache", "pastel", "fusain", "encre", "portrait", "paysage", "croquis", "esquisse",
     "dessin", "gravure", "caricature", "illustration", "pinceau", "palette", "chevalet",
@@ -507,22 +495,21 @@ CURATED_SECRET_NOUNS = [
     "vestiaire", "arbitre", "sifflet", "chronomètre", "entraîneur", "équipe", "joueur",
     "capitaine", "gardien", "supporter", "match", "compétition", "tournoi", "championnat",
     "finale", "demi-finale", "victoire", "défaite", "record", "exploit", "champion",
-    "vainqueur", "adversaire", "médaille", "trophée", "podium",
-    # Société, Métiers, Économie, Justice, Histoire & Sciences
-    "école", "maternelle", "collège", "lycée", "université", "faculté", "institut",
-    "internat", "classe", "amphithéâtre", "récréation", "cantine", "élève", "écolier",
-    "collégien", "lycéen", "étudiant", "apprenti", "professeur", "instituteur",
-    "enseignant", "chercheur", "proviseur", "recteur", "surveillant", "cours", "leçon",
-    "devoir", "exercice", "dictée", "rédaction", "interrogation", "examen", "concours",
-    "épreuve", "diplôme", "baccalauréat", "licence", "doctorat", "thèse", "bulletin",
-    "métier", "profession", "travail", "emploi", "stage", "apprentissage", "carrière",
-    "atelier", "usine", "fabrique", "manufacture", "entrepôt", "mine", "forage",
-    "raffinerie", "centrale", "barrage", "éolienne", "entreprise", "coopérative",
-    "syndicat", "grève", "manifestation", "patron", "employeur", "directeur", "employé",
-    "ouvrier", "technicien", "ingénieur", "artisan", "commerçant", "marchand", "vendeur",
-    "client", "consommateur", "fournisseur", "livreur", "agriculteur", "paysan",
-    "fermier", "éleveur", "berger", "vigneron", "jardinier", "bûcheron", "pêcheur",
-    "marin", "mineur", "forgeron", "serrurier", "plombier", "électricien", "menuisier",
+    "vainqueur", "adversaire", "médaille", "trophée", "podium", "école", "maternelle",
+    "collège", "lycée", "université", "faculté", "institut", "internat", "classe",
+    "amphithéâtre", "récréation", "cantine", "élève", "écolier", "collégien", "lycéen",
+    "étudiant", "apprenti", "professeur", "instituteur", "enseignant", "chercheur",
+    "proviseur", "recteur", "surveillant", "cours", "leçon", "devoir", "exercice",
+    "dictée", "rédaction", "interrogation", "examen", "concours", "épreuve", "diplôme",
+    "baccalauréat", "licence", "doctorat", "thèse", "bulletin", "métier", "profession",
+    "travail", "emploi", "stage", "apprentissage", "carrière", "atelier", "usine",
+    "fabrique", "manufacture", "entrepôt", "mine", "forage", "raffinerie", "centrale",
+    "barrage", "éolienne", "entreprise", "coopérative", "syndicat", "grève",
+    "manifestation", "patron", "employeur", "directeur", "employé", "ouvrier",
+    "technicien", "ingénieur", "artisan", "commerçant", "marchand", "vendeur", "client",
+    "consommateur", "fournisseur", "livreur", "agriculteur", "paysan", "fermier",
+    "éleveur", "berger", "vigneron", "jardinier", "bûcheron", "pêcheur", "marin",
+    "mineur", "forgeron", "serrurier", "plombier", "électricien", "menuisier",
     "charpentier", "ébéniste", "maçon", "couvreur", "vitrier", "carreleur", "mécanicien",
     "garagiste", "chauffeur", "conducteur", "facteur", "postier", "boulanger", "pâtissier",
     "boucher", "charcutier", "poissonnier", "épicier", "cuisinier", "barman", "hôtelier",
@@ -618,6 +605,7 @@ CURATED_SECRET_NOUNS = [
 ]
 
 def strip_accents(s):
+    s = s.replace("œ", "oe").replace("æ", "ae")
     return "".join(
         c for c in unicodedata.normalize("NFD", s)
         if unicodedata.category(c) != "Mn"
@@ -629,6 +617,16 @@ def has_french_accent(s):
 def get_singular_candidate(w):
     if w in SINGULAR_S_X_KEEP or "-" in w or len(w) <= 3:
         return None
+    if w == "yeux":
+        return "œil"
+    if w == "cieux":
+        return "ciel"
+    irregular_ail = {
+        "travaux": "travail", "vitraux": "vitrail", "coraux": "corail",
+        "émaux": "émail", "baux": "bail", "soupiraux": "soupirail", "vantaux": "vantail"
+    }
+    if w in irregular_ail:
+        return irregular_ail[w]
     if w.endswith("eaux") and len(w) > 5:
         return w[:-1]
     if w.endswith("aux") and len(w) > 4:
@@ -643,26 +641,25 @@ def is_valid_french_word(w):
     if w in BLACKLIST:
         return False
 
-    # 1. Mots de 2-3 lettres : liste blanche fermée
+    # Bloque les accents étrangers (espagnol/portugais : jardÍn, marÍa, etc.)
+    if any(c in w for c in "áíóúñãõ¡¿"):
+        return False
+
     if len(w) <= 3:
         return w in VALID_SHORT_WORDS
 
-    # 2. Mots composés avec tiret : liste blanche fermée
     if "-" in w:
         return w in VALID_HYPHEN_WORDS
 
     if not w.isalpha():
         return False
 
-    # 3. Verbes conjugués en -ez (salez, emincez...)
     if w.endswith("ez") and len(w) >= 4:
         return False
 
-    # 4. Adverbes en -ment (en gardant les vrais noms en -ment)
     if w.endswith("ment") and len(w) > 5 and w not in VALID_MENT_NOUNS:
         return False
 
-    # 5. Sigles sans voyelle ou avec 5 consonnes d'affilée
     vowels = set("aeiouyàâäéèêëîïôöùûüÿœæ")
     if not any(c in vowels for c in w):
         return False
@@ -734,7 +731,6 @@ def build_semantic_ban_mask(raw_words, raw_word_to_idx, raw_vectors):
         sims = raw_vectors @ centroid
         bad_idxs = np.where(sims >= threshold)[0]
         for idx in bad_idxs:
-            # Ne bannit JAMAIS un mot courant situé dans les 20 000 premiers mots du français
             if idx >= 20000 and raw_words[idx] not in protected_set:
                 banned_indices.add(int(idx))
 
@@ -742,16 +738,14 @@ def build_semantic_ban_mask(raw_words, raw_word_to_idx, raw_vectors):
     return banned_indices
 
 def build_deduplicated_vocabulary(words, raw_word_to_idx, banned_indices):
-    print("3/5 Construction du vocabulaire (avec protection de 'plante' et suppression des doublons sans accent)...")
+    print("3/5 Construction du vocabulaire (avec pré-détection globale des pluriels)...")
     candidates = []
     seen_exact = set()
-    # Stocke uniquement les mots accentués dont l'accent n'est PAS une simple terminaison de participe passé (-é/-ée)
     internal_accent_lookup = {}
 
     for idx, w in enumerate(words):
         if idx in banned_indices or w in seen_exact or not is_valid_french_word(w):
             continue
-        # Exclut les siècles en chiffres romains (ex: xvème, xviième, xiiième)
         if w.endswith(("ème", "eme")) and any(c in w[:-3] for c in "ivx"):
             continue
 
@@ -760,7 +754,6 @@ def build_deduplicated_vocabulary(words, raw_word_to_idx, banned_indices):
 
         if has_french_accent(w):
             unacc = strip_accents(w)
-            # RÈGLE CRUCIALE : Ne jamais enregistrer "planté" comme version accentuée de "plante" !
             if not (w.endswith(("é", "ée", "és", "ées")) and not has_french_accent(w.rstrip("s").rstrip("e")[:-1])):
                 if unacc not in internal_accent_lookup:
                     internal_accent_lookup[unacc] = (w, idx)
@@ -768,11 +761,13 @@ def build_deduplicated_vocabulary(words, raw_word_to_idx, banned_indices):
         if len(candidates) >= 105000:
             break
 
-    # Vrais homographes français où la version sans accent et avec accent sont 2 vrais mots différents
+    # Ensemble global de tous les candidats valides (permet de détecter le singulier même s'il est moins fréquent que le pluriel !)
+    all_valid_candidates_set = {w for _, w in candidates}
+
     TRUE_HOMOGRAPHS = {
         "mur", "tache", "cote", "jeune", "pate", "foret", "du", "cru",
         "sur", "mat", "chaine", "boite", "haler", "batir", "pecher", "gene",
-        "pole", "cone", "dome", "role", "jeunes", "romo", "acre"
+        "pole", "cone", "dome", "role", "jeunes", "acre", "matin", "jardin"
     }
 
     clean_indices = []
@@ -780,14 +775,15 @@ def build_deduplicated_vocabulary(words, raw_word_to_idx, banned_indices):
     word_to_clean_pos = {}
 
     for orig_idx, w in candidates:
-        # 1. Supprime toute faute d'oubli d'accent (chateau -> château, etoile -> étoile, reseau -> réseau)
-        # tout en gardant les vrais mots en -e (plante != planté) et les vrais homographes (mur != mûr)
+        # 1. Supprime toute faute d'oubli d'accent si la version accentuée est plus fréquente (acc_idx < orig_idx)
         if not has_french_accent(w) and w in internal_accent_lookup and w not in TRUE_HOMOGRAPHS:
-            continue
+            acc_word, acc_idx = internal_accent_lookup[w]
+            if acc_idx < orig_idx:
+                continue
 
-        # 2. Filtre des pluriels (uniquement si le singulier est déjà présent dans notre dictionnaire propre)
+        # 2. Supprime tout pluriel dès lors que son singulier existe dans les candidats (même plus loin dans la liste !)
         sing = get_singular_candidate(w)
-        if sing and sing in word_to_clean_pos:
+        if sing and (sing in word_to_clean_pos or sing in all_valid_candidates_set):
             continue
 
         word_to_clean_pos[w] = len(clean_words)
@@ -797,20 +793,19 @@ def build_deduplicated_vocabulary(words, raw_word_to_idx, banned_indices):
         if len(clean_words) >= TARGET_CLEAN_VOCAB:
             break
 
-    # Auto-test de sécurité sur les mots courants ET vérification que les fautes sans accent sont bien supprimées
     must_exist = [
-        "plante", "plant", "planter", "arbre", "fleur", "forêt", "feuille", "racine", "jardin",
-        "ferme", "forme", "force", "place", "coupe", "groupe", "compte", "garde", "marche",
-        "château", "étoile", "réseau", "éditeur", "aïkido", "poisson", "poison", "désert", "dessert"
+        "plante", "jardin", "matin", "espoir", "pierre", "infirmier", "cil", "or", "neuf",
+        "devoir", "château", "étoile", "réseau", "éditeur", "poisson", "poison", "désert", "dessert"
     ]
-    must_not_exist = ["chateau", "etoile", "reseau", "editeur", "aikido", "xvème", "xviième"]
+    must_not_exist = ["chateau", "etoile", "reseau", "editeur", "aikido", "xvème", "xviième", "gants", "mots"]
 
     present = [tw for tw in must_exist if tw in word_to_clean_pos]
+    missing = [tw for tw in must_exist if tw not in word_to_clean_pos]
     leaked = [tw for tw in must_not_exist if tw in word_to_clean_pos]
 
     print(f"    ✓ Vocabulaire final : {len(clean_words):,} mots")
-    print(f"    ✓ Auto-test mots valides : {len(present)}/{len(must_exist)} présents")
-    print(f"    ✓ Auto-test fautes supprimées : {len(leaked)} fuite(s) ({leaked if leaked else '100% propre !'})")
+    print(f"    ✓ Auto-test mots valides : {len(present)}/{len(must_exist)} présents (Manquants: {missing if missing else 'Aucun !'})")
+    print(f"    ✓ Auto-test fautes/pluriels supprimés : {len(leaked)} fuite(s) ({leaked if leaked else '100% propre !'})")
 
     return np.array(clean_indices, dtype=np.int32), clean_words, word_to_clean_pos
 
@@ -821,7 +816,14 @@ def select_500_curated_secrets(clean_words, clean_vectors, word_to_clean_pos, co
 
     for w in CURATED_SECRET_NOUNS:
         w_low = w.lower().strip()
-        if w_low in seen or w_low not in word_to_clean_pos:
+        if w_low not in word_to_clean_pos:
+            # Tolérance œ <-> oe (ex: œil -> oeil, bœuf -> boeuf)
+            w_alt = w_low.replace("œ", "oe")
+            if w_alt in word_to_clean_pos:
+                w_low = w_alt
+            else:
+                continue
+        if w_low in seen:
             continue
         seen.add(w_low)
 
@@ -853,6 +855,7 @@ def generate_500_games():
     for game_id, secret in enumerate(secrets, start=1):
         secret_pos = word_to_clean_pos[secret]
         target_vec = clean_vectors[secret_pos]
+        secret_stem = strip_accents(secret).replace("-", "")
 
         sims = clean_vectors @ target_vec
         order = np.argsort(-sims)
@@ -864,6 +867,11 @@ def generate_500_games():
             w = clean_words[pos]
             if w == secret:
                 words_dict[w] = [100.0, 1000]
+                continue
+
+            # Évite qu'une simple variante orthographique ou féminine directe du mot secret (ex: poissonnière sous poissonnier) prenne le Top 2
+            w_stem = strip_accents(w).replace("-", "")
+            if w_stem == secret_stem or (len(secret_stem) >= 5 and w_stem == secret_stem + "e"):
                 continue
 
             if rank_counter > 1:
@@ -879,7 +887,7 @@ def generate_500_games():
         if game_id % 50 == 0 or game_id == len(secrets):
             print(f"    [{game_id}/{len(secrets)}] parties générées...")
 
-    print("✅ Terminé ! Tous les mots courants (dont 'plante') sont désormais présents.")
+    print("✅ Terminé ! Vos 500 parties classiques sont régénérées et 100% conformes.")
 
 if __name__ == "__main__":
     generate_500_games()

@@ -1,19 +1,45 @@
 // =========================================================================
-// 1. CONFIGURATION, SUPABASE CLOUD & CONSTANTES (v1.0)
+// 1. CONFIGURATION, SUPABASE CLOUD & CONSTANTES (v1.1)
 // =========================================================================
-const APP_VERSION = "v1.0";
+const APP_VERSION = "v1.1";
 const APP_EDITION = "Édition Solaire";
 const $ = id => document.getElementById(id);
 
-const SUPABASE_URL = window.SUPABASE_URL || "";
-const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || "";
+const MODE_CONFIG = {
+  classic: {
+    total: 500,
+    folder: "parties",
+    label: "Classique",
+    icon: "ph-compass-rose",
+    color: "text-sky-400",
+    pillCls: "bg-sky-500/10 text-sky-300 border-sky-500/25"
+  },
+  pop: {
+    total: 91,
+    folder: "parties_pop",
+    label: "Pop & Manga",
+    icon: "ph-game-controller",
+    color: "text-purple-400",
+    pillCls: "bg-purple-500/15 text-purple-200 border-purple-500/40"
+  }
+};
+let currentGameMode = localStorage.getItem("zeroabsolu_mode") || "classic";
+
+const SUPABASE_URL = (() => {
+  try {
+    return window.SUPABASE_URL ? new URL(window.SUPABASE_URL.trim()).origin : "";
+  } catch (_) {
+    return "";
+  }
+})();
+const SUPABASE_ANON_KEY = (window.SUPABASE_ANON_KEY || "").trim();
 
 const sbClient = (SUPABASE_URL && SUPABASE_ANON_KEY && window.supabase)
   ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
   : null;
 
-const TOTAL_GAMES = 500, HINT_COST = 35, XP_PER_LEVEL = 100;
-const TOPIC_ROOT = "zeroabsolu/v10/rooms/";
+const HINT_COST = 35, XP_PER_LEVEL = 100;
+const TOPIC_ROOT = "zeroabsolu/v11/rooms/";
 
 const WSS_BROKERS = [
   "wss://broker.emqx.io:8084/mqtt",
@@ -42,13 +68,13 @@ sessionStorage.setItem("za_tab_id", myId);
 let myPseudo = localStorage.getItem("zeroabsolu_pseudo") || "";
 let myPassword = localStorage.getItem("zeroabsolu_pwd") || "";
 let isAuthenticated = false;
-let authMode = "login"; // "login" ou "register"
+let authMode = "login";
 let currentTutoSlide = 0;
 
 let savedStats = JSON.parse(localStorage.getItem("zeroabsolu_profile_v2") || "{}");
 
 let hasStartedSession = false, roomCode = null, isHost = true;
-let roundNumber = 1, playedGameIds = new Set(), currentGameId = pickUnplayedGameId();
+let roundNumber = 1, playedGameIds = new Set(), currentGameId = pickUnplayedGameId(currentGameMode);
 let currentLoadSeq = 0;
 let gameDictionary = {}, accentInsensitiveMap = {}, guesses = [];
 let roundFinished = false, roomBestScorePct = 0, roomBestRank = 0;
@@ -59,16 +85,64 @@ let statsMinimized = false, statsIdleTimer = null, surgeHideTimer = null, levelU
 let secretClickCount = 0, secretClickTimer = null;
 
 const escapeHTML = s => String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
-const stripAccents = s => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase();
+const stripAccents = s => s.replace(/œ/g, "oe").replace(/æ/g, "ae").normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase();
 const vibrateDevice = p => { try { navigator.vibrate?.(p); } catch (_) {} };
 const formatPct = v => v >= 100 ? "100%" : `${Number(v).toFixed(1)}%`;
 const getReadableTopLabel = r => r === 1000 ? "FUSION" : r ? `Top ${1001 - r}` : null;
-const toggleModal = (id, show) => $(id).classList.toggle("hidden", !show);
+const toggleModal = (id, show) => $(id)?.classList.toggle("hidden", !show);
 
-function pickUnplayedGameId() {
-  if (playedGameIds.size >= TOTAL_GAMES) playedGameIds.clear();
-  let c; do { c = Math.floor(Math.random() * TOTAL_GAMES) + 1; } while (playedGameIds.has(c));
-  playedGameIds.add(c); return c;
+function pickUnplayedGameId(mode = currentGameMode) {
+  const maxGames = MODE_CONFIG[mode]?.total || 500;
+  if (playedGameIds.size >= maxGames) playedGameIds.clear();
+  let c;
+  do {
+    c = Math.floor(Math.random() * maxGames) + 1;
+  } while (playedGameIds.has(c));
+  playedGameIds.add(c);
+  return c;
+}
+
+function updateModeUI(mode = currentGameMode) {
+  const isPop = mode === "pop";
+  if ($("modeClassicBtn") && $("modePopBtn")) {
+    $("modeClassicBtn").className = !isPop
+      ? "py-2 px-2.5 rounded-xl bg-sky-500/20 border border-sky-400/50 text-sky-200 flex items-center justify-center gap-2 transition shadow-sm"
+      : "py-2 px-2.5 rounded-xl bg-slate-900/60 border border-transparent text-slate-400 hover:text-white flex items-center justify-center gap-2 transition";
+    $("modePopBtn").className = isPop
+      ? "py-2 px-2.5 rounded-xl bg-purple-500/25 border border-purple-400/60 text-purple-100 flex items-center justify-center gap-2 transition shadow-sm"
+      : "py-2 px-2.5 rounded-xl bg-slate-900/60 border border-transparent text-slate-400 hover:text-white flex items-center justify-center gap-2 transition";
+  }
+
+  const cfg = MODE_CONFIG[mode] || MODE_CONFIG.classic;
+  if ($("modeHeaderBadge")) {
+    $("modeHeaderBadge").className = `cursor-pointer text-[11px] font-bold px-2 py-1 rounded-lg border flex items-center gap-1 shrink-0 ${cfg.pillCls}`;
+    $("modeHeaderIcon").className = `ph-duotone ${cfg.icon} text-xs ${cfg.color}`;
+    $("modeHeaderText").textContent = cfg.label;
+  }
+}
+
+function selectGameMode(mode) {
+  if (!MODE_CONFIG[mode]) return;
+  if (roomCode && !isHost) {
+    showToast("Seul l'hôte du salon peut changer le mode de jeu.", "amber");
+    return;
+  }
+  const changed = currentGameMode !== mode;
+  currentGameMode = mode;
+  localStorage.setItem("zeroabsolu_mode", mode);
+  updateModeUI(mode);
+
+  if (changed) {
+    playedGameIds.clear();
+    const nextId = pickUnplayedGameId(mode);
+    const nextRound = hasStartedSession ? roundNumber + 1 : 1;
+    loadGame(nextId, nextRound, [], mode);
+    if (roomCode && isHost) {
+      publishRoomEvent({ type: "NEW_ROUND", senderId: myId, gameId: nextId, roundNumber: nextRound, gameMode: mode, players }, false);
+      publishRetainedRoomSnapshot();
+    }
+    showToast(`Mode ${MODE_CONFIG[mode].label} activé !`, "sky");
+  }
 }
 
 function getLevelInfo(xp = 0) {
@@ -183,7 +257,7 @@ async function handleAuthSubmit(e) {
 
     if (selErr) {
       $("authSubmitBtn").disabled = false;
-      errEl.textContent = `Erreur Supabase (${selErr.code || 'SQL'}) : exécutez le script SQL des droits !`;
+      errEl.textContent = `Erreur Supabase (${selErr.code || 'SQL'}) : ${selErr.message}`;
       return;
     }
 
@@ -220,7 +294,6 @@ async function handleAuthSubmit(e) {
       isNewAccount = true;
       applyCloudProfileToSelf(pseudo, pwd, newRow);
     } else {
-      // Mode Connexion
       if (!existing) {
         $("authSubmitBtn").disabled = false;
         errEl.textContent = `Aucun compte "${pseudo}" trouvé. Cliquez sur l'onglet Inscription !`;
@@ -244,7 +317,6 @@ async function handleAuthSubmit(e) {
     $("authView").classList.add("hidden");
     $("lobbyView").classList.remove("hidden");
 
-    // Ouvre la pop-up de Bienvenue personnalisée
     openWelcomeModal(isNewAccount);
 
   } catch (err) {
@@ -283,6 +355,7 @@ function updateLobbyHeaderUI() {
   $("lobbyLevelBadge").textContent = `N${lvl.level}`;
   $("lobbyPseudoDisplay").textContent = me.pseudo || myPseudo;
   $("lobbyStatsDisplay").textContent = `${me.points || 0} ⚡ • ${me.xp || 0} XP (${lvl.title})`;
+  updateModeUI(currentGameMode);
 }
 
 function logoutAccount() {
@@ -335,7 +408,6 @@ function closeWelcomeModal() {
   toggleModal("welcomeModal", false);
 }
 
-// Carrousel du Tutoriel (3 slides)
 function openTutorialModal() {
   currentTutoSlide = 0;
   updateTutorialCarousel();
@@ -516,7 +588,7 @@ function closeConfirmModal() {
 }
 
 // =========================================================================
-// 4. INDEXATION LÉGÈRE DE SAISIE
+// 4. INDEXATION LÉGÈRE DE SAISIE (TOLÉRANCE ACCENTS, PLURIELS & LIGATURES)
 // =========================================================================
 function buildAccentInsensitiveIndex() {
   accentInsensitiveMap = {};
@@ -534,14 +606,18 @@ function resolveWordInDictionary(raw) {
   let m = tryDirectMatch(cleaned);
   if (m) return m;
 
+  if (cleaned === "yeux") return tryDirectMatch("œil") || tryDirectMatch("oeil");
+  if (cleaned === "cieux") return tryDirectMatch("ciel");
+
   const forms = [cleaned];
   if (cleaned.endsWith("eaux") && cleaned.length > 5) forms.push(cleaned.slice(0, -1));
   if ((cleaned.endsWith("s") || cleaned.endsWith("x")) && cleaned.length > 3) forms.push(cleaned.slice(0, -1));
 
   const rules = [
-    ["aux","al"],["euse","eur"],["rice","eur"],["trice","teur"],["ive","if"],["ienne","ien"],
-    ["onne","on"],["elle","el"],["elle","eau"],["ère","er"],["ere","er"],["ette","et"],
-    ["otte","ot"],["e",""],["ée","er"],["é","er"],["és","er"],["ées","er"],["er","e"]
+    ["aux","al"],["aux","ail"],["euse","eur"],["euse","eux"],["rice","eur"],["trice","teur"],
+    ["ive","if"],["ienne","ien"],["onne","on"],["elle","el"],["elle","eau"],["ère","er"],
+    ["ere","er"],["ette","et"],["otte","ot"],["e",""],["ée","er"],["é","er"],["és","er"],
+    ["ées","er"],["er","e"]
   ];
   for (const f of forms) {
     if ((m = tryDirectMatch(f))) return m;
@@ -586,8 +662,9 @@ window.addEventListener("DOMContentLoaded", () => {
   if (myPseudo) $("authPseudo").value = myPseudo;
   if (myPassword) $("authPassword").value = myPassword;
 
+  updateModeUI(currentGameMode);
   initSelfPlayer();
-  loadGame(currentGameId, 1);
+  loadGame(currentGameId, 1, [], currentGameMode);
   resetStatsIdleTimer();
 
   $("modalRoomCode").addEventListener("keydown", e => { if (e.key === "Enter" && !$("joinRoomBtn").disabled) startJoinRoom(); });
@@ -791,7 +868,7 @@ function triggerSolarFusionExplosion() {
 }
 
 // =========================================================================
-// 8. MULTIJOUEUR CLOUD WSS
+// 8. MULTIJOUEUR CLOUD WSS (AVEC SYNCHRO DU MODE CLASSIQUE / POP & MANGA)
 // =========================================================================
 let mqttClients = [];
 let seenMsgIds = new Set();
@@ -896,6 +973,7 @@ function publishRetainedRoomSnapshot() {
     type: "STATE_SNAPSHOT",
     hostId: isHost ? myId : undefined,
     gameId: currentGameId,
+    gameMode: currentGameMode,
     roundNumber,
     players,
     guesses,
@@ -911,8 +989,8 @@ function startSoloMode() {
   isHost = true; roomCode = null;
   $("roomCodePill").classList.add("hidden");
   closeOnboardingModal();
-  updateLiveTicker(`Mode Solo • Manche #${roundNumber}`);
-  showToast("Mode Solo activé", "sky");
+  updateLiveTicker(`Mode Solo (${MODE_CONFIG[currentGameMode].label}) • Manche #${roundNumber}`);
+  showToast(`Mode Solo (${MODE_CONFIG[currentGameMode].label}) activé`, "sky");
 }
 
 function startCreateRoom() {
@@ -934,7 +1012,7 @@ function startCreateRoom() {
 
     publishRetainedRoomSnapshot();
     navigator.clipboard?.writeText(roomCode).catch(() => {});
-    addSystemFeedEvent(`Salon ${roomCode} créé (code copié)`);
+    addSystemFeedEvent(`Salon ${roomCode} créé (${MODE_CONFIG[currentGameMode].label})`);
     updateLiveTicker(`Salon ${roomCode} actif • Code copié !`);
     showToast(`Salon ${roomCode} créé et copié !`, "amber");
   });
@@ -1003,7 +1081,8 @@ function completeJoinSuccess(snapshot) {
   roomBestRank = snapshot.roomBestRank || 0;
   roundFinished = !!snapshot.roundFinished;
 
-  loadGame(snapshot.gameId || currentGameId, snapshot.roundNumber || 1, snapshot.guesses || []);
+  const roomMode = snapshot.gameMode || "classic";
+  loadGame(snapshot.gameId || currentGameId, snapshot.roundNumber || 1, snapshot.guesses || [], roomMode);
   renderLeaderboard();
 
   publishRoomEvent({ type: "PLAYER_JOINED", player: me }, false);
@@ -1059,7 +1138,7 @@ function handleNetworkPayload(data) {
     if (data.players) {
       Object.entries(data.players).forEach(([id, pl]) => { if (id !== myId) players[id] = pl; });
     }
-    loadGame(data.gameId, data.roundNumber, []);
+    loadGame(data.gameId, data.roundNumber, [], data.gameMode || currentGameMode);
     renderLeaderboard();
     return;
   }
@@ -1076,10 +1155,17 @@ function handleNetworkPayload(data) {
 const copyRoomCode = () => { if (roomCode) { navigator.clipboard.writeText(roomCode); showToast(`Code "${roomCode}" copié !`, "sky"); } };
 
 // =========================================================================
-// 9. CHARGEMENT DE MANCHE & VALIDATION DES MOTS
+// 9. CHARGEMENT DE MANCHE (CLASSIQUE OU POP & MANGA) & VALIDATION DES MOTS
 // =========================================================================
-async function loadGame(gameId, displayRound = roundNumber, initialGuesses = []) {
+async function loadGame(gameId, displayRound = roundNumber, initialGuesses = [], mode = currentGameMode) {
   const seq = ++currentLoadSeq;
+  if (mode && MODE_CONFIG[mode]) {
+    currentGameMode = mode;
+    localStorage.setItem("zeroabsolu_mode", mode);
+  }
+  updateModeUI(currentGameMode);
+
+  const cfg = MODE_CONFIG[currentGameMode] || MODE_CONFIG.classic;
   currentGameId = gameId;
   roundNumber = displayRound;
   guesses = [...initialGuesses];
@@ -1100,11 +1186,11 @@ async function loadGame(gameId, displayRound = roundNumber, initialGuesses = [])
   toggleModal("victoryBanner", false);
   updateStatsUI(); updateHintButtonUI(); renderLeaderboard();
 
-  $("guessesList").innerHTML = `<div class="text-slate-400 text-xs text-center my-auto py-8 flex flex-col items-center gap-2"><div class="w-4 h-4 border-2 border-sky-500 border-t-transparent rounded-full animate-spin"></div><span>Manche #${roundNumber}...</span></div>`;
+  $("guessesList").innerHTML = `<div class="text-slate-400 text-xs text-center my-auto py-8 flex flex-col items-center gap-2"><div class="w-4 h-4 border-2 border-sky-500 border-t-transparent rounded-full animate-spin"></div><span>Manche #${roundNumber} (${cfg.label})...</span></div>`;
 
   let dict = FALLBACK_WORDS;
   try {
-    const res = await fetch(`parties/partie_${gameId}.json`);
+    const res = await fetch(`${cfg.folder}/partie_${gameId}.json`);
     if (res.ok) dict = (await res.json()).words;
   } catch (_) {}
 
@@ -1117,11 +1203,11 @@ async function loadGame(gameId, displayRound = roundNumber, initialGuesses = [])
     renderGuesses();
     updateStatsUI();
   } else {
-    $("guessesList").innerHTML = `<p class="text-slate-500 text-xs text-center my-auto py-8">Manche #${roundNumber} prête • Montez jusqu'à 100% !</p>`;
+    $("guessesList").innerHTML = `<p class="text-slate-500 text-xs text-center my-auto py-8">Manche #${roundNumber} (${cfg.label}) prête • Montez jusqu'à 100% !</p>`;
   }
 
-  addSystemFeedEvent(`Manche #${roundNumber} lancée`);
-  updateLiveTicker(roomCode ? `Salon ${roomCode} • Manche #${roundNumber}` : `Manche #${roundNumber} en cours`);
+  addSystemFeedEvent(`Manche #${roundNumber} lancée (${cfg.label})`);
+  updateLiveTicker(roomCode ? `Salon ${roomCode} (${cfg.label}) • Manche #${roundNumber}` : `Manche #${roundNumber} (${cfg.label}) en cours`);
 }
 
 function handleGuess(e) {
@@ -1344,10 +1430,10 @@ function askNextGame() {
 
 function executeNextGame() {
   if (roomCode && !isHost) return showToast("Seul l'hôte peut changer de manche.", "amber");
-  const nextId = pickUnplayedGameId(), nextRound = roundNumber + 1;
-  loadGame(nextId, nextRound, []);
+  const nextId = pickUnplayedGameId(currentGameMode), nextRound = roundNumber + 1;
+  loadGame(nextId, nextRound, [], currentGameMode);
   if (roomCode && isHost) {
-    publishRoomEvent({ type: "NEW_ROUND", senderId: myId, gameId: nextId, roundNumber: nextRound, players }, false);
+    publishRoomEvent({ type: "NEW_ROUND", senderId: myId, gameId: nextId, roundNumber: nextRound, gameMode: currentGameMode, players }, false);
     publishRetainedRoomSnapshot();
   }
 }

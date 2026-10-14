@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>ZéroAbsolu — v1.0</title>
+  <title>ZéroAbsolu — v1.1</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/mqtt@5.10.3/dist/mqtt.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -67,7 +67,7 @@
             <div class="flex items-center gap-2">
               <h1 class="text-xl font-extrabold tracking-tight bg-gradient-to-r from-sky-300 via-purple-300 to-amber-300 bg-clip-text text-transparent">ZéroAbsolu</h1>
               <span id="versionBadgeTop" class="font-mono-num text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-gradient-to-r from-sky-500/20 to-amber-500/20 text-amber-300 border border-amber-400/30 shadow-sm">
-                v1.0
+                v1.1
               </span>
             </div>
             <p class="text-[11px] text-slate-400">Du froid polaire jusqu'à la fusion solaire</p>
@@ -119,7 +119,7 @@
 
         <!-- ÉTAPE B : CHOIX DU MODE DE JEU (AFFICHÉ UNE FOIS CONNECTÉ) -->
         <div id="lobbyView" class="hidden">
-          <div class="bg-slate-950/80 border border-slate-800 rounded-2xl p-2.5 mb-3.5 flex items-center justify-between">
+          <div class="bg-slate-950/80 border border-slate-800 rounded-2xl p-2.5 mb-3 flex items-center justify-between">
             <div class="flex items-center gap-2 min-w-0">
               <div class="w-8 h-8 rounded-xl bg-sky-500/15 border border-sky-500/30 flex items-center justify-center text-sky-300 font-mono-num text-xs font-extrabold shrink-0" id="lobbyLevelBadge">
                 N1
@@ -139,6 +139,31 @@
             </div>
           </div>
 
+          <!-- Sélecteur de Mode : Classique vs Pop Culture & Manga (Phosphor Duotone) -->
+          <div class="mb-3">
+            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 flex items-center gap-1">
+              <i class="ph-duotone ph-planet text-sky-400 text-xs"></i> Choisir l'univers des mots
+            </label>
+            <div class="grid grid-cols-2 gap-2 bg-slate-950 p-1 rounded-2xl border border-slate-800">
+              <button type="button" id="modeClassicBtn" onclick="selectGameMode('classic')"
+                class="py-2 px-2.5 rounded-xl bg-sky-500/20 border border-sky-400/50 text-sky-200 flex items-center justify-center gap-2 transition shadow-sm">
+                <i class="ph-duotone ph-compass-rose text-lg text-sky-400 shrink-0"></i>
+                <div class="text-left leading-tight">
+                  <div class="text-xs font-extrabold">Classique</div>
+                  <div class="text-[9px] text-sky-300/80">500 mots courants</div>
+                </div>
+              </button>
+              <button type="button" id="modePopBtn" onclick="selectGameMode('pop')"
+                class="py-2 px-2.5 rounded-xl bg-slate-900/60 border border-transparent text-slate-400 hover:text-white flex items-center justify-center gap-2 transition">
+                <i class="ph-duotone ph-game-controller text-lg text-purple-400 shrink-0"></i>
+                <div class="text-left leading-tight">
+                  <div class="text-xs font-extrabold">Pop & Manga</div>
+                  <div class="text-[9px] text-slate-500">Geek, Anime, Jeux</div>
+                </div>
+              </button>
+            </div>
+          </div>
+
           <div class="grid grid-cols-2 gap-2.5">
             <button onclick="startSoloMode()" class="flex flex-col items-center justify-center gap-1 bg-slate-800/80 hover:bg-slate-800 border border-slate-700/70 rounded-2xl p-3.5 transition group">
               <i class="ph-duotone ph-compass text-2xl text-sky-400 group-hover:scale-110 transition"></i>
@@ -150,7 +175,7 @@
             </button>
           </div>
 
-          <div class="relative flex py-3.5 items-center">
+          <div class="relative flex py-3 items-center">
             <div class="flex-grow border-t border-slate-800"></div>
             <span class="flex-shrink mx-3 text-[10px] text-slate-500 uppercase tracking-wider">Rejoindre un salon</span>
             <div class="flex-grow border-t border-slate-800"></div>
@@ -173,7 +198,7 @@
             <span id="cloudStatusDot" class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
             <span id="cloudStatusText">Supabase Cloud Actif</span>
           </span>
-          <span id="versionBadgeFooter" class="font-mono-num text-slate-400 font-semibold">v1.0 • Édition Solaire</span>
+          <span id="versionBadgeFooter" class="font-mono-num text-slate-400 font-semibold">v1.1 • Édition Solaire</span>
         </div>
       </div>
     </div>
@@ -188,7 +213,6 @@
         <h3 id="welcomeTitle" class="text-lg font-extrabold text-white">Bienvenue !</h3>
         <p id="welcomeSub" class="text-xs text-slate-400 mt-1">Ravi de vous revoir dans ZéroAbsolu.</p>
 
-        <!-- Résumé du profil (Niveau / Grade / Points) -->
         <div id="welcomeStatsCard" class="bg-slate-950/90 border border-slate-800 rounded-2xl p-3 my-4 flex items-center justify-around">
           <div>
             <span class="text-[10px] text-slate-400 block">Niveau</span>
@@ -223,7 +247,6 @@
           <span class="text-xs font-extrabold uppercase tracking-wider text-sky-300">Tutoriel Rapide</span>
         </div>
 
-        <!-- Piste coulissante des 3 slides -->
         <div class="overflow-hidden w-full">
           <div id="tutorialTrack" class="flex transition-transform duration-300 ease-out w-full" style="transform: translateX(0%);">
             
@@ -279,18 +302,18 @@
 
             <!-- SLIDE 3 : POINTS, INDICES & SALONS -->
             <div class="w-full shrink-0 pl-1 flex flex-col gap-2.5">
-              <h4 class="text-base font-extrabold text-white">3. Points ⚡, Indices & Amis</h4>
+              <h4 class="text-base font-extrabold text-white">3. Points ⚡, Indices & Modes</h4>
               <div class="flex flex-col gap-2 text-xs text-slate-300">
                 <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-2.5 flex items-center gap-2.5">
                   <i class="ph-duotone ph-lightbulb-filament text-xl text-amber-400 shrink-0"></i>
                   <span>Chaque mot chaud rapporte des <strong>Points ⚡</strong>. Dépensez <strong>35 ⚡</strong> sur l'ampoule en haut pour débloquer un <strong>Indice</strong> !</span>
                 </div>
                 <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-2.5 flex items-center gap-2.5">
-                  <i class="ph-duotone ph-users-three text-xl text-sky-400 shrink-0"></i>
-                  <span>Créez un <strong>Salon à 4 lettres</strong> pour coopérer ou faire la course en temps réel avec vos amis.</span>
+                  <i class="ph-duotone ph-game-controller text-xl text-purple-400 shrink-0"></i>
+                  <span>Basculez entre le mode <strong>Classique</strong> et le mode <strong>Pop & Manga</strong> dans le menu du salon.</span>
                 </div>
                 <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-2.5 flex items-center gap-2.5">
-                  <i class="ph-duotone ph-medal-military text-xl text-purple-400 shrink-0"></i>
+                  <i class="ph-duotone ph-medal-military text-xl text-sky-400 shrink-0"></i>
                   <span>Votre progression et votre <strong>Grade</strong> sont sauvegardés dans le Cloud sur tous vos appareils.</span>
                 </div>
               </div>
@@ -299,7 +322,6 @@
           </div>
         </div>
 
-        <!-- Navigation du Carrousel (Points + Boutons) -->
         <div class="flex items-center justify-between mt-5 pt-3 border-t border-slate-800">
           <button id="tutoPrevBtn" onclick="stepTutorial(-1)" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 transition invisible">
             ← Précédent
@@ -496,6 +518,10 @@
           <i class="ph-duotone ph-fire-simple text-lg text-white"></i>
         </button>
         <span id="roundBadge" class="text-xs font-mono-num bg-sky-500/15 text-sky-300 px-2 py-1 rounded-lg border border-sky-500/30 font-bold shrink-0">#1</span>
+        <span id="modeHeaderBadge" onclick="openOnboardingModal()" title="Changer le mode de jeu" class="cursor-pointer text-[11px] font-bold bg-sky-500/10 text-sky-300 px-2 py-1 rounded-lg border border-sky-500/25 flex items-center gap-1 shrink-0">
+          <i id="modeHeaderIcon" class="ph-duotone ph-compass-rose text-xs text-sky-400"></i>
+          <span id="modeHeaderText" class="hidden sm:inline">Classique</span>
+        </span>
         <button id="roomCodePill" onclick="copyRoomCode()" class="hidden items-center gap-1 bg-indigo-950/80 hover:bg-indigo-900/80 border border-indigo-500/40 px-2 py-1 rounded-lg transition shrink-0">
           <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
           <strong id="headerRoomCode" class="font-mono-num text-xs font-bold tracking-wider text-white">----</strong>

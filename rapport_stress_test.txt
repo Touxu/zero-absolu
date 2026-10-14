@@ -1,0 +1,32 @@
+=================================================================
+   RAPPORT DE STRESS-TEST & AUDIT MULTI-BOTS (ZéroAbsolu v1.0)
+=================================================================
+
+### 1. AUTHENTIFICATION SUPABASE DES 3 BOTS
+• BotAlpha (Mobile)   : ✅ Connecté
+• BotBravo (Mobile)   : ✅ Connecté
+• BotCharlie (Desktop): ✅ Connecté
+
+### 2. AUDIT LINGUISTIQUE DU CORPUS COURANT
+• Mots testés : 934 (incluant pluriels, féminins et mots sans accent)
+• Taux de reconnaissance : 911/934 (97.5%)
+• Mots non reconnus (23) : jardin, ouvre-boite, pierre, or, étoile-de-mer, cil, infirmier, espoir, devoir, piloteplombier, matin, dire, entendre, voir, prendre, mettre, sortir, partir, venir, comprendre, savoir, croire, neuf
+
+### 3. SYNCHRONISATION SALON MULTIJOUEUR WSS (3 BOTS)
+• Code du salon créé par BotAlpha : RKDD
+• Joueurs détectés : Alpha=3/3 | Bravo=3/3 | Charlie=3/3
+• Synchro du nombre de mots : Alpha=11 | Bravo=11 | Charlie=11 (Attendu: 11)
+• Synchro du Record Salon   : Alpha=99.9% | Bravo=99.9% | Charlie=99.9%
+• Vérification du badge 'Top 2' (Rang 999) : ✅ OK (Top 2 affiché)
+• Règle 'Mot récent hors Top 7' : ✅ Affiché (11e / 11)
+• Protection anti-doublon inter-joueurs : ✅ Bloqué (reste à 11)
+
+### 4. SÉCURITÉ DES RÔLES, INDICE & VICTOIRE COOPÉRATIVE
+• Blocage Abandon/Skip par un Invité (BotBravo) : ✅ Bloqué
+• Achat Indice (-35 ⚡) & Synchro Salon : ✅ OK (Mots salon=12)
+• Synchro Victoire 100% (Bannière Solaire) : Alpha=✅ | Bravo=✅ | Charlie=✅
+• Passage synchronisé à la Manche #2 : Alpha=#2 | Bravo=#2 | Charlie=#2
+
+### 5. PERFORMANCES DOM & INTÉGRITÉ TECHNIQUE
+• Temps de rendu DOM pour 100 cartes simultanées : 9 ms (Excellent si < 50 ms)
+• Erreurs JavaScript sur les 3 navigateurs : 0
