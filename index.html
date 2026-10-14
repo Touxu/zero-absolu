@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>ZéroAbsolu — v0.7</title>
+  <title>ZéroAbsolu — v0.8</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/mqtt@5.10.3/dist/mqtt.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
@@ -128,11 +128,10 @@
       <div id="solarShockwave" class="absolute top-1/2 left-1/2 w-56 h-56 rounded-full border-amber-200 shadow-[0_0_60px_#facc15]"></div>
     </div>
 
-    <!-- BANNIÈRE ANIMÉE DE GAIN DE NIVEAU (REMPLACE LE TOAST BASIQUE) -->
+    <!-- BANNIÈRE ANIMÉE DE GAIN DE NIVEAU -->
     <div id="levelUpBanner" onclick="this.classList.add('hidden')"
       class="hidden fixed top-4 left-1/2 z-50 cursor-pointer pointer-events-auto w-[92%] max-w-xs">
       <div class="relative overflow-hidden bg-slate-950/95 border-2 border-amber-400/80 rounded-2xl p-3.5 shadow-[0_0_40px_rgba(250,204,21,0.35)] backdrop-blur-xl flex items-center gap-3.5">
-        <!-- Médaillon Hexagonal SVG animé -->
         <div class="relative w-12 h-12 flex items-center justify-center shrink-0">
           <svg class="w-12 h-12 spin-slow text-amber-400/30 absolute inset-0" viewBox="0 0 100 100">
             <polygon points="50 3, 93 25, 93 75, 50 97, 7 75, 7 25" fill="none" stroke="currentColor" stroke-width="4" stroke-dasharray="10 6"/>
@@ -155,7 +154,7 @@
       </div>
     </div>
 
-    <!-- 1. MODALE D'ACCUEIL AVEC VERSION v0.7 -->
+    <!-- 1. MODALE D'ACCUEIL AVEC VERSION v0.8 -->
     <div id="onboardingModal" onclick="if(event.target.id==='onboardingModal' && hasStartedSession) closeOnboardingModal()"
       class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
       <div class="relative bg-slate-900 border border-slate-800 rounded-3xl max-w-sm w-full p-5 sm:p-6 shadow-2xl animate-pop">
@@ -172,7 +171,7 @@
             <div class="flex items-center gap-2">
               <h1 class="text-xl font-extrabold tracking-tight bg-gradient-to-r from-sky-300 via-purple-300 to-amber-300 bg-clip-text text-transparent">ZéroAbsolu</h1>
               <span id="versionBadgeTop" class="font-mono-num text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-gradient-to-r from-sky-500/20 to-amber-500/20 text-amber-300 border border-amber-400/30 shadow-sm">
-                v0.7
+                v0.8
               </span>
             </div>
             <p class="text-[11px] text-slate-400">Du froid polaire jusqu'à la fusion solaire</p>
@@ -219,9 +218,9 @@
         <div class="mt-3 pt-2.5 border-t border-slate-800/70 flex items-center justify-between text-[10px] text-slate-500">
           <span class="flex items-center gap-1.5">
             <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-            <span>Multijoueur Cloud Temps Réel</span>
+            <span>Catalogue Python Purifié</span>
           </span>
-          <span id="versionBadgeFooter" class="font-mono-num text-slate-400 font-semibold">v0.7 • Édition Solaire</span>
+          <span id="versionBadgeFooter" class="font-mono-num text-slate-400 font-semibold">v0.8 • Édition Solaire</span>
         </div>
       </div>
     </div>
@@ -429,7 +428,7 @@
         <div id="victoryBanner" class="hidden tier-fusion-card border-2 rounded-xl p-2.5 animate-pop shrink-0">
           <div class="flex items-center justify-between gap-2">
             <div class="min-w-0">
-              <h3 id="victoryTitle" class="text-xs sm:text-sm font-extrabold text-white fusion-word-glow truncate">☀️ Fusion atteinte !</h3>
+              <h3 id="victoryTitle" class="text-xs sm:text-sm font-extrabold text-white fusion-word-glow truncate">Fusion atteinte !</h3>
               <p id="victorySub" class="text-[11px] text-amber-100 font-medium truncate"></p>
             </div>
             <button onclick="triggerNextGame()" class="bg-white hover:bg-amber-100 text-slate-950 font-extrabold text-xs px-3 py-1.5 rounded-lg transition shrink-0 shadow-lg">Suivant</button>
@@ -497,15 +496,14 @@
 
   <script>
     // =========================================================================
-    // 1. VERSION v0.7, NOUVELLE ÉCONOMIE DE POINTS/XP & ICÔNES PHOSPHOR DUOTONE
+    // 1. VERSION v0.8, ÉCONOMIE ÉQUILIBRÉE & CATALOGUE DÉDOUBLONNÉ PAR PYTHON
     // =========================================================================
-    const APP_VERSION = "v0.7";
+    const APP_VERSION = "v0.8";
     const APP_EDITION = "Édition Solaire";
     const $ = id => document.getElementById(id);
 
-    // Nouveau barème équilibré : Indice à 35 pts, 100 XP par niveau
     const TOTAL_GAMES = 500, HINT_COST = 35, XP_PER_LEVEL = 100;
-    const TOPIC_ROOT = "zeroabsolu/v07/rooms/";
+    const TOPIC_ROOT = "zeroabsolu/v08/rooms/";
 
     const WSS_BROKERS = [
       "wss://broker.emqx.io:8084/mqtt",
@@ -532,26 +530,12 @@
     sessionStorage.setItem("za_tab_id", myId);
 
     let myPseudo = localStorage.getItem("zeroabsolu_pseudo") || "";
-    let savedStats = JSON.parse(localStorage.getItem("zeroabsolu_profile_v2") || "null");
-
-    // Migration douce depuis la v0.6 si le joueur avait des milliers de points de l'ancien barème
-    if (!savedStats) {
-      const old = JSON.parse(localStorage.getItem("zeroabsolu_profile_v1") || "{}");
-      savedStats = {
-        points: Math.min(120, Math.round((old.points || 0) / 15)),
-        xp: Math.round((old.xp || 0) / 5),
-        wins: old.wins || 0,
-        totalAttempts: old.totalAttempts || 0,
-        hotWordsFound: old.hotWordsFound || 0,
-        top10Found: old.top10Found || 0
-      };
-      localStorage.setItem("zeroabsolu_profile_v2", JSON.stringify(savedStats));
-    }
+    let savedStats = JSON.parse(localStorage.getItem("zeroabsolu_profile_v2") || "{}");
 
     let hasStartedSession = false, roomCode = null, isHost = true;
     let roundNumber = 1, playedGameIds = new Set(), currentGameId = pickUnplayedGameId();
     let currentLoadSeq = 0;
-    let gameDictionary = {}, canonicalRedirectMap = {}, guesses = [];
+    let gameDictionary = {}, accentInsensitiveMap = {}, guesses = [];
     let roundFinished = false, roomBestScorePct = 0, roomBestRank = 0;
     let players = {}, selectedStatsPlayerId = myId, showingGradesCatalog = false;
     let statsMinimized = false, statsIdleTimer = null, surgeHideTimer = null, levelUpTimer = null, feedOnlyHot = false, feedEvents = [];
@@ -622,88 +606,27 @@
     }
 
     // =========================================================================
-    // 2. ANTI-DOUBLON TOTAL (PLURIELS, ACCENTS & FÉMININS REGROUPÉS)
+    // 2. INDEXATION LÉGÈRE POUR TOLÉRER LA SAISIE SANS ACCENT / AU PLURIEL
     // =========================================================================
-    // Génère une racine canonique sans accent ni marque du pluriel (ex: "compléments" -> "complement")
-    function getStemKey(word) {
-      let s = stripAccents(word).replace(/[-_\s]+/g, "");
-      if (s.length <= 3) return s;
-      if (s.endsWith("aux") && s.length > 4) return s.slice(0, -3) + "al";
-      if (s.endsWith("eaux") && s.length > 5) return s.slice(0, -1);
-      if (s.endsWith("s") || s.endsWith("x")) s = s.slice(0, -1);
-      return s;
-    }
-
-    // Fusionne au chargement les doublons du dictionnaire (ex: "complément", "compléments", "complement")
-    function buildCanonicalDictionary(rawDict) {
-      gameDictionary = {};
-      canonicalRedirectMap = {};
-      const groups = {};
-
-      for (const [word, val] of Object.entries(rawDict)) {
-        const stem = getStemKey(word);
-        if (!groups[stem]) groups[stem] = [];
-        groups[stem].push({ word, val });
-      }
-
-      for (const [stem, items] of Object.entries(groups)) {
-        // Choisit le meilleur représentant d'affichage :
-        // 1. Le mot gagnant (rank === 1000) a toujours la priorité absolue
-        // 2. Sinon, on préfère la forme au singulier (sans 's' final) et comportant des accents français
-        items.sort((a, b) => {
-          const rankA = Array.isArray(a.val) ? a.val[1] : 0;
-          const rankB = Array.isArray(b.val) ? b.val[1] : 0;
-          if (rankA === 1000) return -1;
-          if (rankB === 1000) return 1;
-
-          const singA = !a.word.endsWith("s") ? 1 : 0;
-          const singB = !b.word.endsWith("s") ? 1 : 0;
-          if (singA !== singB) return singB - singA;
-
-          const accA = a.word !== stripAccents(a.word) ? 1 : 0;
-          const accB = b.word !== stripAccents(b.word) ? 1 : 0;
-          if (accA !== accB) return accB - accA;
-
-          return a.word.length - b.word.length;
-        });
-
-        const canonicalWord = items[0].word;
-
-        // Garde le meilleur score/rang parmi les variantes de ce même mot
-        let bestTemp = -999, bestRank = null;
-        for (const it of items) {
-          const t = Array.isArray(it.val) ? it.val[0] : it.val;
-          const r = Array.isArray(it.val) ? it.val[1] : null;
-          if (r === 1000) { bestTemp = 100; bestRank = 1000; break; }
-          if (r !== null && (bestRank === null || r > bestRank)) bestRank = r;
-          if (t > bestTemp) bestTemp = t;
-        }
-
-        gameDictionary[canonicalWord] = bestRank !== null ? [bestTemp, bestRank] : bestTemp;
-        canonicalRedirectMap[stem] = canonicalWord;
-
-        for (const it of items) {
-          canonicalRedirectMap[stripAccents(it.word)] = canonicalWord;
-          canonicalRedirectMap[it.word] = canonicalWord;
-        }
+    function buildAccentInsensitiveIndex() {
+      accentInsensitiveMap = {};
+      for (const word of Object.keys(gameDictionary)) {
+        const s = stripAccents(word);
+        accentInsensitiveMap[s] = word;
+        if (word.includes("-")) accentInsensitiveMap[s.replace(/-/g, "")] = word;
       }
     }
 
-    function tryDirectMatch(c) {
-      if (c in canonicalRedirectMap) return canonicalRedirectMap[c];
-      const stripped = stripAccents(c);
-      if (stripped in canonicalRedirectMap) return canonicalRedirectMap[stripped];
-      const stem = getStemKey(c);
-      if (stem in canonicalRedirectMap) return canonicalRedirectMap[stem];
-      return null;
-    }
+    const tryDirectMatch = c => (c in gameDictionary) ? c : (accentInsensitiveMap[stripAccents(c)] || null);
 
+    // Permet au joueur de taper "complements" ou "adolescente" et de pointer vers le mot purifié du JSON ("complément", "adolescent")
     function resolveWordInDictionary(raw) {
       const cleaned = raw.trim().toLowerCase().replace(/\s+/g, "-");
       let m = tryDirectMatch(cleaned);
       if (m) return m;
 
       const forms = [cleaned];
+      if (cleaned.endsWith("eaux") && cleaned.length > 5) forms.push(cleaned.slice(0, -1));
       if ((cleaned.endsWith("s") || cleaned.endsWith("x")) && cleaned.length > 3) forms.push(cleaned.slice(0, -1));
 
       const rules = [
@@ -794,7 +717,6 @@
       $("hintBtnContent").innerHTML = `<i class="ph-duotone ${hasPts ? 'ph-lightbulb-filament text-amber-300' : 'ph-lock-key text-slate-500'} text-sm"></i><span class="font-mono-num text-[11px]">${HINT_COST}</span>`;
     }
 
-    // Nouvelle animation de passage de niveau avec médaillon et icône Phosphor Duotone
     function showLevelUpBanner(newLevelInfo) {
       const banner = $("levelUpBanner");
       $("levelUpIcon").className = `ph-duotone ${newLevelInfo.icon} text-2xl text-white`;
@@ -955,7 +877,7 @@
     }
 
     // =========================================================================
-    // 6. MULTIJOUEUR CLOUD WSS (DOUBLE RELAIS + ÉTAT RETENU INSTANTANÉ)
+    // 6. MULTIJOUEUR CLOUD WSS
     // =========================================================================
     let mqttClients = [];
     let seenMsgIds = new Set();
@@ -1239,7 +1161,7 @@
     const copyRoomCode = () => { if (roomCode) { navigator.clipboard.writeText(roomCode); showToast(`Code "${roomCode}" copié !`, "sky"); } };
 
     // =========================================================================
-    // 7. CHARGEMENT DE MANCHE & VALIDATION DES MOTS (NOUVEAU BARÈME POINTS/XP)
+    // 7. CHARGEMENT DE MANCHE ULTRA-RAPIDE (JSON DÉJÀ PROPRE)
     // =========================================================================
     async function loadGame(gameId, displayRound = roundNumber, initialGuesses = []) {
       const seq = ++currentLoadSeq;
@@ -1265,16 +1187,16 @@
 
       $("guessesList").innerHTML = `<div class="text-slate-400 text-xs text-center my-auto py-8 flex flex-col items-center gap-2"><div class="w-4 h-4 border-2 border-sky-500 border-t-transparent rounded-full animate-spin"></div><span>Manche #${roundNumber}...</span></div>`;
 
-      let rawDict = FALLBACK_WORDS;
+      let dict = FALLBACK_WORDS;
       try {
         const res = await fetch(`parties/partie_${gameId}.json`);
-        if (res.ok) rawDict = (await res.json()).words;
+        if (res.ok) dict = (await res.json()).words;
       } catch (_) {}
 
       if (seq !== currentLoadSeq) return;
 
-      // Dédoublonne les pluriels et accents dès le chargement
-      buildCanonicalDictionary(rawDict);
+      gameDictionary = dict;
+      buildAccentInsensitiveIndex();
 
       if (guesses.length > 0) {
         renderGuesses();
@@ -1298,9 +1220,7 @@
         return showToast(`« ${rawText.toLowerCase()} » inconnu`, "rose");
       }
 
-      // Vérifie les doublons à la fois sur le mot résolu ET sur sa racine (stem) sans accent/pluriel
-      const targetStem = getStemKey(resolvedWord);
-      const existing = guesses.find(g => g.word === resolvedWord || getStemKey(g.word) === targetStem);
+      const existing = guesses.find(g => g.word === resolvedWord);
       if (existing) {
         input.value = ""; vibrateDevice([30, 50, 30]); triggerInputShake($("guessForm"));
         const who = existing.finderId === myId ? "vous" : existing.finderPseudo;
@@ -1322,12 +1242,11 @@
 
       const surgeGain = checkPowerSurge(rank, scorePct);
 
-      // NOUVEAU PLAN D'ATTRIBUTION DES POINTS (⚡) ET DE L'XP (✨)
       let pointsEarned = 0, xpEarned = 2, isNewRecord = false;
 
       if (!roundFinished) {
         if (isWin) {
-          pointsEarned += 20 + (guesses.length < 25 ? 5 : 0); // Bonus de rapidité si < 25 coups
+          pointsEarned += 20 + (guesses.length < 25 ? 5 : 0);
           xpEarned = 45;
         } else if (isTop10) {
           pointsEarned += 10;
@@ -1340,7 +1259,6 @@
           xpEarned = 5;
         }
 
-        // Bonus Record du Salon (+3 ⚡ et +5 XP si ce mot chaud bat le record actuel)
         if (scorePct > roomBestScorePct && rank !== null && !isWin) {
           isNewRecord = true;
           pointsEarned += 3;
@@ -1378,8 +1296,7 @@
     }
 
     function applySharedGuess(data, isLocal) {
-      const targetStem = getStemKey(data.word);
-      if (guesses.some(g => g.word === data.word || getStemKey(g.word) === targetStem)) return;
+      if (guesses.some(g => g.word === data.word)) return;
       const scorePct = data.scorePct ?? computeUnifiedScorePct(data.temp, data.rank);
 
       players[data.playerId] = {
@@ -1446,11 +1363,11 @@
         return showToast(`Il manque ${HINT_COST - (me?.points || 0)} ⚡ (Coût : ${HINT_COST} ⚡)`, "rose");
       }
       const targetRank = roomBestRank > 0 ? Math.min(998, Math.floor((roomBestRank + 1000) / 2)) : 600;
-      const guessedStems = new Set(guesses.map(g => getStemKey(g.word)));
+      const guessedSet = new Set(guesses.map(g => g.word));
       let bestCandidate = null, minDiff = 9999;
 
       for (const [w, val] of Object.entries(gameDictionary)) {
-        if (Array.isArray(val) && val[1] < 1000 && !guessedStems.has(getStemKey(w))) {
+        if (Array.isArray(val) && val[1] < 1000 && !guessedSet.has(w)) {
           const diff = Math.abs(val[1] - targetRank);
           if (diff < minDiff) { minDiff = diff; bestCandidate = w; }
         }
