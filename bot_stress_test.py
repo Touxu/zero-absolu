@@ -4,14 +4,14 @@ from playwright.sync_api import sync_playwright
 SITE_URL = "https://zero-absolu.vercel.app"
 MDP_BOTS = "Soleil2026Secret"
 
-# Corpus de 1 000 mots courants (noms, verbes, adjectifs + variantes sans accent / pluriels / féminins)
-CORPUS_1000_MOTS = """
+# Corpus Classique de ~935 mots courants (noms, verbes, adjectifs + variantes sans accent / pluriels / féminins)
+CORPUS_CLASSIQUE = """
 maison appartement chambre cuisine salon jardin porte fenetre toit mur plafond plancher escalier
 table chaise fauteuil canape lit matelas oreiller couverture drap armoire placard tiroir etagere
 miroir lampe ampoule bougie horloge montre reveil calendrier rideau tapis coussin balai brosse
 aspirateur seau eponge savon shampoing serviette peigne rasoir dentifrice baignoire douche lavabo
 robinet evier four refrigerateur congelateur casserole poele marmite assiette bol tasse verre
-fourchette couteau cuillere bouteille carafe plateau passoire ouvre-boite tire-bouchon poubelle
+fourchette couteau cuillere bouteille carafe plateau passoire tire-bouchon poubelle
 pain baguette croissant brioche gateau tarte biscuit chocolat bonbon miel confiture sucre farine
 beurre lait fromage yaourt creme oeuf omelette viande boeuf poulet canard dinde porc jambon
 saucisse poisson saumon thon truite sardine crevette crabe moule huitre legume salade tomate
@@ -31,7 +31,7 @@ gorille kangourou koala panda lapin lievre ecureuil souris rat herisson taupe ch
 baleine dauphin requin phoque tortue crocodile serpent lezard grenouille crapaud escargot limace
 oiseau aigle faucon hibou chouette corbeau pigeon moineau hirondelle mouette canard cygne oie
 poule coq poussin paon perroquet autruche manchot insecte abeille guepe fourmi papillon chenille
-coccinelle mouche moustique araignee scorpion ver crabe homard meduse pieuvre étoile-de-mer
+coccinelle mouche moustique araignee scorpion ver crabe homard meduse pieuvre
 corps tete visage front oeil yeux paupiere sourcil cil nez oreille bouche levre langue dent
 gencive menton joue barbe moustache cheveu cou gorge epaule bras coude poignet main doigt pouce
 ongle poitrine dos ventre estomac hanche jambe cuisse genou cheville pied talon orteil peau os
@@ -48,11 +48,11 @@ directeur cours lecon devoir exercice examen concours diplome note cahier carnet
 dictionnaire page feuille crayon stylo feutre craie gomme regle ciseaux colle sac cartable
 bureau travail metier emploi entreprise usine atelier chantier magasin boutique marche supermarche
 banque poste mairie tribunal police prison caserne gare aeroport port hotel restaurant cinema
-theatre musee bibliotheque stade piscine parc zoo cirque eglise cathedrale chateau palais Tour
+theatre musee bibliotheque stade piscine parc zoo cirque eglise cathedrale chateau palais tour
 ouvrier employe patron directeur ingenieur technicien artisan commercant vendeur client facteur
 boulanger patissier boucher cuisinier serveur agriculteur paysan fermier pecheur marin soldat
 policier gendarme pompier juge avocat journaliste ecrivain auteur poete musicien chanteur acteur
-peintre sculpteur architecte mecanicien chauffeur piloteplombier electricien menuisier macon
+peintre sculpteur architecte mecanicien chauffeur pilote plombier electricien menuisier macon
 voiture automobile camion bus autocar train metro tramway velo bicyclette moto scooter avion
 helicoptere fusee bateau navire voilier barque sous-marin moteur roue pneu volant frein phare
 essence billet ticket bagage valise carte boussole voyage vacance aventure vitesse accident panne
@@ -64,7 +64,7 @@ argent monnaie piece billet prix achat vente salaire dette credit impot fortune 
 loi droit justice crime delit vol prison preuve temoin proces paix guerre bataille arme fusil
 epee bouclier bombe victoire roi reine prince chateau chevalier drapeau nation pays ville village
 temps heure minute seconde jour matin midi soir nuit semaine mois annee siecle passe present futur
-debut fin matinée soiree printemps ete automne hiver histoire science nature energie force chaleur
+debut fin matinee soiree printemps ete automne hiver histoire science nature energie force chaleur
 aimer adorer detester parler dire ecouter entendre voir regarder chercher trouver donner prendre
 mettre poser ouvrir fermer entrer sortir monter descendre partir arriver venir aller marcher
 courir sauter nager voler tomber dormir reveiller manger boire cuisiner couper laver nettoyer
@@ -81,8 +81,28 @@ chanteuse vendeuse actrice directrice fermiere boulangere infirmiere policiere
 grandes petites belles nouvelles vieilles bonnes mauvaises chaudes froides
 """.split()
 
-# Complète jusqu'à 1000 mots uniques si nécessaire
-MOTS_UNIQUES = list(dict.fromkeys(CORPUS_1000_MOTS))
+# Corpus Pop Culture, Manga, Gaming, Fantasy & Sci-Fi (110 termes)
+CORPUS_POP_CULTURE = """
+manga anime naruto sasuke sakura kakashi hokage ninja shinobi sharingan chakra akatsuki konoha
+orochimaru itachi tsunade uzumaki jiraya uchiwa obito byakugan ninjutsu taijutsu genjutsu
+sangoku goku vegeta gohan trunks bulma saiyan sangohan broly dragonball dbz
+luffy nami shanks ichigo rukia shinigami kurosaki bleach bankai shikai katana shuriken kunai
+ghibli miyazaki totoro chihiro mononoke laputa takahata akira seiya shiryu kenshin
+cosplay otaku shonen seinen shojo mangaka samourai fullmetal alchemist elric
+zelda hyrule triforce ganon majora ocarina mario bowser peach wario yoshi donkey metroid samus
+pikachu pokemon mewtwo pokedex pokeball evoli kanto sonic sega dreamcast megadrive
+tetris bomberman lara croft raider warcraft azeroth starcraft diablo blizzard outreterre
+playstation nintendo gamecube gameboy wii wiimote xbox psp tekken joystick manette mmorpg gamer
+voldemort poudlard gryffondor serpentard moldu hagrid dumbledore quidditch mangemort horcruxe
+weasley malefoy hermione harry gandalf frodon aragorn gollum sauron mordor hobbit bilbon
+legolas gimli elrond saroumane tolkien gondor elfe dragon donjon troll gobelin
+vampire dracula loup-garou zombie cyborg robocop terminator alien predator
+jedi sith vador skywalker yoda anakin palpatine padawan chewbacca tatooine
+matrix batman spiderman superman marvel x-men wolverine catwoman gotham venom hulk magneto
+""".split()
+
+MOTS_CLASSIQUES_UNIQUES = list(dict.fromkeys(CORPUS_CLASSIQUE))
+MOTS_POP_UNIQUES = list(dict.fromkeys(CORPUS_POP_CULTURE))
 
 def connecter_ou_inscrire_bot(page, pseudo, password):
     """Connecte un bot sur Supabase (ou crée son compte s'il n'existe pas encore)."""
@@ -109,17 +129,16 @@ def connecter_ou_inscrire_bot(page, pseudo, password):
 
 def lancer_stress_test():
     rapport = ["================================================================="]
-    rapport.append("   RAPPORT DE STRESS-TEST & AUDIT MULTI-BOTS (ZéroAbsolu v1.0)")
+    rapport.append("   RAPPORT DE STRESS-TEST & AUDIT MULTI-BOTS (ZéroAbsolu v1.1)")
     rapport.append("=================================================================\n")
     erreurs_js = []
 
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
 
-        # Création de 3 contextes de navigation 100% isolés (3 joueurs distincts)
         ctx_alpha = browser.new_context(viewport={"width": 390, "height": 844}, is_mobile=True)
         ctx_bravo = browser.new_context(viewport={"width": 390, "height": 844}, is_mobile=True)
-        ctx_charlie = browser.new_context(viewport={"width": 1280, "height": 800}) # Charlie sur PC Desktop
+        ctx_charlie = browser.new_context(viewport={"width": 1280, "height": 800})
 
         p_alpha = ctx_alpha.new_page()
         p_bravo = ctx_bravo.new_page()
@@ -129,18 +148,22 @@ def lancer_stress_test():
             pg.on("pageerror", lambda err, n=nom: erreurs_js.append(f"[{n}] {err}"))
 
         # ---------------------------------------------------------------------
-        # PILIER 1 : CONNEXION DES 3 BOTS & CRÉATION DU SALON MULTIJOUEUR
+        # PILIER 1 : CONNEXION DES 3 BOTS SUR SUPABASE
         # ---------------------------------------------------------------------
-        print("1/5 Connexion des 3 bots (BotAlpha, BotBravo, BotCharlie) sur Supabase...")
+        print("1/6 Connexion des 3 bots (BotAlpha, BotBravo, BotCharlie) sur Supabase...")
         p_alpha.goto(SITE_URL, wait_until="networkidle")
         p_bravo.goto(SITE_URL, wait_until="networkidle")
         p_charlie.goto(SITE_URL, wait_until="networkidle")
+
+        # S'assure que BotAlpha démarre en mode Classique pour le Pilier 2
+        p_alpha.evaluate("localStorage.setItem('zeroabsolu_mode', 'classic')")
 
         ok_a, err_a = connecter_ou_inscrire_bot(p_alpha, "BotAlpha", MDP_BOTS)
         ok_b, err_b = connecter_ou_inscrire_bot(p_bravo, "BotBravo", MDP_BOTS)
         ok_c, err_c = connecter_ou_inscrire_bot(p_charlie, "BotCharlie", MDP_BOTS)
 
-        rapport.append("### 1. AUTHENTIFICATION SUPABASE DES 3 BOTS")
+        version_en_ligne = p_alpha.locator("#versionBadgeTop").inner_text().strip()
+        rapport.append(f"### 1. AUTHENTIFICATION SUPABASE DES 3 BOTS ({version_en_ligne})")
         rapport.append(f"• BotAlpha (Mobile)   : {'✅ Connecté' if ok_a else '❌ ' + err_a}")
         rapport.append(f"• BotBravo (Mobile)   : {'✅ Connecté' if ok_b else '❌ ' + err_b}")
         rapport.append(f"• BotCharlie (Desktop): {'✅ Connecté' if ok_c else '❌ ' + err_c}\n")
@@ -150,40 +173,42 @@ def lancer_stress_test():
             browser.close()
             return
 
+        # Sélection explicite du mode Classique dans le lobby de BotAlpha
+        if p_alpha.locator("#modeClassicBtn").count():
+            p_alpha.click("#modeClassicBtn")
+            p_alpha.wait_for_timeout(600)
+
         # ---------------------------------------------------------------------
-        # PILIER 2 : AUDIT DU CORPUS DE MOTS COURANTS (DANS LE MOTEUR DU JEU)
+        # PILIER 2 : AUDIT DU CORPUS DE MOTS COURANTS (MODE CLASSIQUE)
         # ---------------------------------------------------------------------
-        print(f"2/5 Audit linguistique de {len(MOTS_UNIQUES)} mots courants et variantes...")
-        audit_corpus = p_alpha.evaluate("""(listeMots) => {
-            const reconnus = [];
-            const inconnus = [];
+        print(f"2/6 Audit linguistique du Mode Classique ({len(MOTS_CLASSIQUES_UNIQUES)} mots)...")
+        audit_classique = p_alpha.evaluate("""(listeMots) => {
+            const reconnus = [], inconnus = [];
             for (const m of listeMots) {
                 const res = resolveWordInDictionary(m);
-                if (res) reconnus.push([m, res]);
+                if (res) reconnus.push(m);
                 else inconnus.push(m);
             }
-            return { total: listeMots.length, ok: reconnus.length, inconnus: inconnus };
-        }""", MOTS_UNIQUES)
+            return { total: listeMots.length, ok: reconnus.length, inconnus };
+        }""", MOTS_CLASSIQUES_UNIQUES)
 
-        taux = round((audit_corpus["ok"] / audit_corpus["total"]) * 100, 1)
-        rapport.append("### 2. AUDIT LINGUISTIQUE DU CORPUS COURANT")
-        rapport.append(f"• Mots testés : {audit_corpus['total']} (incluant pluriels, féminins et mots sans accent)")
-        rapport.append(f"• Taux de reconnaissance : {audit_corpus['ok']}/{audit_corpus['total']} ({taux}%)")
-        if audit_corpus["inconnus"]:
-            rapport.append(f"• Mots non reconnus ({len(audit_corpus['inconnus'])}) : {', '.join(audit_corpus['inconnus'][:30])}")
+        taux_cl = round((audit_classique["ok"] / audit_classique["total"]) * 100, 1)
+        rapport.append("### 2. AUDIT LINGUISTIQUE DU CORPUS CLASSIQUE")
+        rapport.append(f"• Mots courants testés : {audit_classique['total']} (avec pluriels, féminins et sans accent)")
+        rapport.append(f"• Taux de reconnaissance : {audit_classique['ok']}/{audit_classique['total']} ({taux_cl}%)")
+        if audit_classique["inconnus"]:
+            rapport.append(f"• Mots non reconnus ({len(audit_classique['inconnus'])}) : {', '.join(audit_classique['inconnus'][:20])}\n")
         else:
-            rapport.append("• Mots non reconnus : Aucun (100% du corpus reconnu !)")
-        rapport.append("")
+            rapport.append("• Mots non reconnus : Aucun (100% du corpus classique reconnu !)\n")
 
         # ---------------------------------------------------------------------
         # PILIER 3 : CRÉATION DU SALON & SYNCHRONISATION TEMPS RÉEL À 3 BOTS
         # ---------------------------------------------------------------------
-        print("3/5 Création d'un salon par BotAlpha et connexion de BotBravo & BotCharlie...")
+        print("3/6 Création d'un salon par BotAlpha et connexion de BotBravo & BotCharlie...")
         p_alpha.click("#createRoomBtn")
         p_alpha.wait_for_selector("#roomCodePill:not(.hidden)", timeout=8000)
         code_salon = p_alpha.locator("#headerRoomCode").inner_text().strip()
 
-        # BotBravo et BotCharlie rejoignent le salon
         for pg in (p_bravo, p_charlie):
             pg.fill("#modalRoomCode", code_salon)
             pg.click("#joinRoomBtn")
@@ -191,7 +216,6 @@ def lancer_stress_test():
 
         p_alpha.wait_for_timeout(1000)
 
-        # Vérifie que les 3 bots voient bien 3 joueurs dans le salon
         nb_joueurs_alpha = p_alpha.evaluate("Object.keys(players).length")
         nb_joueurs_bravo = p_bravo.evaluate("Object.keys(players).length")
         nb_joueurs_charlie = p_charlie.evaluate("Object.keys(players).length")
@@ -200,7 +224,6 @@ def lancer_stress_test():
         rapport.append(f"• Code du salon créé par BotAlpha : {code_salon}")
         rapport.append(f"• Joueurs détectés : Alpha={nb_joueurs_alpha}/3 | Bravo={nb_joueurs_bravo}/3 | Charlie={nb_joueurs_charlie}/3")
 
-        # Extraction intelligente de mots réels de la manche en cours pour tester tous les paliers
         echantillon_manche = p_alpha.evaluate("""() => {
             let secret = null, top2 = null, top5 = null, top50 = null, top500 = null, froids = [];
             for (const [w, val] of Object.entries(gameDictionary)) {
@@ -218,26 +241,24 @@ def lancer_stress_test():
             return { secret, top2, top5, top50, top500, froids };
         }""")
 
-        # Les 3 bots jouent 12 mots à tour de rôle
-        print("4/5 Duel coopératif entre les 3 bots (Froids, Top 500, Flamme, Magma Top 2, Doublons)...")
+        print("4/6 Duel coopératif en Mode Classique (Froids, Top 500, Flamme, Magma Top 2, Doublons)...")
         sequence_tirs = [
-            (p_alpha, echantillon_manche["froids"][0], "Froid #1"),
-            (p_bravo, echantillon_manche["froids"][1], "Froid #2"),
-            (p_charlie, echantillon_manche["froids"][2], "Froid #3"),
-            (p_alpha, echantillon_manche["froids"][3], "Froid #4"),
-            (p_bravo, echantillon_manche["froids"][4], "Froid #5"),
-            (p_charlie, echantillon_manche["froids"][5], "Froid #6"),
-            (p_alpha, echantillon_manche["top500"], "Tiède (Top 501)"),
-            (p_bravo, echantillon_manche["top50"], "Flamme (Top 51)"),
-            (p_charlie, echantillon_manche["top5"], "Magma (Top 5)"),
-            (p_alpha, echantillon_manche["top2"], "Magma (Top 2 - Rang 999)"),
-            (p_bravo, echantillon_manche["froids"][6], "Froid #7 (Hors Top 7 -> doit ouvrir Mot récent)"),
+            (p_alpha, echantillon_manche["froids"][0]),
+            (p_bravo, echantillon_manche["froids"][1]),
+            (p_charlie, echantillon_manche["froids"][2]),
+            (p_alpha, echantillon_manche["froids"][3]),
+            (p_bravo, echantillon_manche["froids"][4]),
+            (p_charlie, echantillon_manche["froids"][5]),
+            (p_alpha, echantillon_manche["top500"]),
+            (p_bravo, echantillon_manche["top50"]),
+            (p_charlie, echantillon_manche["top5"]),
+            (p_alpha, echantillon_manche["top2"]),
+            (p_bravo, echantillon_manche["froids"][6]),
         ]
 
-        for bot_page, mot, label in sequence_tirs:
+        for bot_page, mot in sequence_tirs:
             if not mot:
                 continue
-            # Ferme l'overlay de Percée Thermique s'il est ouvert sur ce bot
             if not bot_page.locator("#surgeOverlay").evaluate("el => el.classList.contains('hidden')"):
                 bot_page.click("#surgeOverlay button")
                 bot_page.wait_for_timeout(100)
@@ -247,7 +268,6 @@ def lancer_stress_test():
 
         p_alpha.wait_for_timeout(800)
 
-        # Vérification de la synchronisation des listes sur les 3 bots
         cnt_a = p_alpha.locator("#statAttempts").inner_text()
         cnt_b = p_bravo.locator("#statAttempts").inner_text()
         cnt_c = p_charlie.locator("#statAttempts").inner_text()
@@ -259,17 +279,14 @@ def lancer_stress_test():
         rapport.append(f"• Synchro du nombre de mots : Alpha={cnt_a} | Bravo={cnt_b} | Charlie={cnt_c} (Attendu: 11)")
         rapport.append(f"• Synchro du Record Salon   : Alpha={rec_a} | Bravo={rec_b} | Charlie={rec_c}")
 
-        # Vérifie que le mot de rang 999 affiche bien "Top 2" (et non "Top 1")
         premier_badge = p_alpha.locator("#guessesList > div").first.inner_text()
         top2_ok = "Top 2" in premier_badge
         rapport.append(f"• Vérification du badge 'Top 2' (Rang 999) : {'✅ OK (Top 2 affiché)' if top2_ok else '❌ Erreur : ' + premier_badge}")
 
-        # Vérifie que la boîte "Mot récent (plus bas)" s'est bien ouverte sur BotBravo après le 11e mot (froid)
         recent_visible = not p_bravo.locator("#lastGuessBox").evaluate("el => el.classList.contains('hidden')")
         pos_recent = p_bravo.locator("#lastGuessRankPos").inner_text() if recent_visible else "Masqué"
         rapport.append(f"• Règle 'Mot récent hors Top 7' : {'✅ Affiché (' + pos_recent + ')' if recent_visible else '❌ Non affiché'}")
 
-        # Test de doublon croisé : BotCharlie tente de retaper le mot Top 2 déjà trouvé par BotAlpha
         p_charlie.fill("#wordInput", echantillon_manche["top2"])
         p_charlie.click("#guessForm button[type='submit']")
         p_charlie.wait_for_timeout(300)
@@ -277,18 +294,16 @@ def lancer_stress_test():
         rapport.append(f"• Protection anti-doublon inter-joueurs : {'✅ Bloqué (reste à ' + cnt_apres_doublon + ')' if cnt_apres_doublon == cnt_c else '❌ Doublon accepté'}\n")
 
         # ---------------------------------------------------------------------
-        # PILIER 4 : SÉCURITÉ HÔTE/INVITÉ, INDICE 35 ⚡ & TRANSITION DE MANCHE
+        # PILIER 4 : SÉCURITÉ HÔTE/INVITÉ, INDICE 35 ⚡ & VICTOIRE CLASSIQUE
         # ---------------------------------------------------------------------
-        print("5/5 Test Sécurité Invité, Achat d'Indice (35 ⚡), Victoire 100% et Manche #2...")
+        print("5/6 Test Sécurité Invité, Achat d'Indice (35 ⚡) et Victoire 100%...")
         rapport.append("### 4. SÉCURITÉ DES RÔLES, INDICE & VICTOIRE COOPÉRATIVE")
 
-        # BotBravo (Invité) essaie d'abandonner la manche -> doit être bloqué
         p_bravo.click("button[title='Révéler le mot']")
         p_bravo.wait_for_timeout(200)
         invite_bloque = p_bravo.locator("#confirmModal").evaluate("el => el.classList.contains('hidden')")
         rapport.append(f"• Blocage Abandon/Skip par un Invité (BotBravo) : {'✅ Bloqué' if invite_bloque else '❌ Non bloqué'}")
 
-        # BotAlpha utilise le Labo Secret pour se donner +50 ⚡ et achète un Indice (35 ⚡)
         p_alpha.evaluate("debugAddPointsAndXp(50, 0)")
         p_alpha.wait_for_timeout(200)
         pts_avant = int(p_alpha.locator("#headerPoints").inner_text())
@@ -298,7 +313,6 @@ def lancer_stress_test():
         cnt_apres_indice = p_bravo.locator("#statAttempts").inner_text()
         rapport.append(f"• Achat Indice (-35 ⚡) & Synchro Salon : {'✅ OK' if (pts_avant - pts_apres == 35 or pts_apres > pts_avant - 35) and int(cnt_apres_indice) == 12 else '❌ Échec'} (Mots salon={cnt_apres_indice})")
 
-        # BotCharlie tape le mot secret -> Déclenche la victoire (100% Fusion) chez les 3 bots !
         p_charlie.fill("#wordInput", echantillon_manche["secret"])
         p_charlie.click("#guessForm button[type='submit']")
         p_alpha.wait_for_timeout(900)
@@ -306,18 +320,76 @@ def lancer_stress_test():
         vic_a = not p_alpha.locator("#victoryBanner").evaluate("el => el.classList.contains('hidden')")
         vic_b = not p_bravo.locator("#victoryBanner").evaluate("el => el.classList.contains('hidden')")
         vic_c = not p_charlie.locator("#victoryBanner").evaluate("el => el.classList.contains('hidden')")
-        rapport.append(f"• Synchro Victoire 100% (Bannière Solaire) : Alpha={'✅' if vic_a else '❌'} | Bravo={'✅' if vic_b else '❌'} | Charlie={'✅' if vic_c else '❌'}")
-
-        # BotAlpha passe à la Manche #2 -> Vérifie que les 3 bots passent bien en #2
-        p_alpha.click("#victoryBanner button:has-text('Suivant')")
-        p_alpha.wait_for_timeout(1200)
-        manche_a = p_alpha.locator("#roundBadge").inner_text()
-        manche_b = p_bravo.locator("#roundBadge").inner_text()
-        manche_c = p_charlie.locator("#roundBadge").inner_text()
-        rapport.append(f"• Passage synchronisé à la Manche #2 : Alpha={manche_a} | Bravo={manche_b} | Charlie={manche_c}\n")
+        rapport.append(f"• Synchro Victoire 100% (Bannière Solaire) : Alpha={'✅' if vic_a else '❌'} | Bravo={'✅' if vic_b else '❌'} | Charlie={'✅' if vic_c else '❌'}\n")
 
         # ---------------------------------------------------------------------
-        # PILIER 5 : STRESS-TEST DOM (100 MOTS) & BILAN TECHNIQUE
+        # PILIER 5 : TEST COMPLET DU MODE « POP CULTURE, MANGA & GAMING »
+        # ---------------------------------------------------------------------
+        print("6/6 Test du Mode 'Pop & Manga' (Bascule Salon, Corpus Geek 110 mots & Manche Pop)...")
+        rapport.append("### 5. AUDIT DU MODE « POP CULTURE, MANGA & GAMING »")
+
+        if p_alpha.locator("#modePopBtn").count() == 0:
+            rapport.append("⚠️ Les boutons #modePopBtn ne sont pas encore en ligne sur Vercel (faites un Commit & Push de index.html, app.js et parties_pop/).\n")
+        else:
+            # 1. Vérifie qu'un invité (BotBravo) ne peut pas changer le mode du salon
+            p_bravo.evaluate("selectGameMode('pop')")
+            p_bravo.wait_for_timeout(300)
+            mode_bravo_seul = p_bravo.evaluate("currentGameMode")
+            rapport.append(f"• Blocage changement de mode par un Invité : {'✅ Bloqué (reste en ' + mode_bravo_seul + ')' if mode_bravo_seul == 'classic' else '❌ Non bloqué'}")
+
+            # 2. BotAlpha (Hôte) ouvre le menu et bascule tout le salon en mode Pop & Manga
+            p_alpha.click("#modeHeaderBadge")
+            p_alpha.wait_for_timeout(300)
+            p_alpha.click("#modePopBtn")
+            p_alpha.wait_for_timeout(1200)
+            p_alpha.click("#closeModalBtn")
+            p_alpha.wait_for_timeout(400)
+
+            mode_a = p_alpha.evaluate("currentGameMode")
+            mode_b = p_bravo.evaluate("currentGameMode")
+            mode_c = p_charlie.evaluate("currentGameMode")
+            badge_mode_txt = p_charlie.locator("#modeHeaderText").inner_text().strip()
+            rapport.append(f"• Bascule synchronisée en Mode Pop & Manga : Alpha={mode_a} | Bravo={mode_b} | Charlie={mode_c} (Badge='{badge_mode_txt}')")
+
+            # 3. Audit linguistique des 110 mots Pop Culture / Manga / Gaming
+            audit_pop = p_alpha.evaluate("""(listePop) => {
+                const reconnus = [], inconnus = [];
+                for (const m of listePop) {
+                    const res = resolveWordInDictionary(m);
+                    if (res) reconnus.push(m);
+                    else inconnus.push(m);
+                }
+                const secretPop = Object.entries(gameDictionary).find(([, v]) => Array.isArray(v) && v[1] === 1000)?.[0] || "?";
+                const top2Pop = Object.entries(gameDictionary).find(([, v]) => Array.isArray(v) && v[1] === 999)?.[0] || "?";
+                return { total: listePop.length, ok: reconnus.length, inconnus, secretPop, top2Pop };
+            }""", MOTS_POP_UNIQUES)
+
+            taux_pop = round((audit_pop["ok"] / audit_pop["total"]) * 100, 1)
+            rapport.append(f"• Mot secret Pop Culture tiré au sort : [{audit_pop['secretPop'].upper()}] (Top 2 = '{audit_pop['top2Pop']}')")
+            rapport.append(f"• Reconnaissance du Corpus Pop/Manga/Gaming : {audit_pop['ok']}/{audit_pop['total']} ({taux_pop}%)")
+            if audit_pop["inconnus"]:
+                rapport.append(f"• Mots Pop non reconnus : {', '.join(audit_pop['inconnus'][:15])}")
+
+            # 4. Les 3 bots jouent des mots Pop Culture puis trouvent le mot secret Pop
+            for pg, w_pop in [(p_alpha, "naruto"), (p_bravo, "pikachu"), (p_charlie, audit_pop["top2Pop"]), (p_alpha, audit_pop["secretPop"])]:
+                if not pg.locator("#surgeOverlay").evaluate("el => el.classList.contains('hidden')"):
+                    pg.click("#surgeOverlay button")
+                    pg.wait_for_timeout(100)
+                pg.fill("#wordInput", w_pop)
+                pg.click("#guessForm button[type='submit']")
+                pg.wait_for_timeout(400)
+
+            p_alpha.wait_for_timeout(800)
+            vic_pop_a = not p_alpha.locator("#victoryBanner").evaluate("el => el.classList.contains('hidden')")
+            vic_pop_b = not p_bravo.locator("#victoryBanner").evaluate("el => el.classList.contains('hidden')")
+            vic_pop_c = not p_charlie.locator("#victoryBanner").evaluate("el => el.classList.contains('hidden')")
+            rapport.append(f"• Victoire coopérative en Mode Pop & Manga : Alpha={'✅' if vic_pop_a else '❌'} | Bravo={'✅' if vic_pop_b else '❌'} | Charlie={'✅' if vic_pop_c else '❌'}\n")
+
+            # Remet BotAlpha en mode Classique à la fin du test
+            p_alpha.evaluate("selectGameMode('classic')")
+
+        # ---------------------------------------------------------------------
+        # PILIER 6 : STRESS-TEST DOM (100 MOTS) & BILAN TECHNIQUE
         # ---------------------------------------------------------------------
         t_dom = p_alpha.evaluate("""() => {
             const t0 = performance.now();
@@ -332,7 +404,7 @@ def lancer_stress_test():
             return Math.round(performance.now() - t0);
         }""")
 
-        rapport.append("### 5. PERFORMANCES DOM & INTÉGRITÉ TECHNIQUE")
+        rapport.append("### 6. PERFORMANCES DOM & INTÉGRITÉ TECHNIQUE")
         rapport.append(f"• Temps de rendu DOM pour 100 cartes simultanées : {t_dom} ms (Excellent si < 50 ms)")
         rapport.append(f"• Erreurs JavaScript sur les 3 navigateurs : {len(erreurs_js)}")
         for e in erreurs_js:

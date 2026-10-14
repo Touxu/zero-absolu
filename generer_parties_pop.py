@@ -9,22 +9,23 @@ from generer_500_parties import (
 )
 
 OUTPUT_POP_DIR = "parties_pop"
+TARGET_POP_GAMES = 91  # Aligné exactement sur MODE_CONFIG.pop.total = 91 dans app.js
 
-# Exactement 91 Mots Secrets Pop Culture, Manga, Gaming, Fantasy & Sci-Fi (aligné sur total: 91 de app.js)
+# Banque de candidats Pop Culture, Manga, Gaming, Fantasy & Sci-Fi
 POP_CULTURE_SECRETS = [
-    # Manga & Animation Japonaise (40)
+    # Manga & Animation Japonaise
     "manga", "anime", "naruto", "sasuke", "sakura", "kakashi", "hokage", "ninja",
     "shinobi", "sharingan", "chakra", "akatsuki", "konoha", "orochimaru", "itachi",
     "tsunade", "sangoku", "goku", "vegeta", "gohan", "trunks", "bulma", "saiyan",
     "luffy", "ichigo", "rukia", "shinigami", "ghibli", "miyazaki", "totoro",
     "chihiro", "mononoké", "akira", "seiya", "cosplay", "otaku", "shonen",
-    "seinen", "shojo", "mangaka", "samouraï", "katana",
-    # Jeux Vidéo & Consoles (24)
+    "seinen", "shojo", "mangaka", "samouraï", "katana", "shuriken", "alchemist",
+    # Jeux Vidéo & Consoles
     "zelda", "hyrule", "triforce", "mario", "bowser", "peach", "wario", "pikachu",
     "pokémon", "mewtwo", "sonic", "tetris", "croft", "warcraft", "azeroth",
     "starcraft", "diablo", "playstation", "nintendo", "gamecube", "gameboy",
-    "joystick", "manette", "mmorpg", "gamer",
-    # Harry Potter, Seigneur des Anneaux, Star Wars, Comics & Sci-Fi (27)
+    "joystick", "manette", "mmorpg", "gamer", "wii", "xbox", "dreamcast",
+    # Harry Potter, Seigneur des Anneaux, Star Wars, Comics & Sci-Fi
     "voldemort", "poudlard", "gryffondor", "serpentard", "moldu", "hagrid",
     "dumbledore", "quidditch", "gandalf", "frodon", "aragorn", "gollum", "sauron",
     "mordor", "hobbit", "elfe", "dragon", "donjon", "troll", "gobelin", "vampire",
@@ -55,7 +56,8 @@ POP_WHITELIST_EXTRA = set(POP_CULTURE_SECRETS) | {
     "dracula", "buffy", "anakin", "palpatine", "padawan", "coruscant", "tatooine",
     "chewbacca", "jabba", "padmé", "darth", "vader", "catwoman", "punisher",
     "gotham", "smallville", "luthor", "venom", "hulk", "daredevil", "magneto",
-    "spider-man", "robocop", "predator", "alien"
+    "spider-man", "robocop", "predator", "alien", "mononoke", "samourai",
+    "pokemon", "pokedex", "pokeball"
 }
 
 def generate_pop_games():
@@ -67,10 +69,18 @@ def generate_pop_games():
     seen_exact = set()
     internal_accent_lookup = {}
 
+    # 1. On inclut d'abord TOUS les mots de la POP_WHITELIST_EXTRA présents dans le modèle (quel que soit leur rang, même > 100 000 !)
+    for w_pop in sorted(POP_WHITELIST_EXTRA):
+        if w_pop in raw_word_to_idx and w_pop not in seen_exact:
+            idx = raw_word_to_idx[w_pop]
+            seen_exact.add(w_pop)
+            candidates.append((idx, w_pop))
+
+    # 2. On ajoute ensuite le vocabulaire français classique
     for idx, w in enumerate(raw_words):
         if w in seen_exact:
             continue
-        if w not in POP_WHITELIST_EXTRA and not is_valid_french_word(w):
+        if not is_valid_french_word(w):
             continue
         seen_exact.add(w)
         candidates.append((idx, w))
@@ -80,7 +90,7 @@ def generate_pop_games():
             if unacc not in internal_accent_lookup:
                 internal_accent_lookup[unacc] = (w, idx)
 
-        if len(candidates) >= 110000:
+        if len(candidates) >= 115000:
             break
 
     all_valid_set = {w for _, w in candidates}
@@ -101,16 +111,18 @@ def generate_pop_games():
         word_to_clean_pos[w] = len(clean_words)
         clean_words.append(w)
         clean_indices.append(orig_idx)
-        if len(clean_words) >= 55000:
+        if len(clean_words) >= 56000:
             break
 
     clean_vectors = raw_vectors[np.array(clean_indices, dtype=np.int32)]
 
-    valid_secrets = [s for s in dict.fromkeys(POP_CULTURE_SECRETS) if s in word_to_clean_pos][:91]
+    valid_secrets = [s for s in dict.fromkeys(POP_CULTURE_SECRETS) if s in word_to_clean_pos][:TARGET_POP_GAMES]
     random.seed(42)
     random.shuffle(valid_secrets)
 
+    print(f"    ✓ Vocabulaire Pop & Français : {len(clean_words):,} mots")
     print(f"3/3 Génération de {len(valid_secrets)} parties Pop Culture dans '{OUTPUT_POP_DIR}/'...")
+
     for game_id, secret in enumerate(valid_secrets, start=1):
         secret_pos = word_to_clean_pos[secret]
         target_vec = clean_vectors[secret_pos]
@@ -140,7 +152,7 @@ def generate_pop_games():
         with open(filepath, "w", encoding="utf-8") as f:
             json.dump({"id": game_id, "mode": "pop", "words": words_dict}, f, ensure_ascii=False, separators=(",", ":"))
 
-    print(f"✅ Terminé ! {len(valid_secrets)} parties Pop Culture & Manga générées dans '{OUTPUT_POP_DIR}/' !")
+    print(f"✅ Terminé ! {len(valid_secrets)}/{TARGET_POP_GAMES} parties Pop Culture & Manga générées dans '{OUTPUT_POP_DIR}/' !")
 
 if __name__ == "__main__":
     generate_pop_games()

@@ -1,19 +1,19 @@
 =================================================================
-   RAPPORT DE STRESS-TEST & AUDIT MULTI-BOTS (ZéroAbsolu v1.0)
+   RAPPORT DE STRESS-TEST & AUDIT MULTI-BOTS (ZéroAbsolu v1.1)
 =================================================================
 
-### 1. AUTHENTIFICATION SUPABASE DES 3 BOTS
+### 1. AUTHENTIFICATION SUPABASE DES 3 BOTS (v1.1)
 • BotAlpha (Mobile)   : ✅ Connecté
 • BotBravo (Mobile)   : ✅ Connecté
 • BotCharlie (Desktop): ✅ Connecté
 
-### 2. AUDIT LINGUISTIQUE DU CORPUS COURANT
-• Mots testés : 934 (incluant pluriels, féminins et mots sans accent)
-• Taux de reconnaissance : 931/934 (99.7%)
-• Mots non reconnus (3) : ouvre-boite, étoile-de-mer, piloteplombier
+### 2. AUDIT LINGUISTIQUE DU CORPUS CLASSIQUE
+• Mots courants testés : 933 (avec pluriels, féminins et sans accent)
+• Taux de reconnaissance : 933/933 (100.0%)
+• Mots non reconnus : Aucun (100% du corpus classique reconnu !)
 
 ### 3. SYNCHRONISATION SALON MULTIJOUEUR WSS (3 BOTS)
-• Code du salon créé par BotAlpha : LHPM
+• Code du salon créé par BotAlpha : KPLP
 • Joueurs détectés : Alpha=3/3 | Bravo=3/3 | Charlie=3/3
 • Synchro du nombre de mots : Alpha=11 | Bravo=11 | Charlie=11 (Attendu: 11)
 • Synchro du Record Salon   : Alpha=99.9% | Bravo=99.9% | Charlie=99.9%
@@ -25,8 +25,15 @@
 • Blocage Abandon/Skip par un Invité (BotBravo) : ✅ Bloqué
 • Achat Indice (-35 ⚡) & Synchro Salon : ✅ OK (Mots salon=12)
 • Synchro Victoire 100% (Bannière Solaire) : Alpha=✅ | Bravo=✅ | Charlie=✅
-• Passage synchronisé à la Manche #2 : Alpha=#2 | Bravo=#2 | Charlie=#2
 
-### 5. PERFORMANCES DOM & INTÉGRITÉ TECHNIQUE
+### 5. AUDIT DU MODE « POP CULTURE, MANGA & GAMING »
+• Blocage changement de mode par un Invité : ✅ Bloqué (reste en classic)
+• Bascule synchronisée en Mode Pop & Manga : Alpha=pop | Bravo=pop | Charlie=pop (Badge='Pop & Manga')
+• Mot secret Pop Culture tiré au sort : [MANGA] (Top 2 = 'shonen')
+• Reconnaissance du Corpus Pop/Manga/Gaming : 159/182 (87.4%)
+• Mots Pop non reconnus : gohan, bulma, sangohan, broly, dragonball, nami, rukia, kurosaki, bankai, shikai, laputa, shiryu, ganon, majora, mewtwo
+• Victoire coopérative en Mode Pop & Manga : Alpha=✅ | Bravo=✅ | Charlie=✅
+
+### 6. PERFORMANCES DOM & INTÉGRITÉ TECHNIQUE
 • Temps de rendu DOM pour 100 cartes simultanées : 8 ms (Excellent si < 50 ms)
 • Erreurs JavaScript sur les 3 navigateurs : 0
