@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>ZéroAbsolu — Duel Sémantique</title>
+  <title>ZéroAbsolu — v0.6</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+  <script src="https://unpkg.com/mqtt@5.10.3/dist/mqtt.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   <style>
@@ -38,7 +38,7 @@
       box-shadow: 0 0 16px rgba(254, 240, 138, 0.95);
     }
 
-    /* Cartes thématiques : Flamme (Top 100), Magma (Top 10), Fusion Solaire (Top 1 / 100%) */
+    /* Cartes thématiques : Flamme (Top 100), Magma (Top 10), Fusion Solaire (100%) */
     @keyframes flameFlicker {
       0%, 100% { box-shadow: 0 0 10px -2px rgba(249,115,22,0.35), inset 0 0 8px rgba(249,115,22,0.12); border-color: rgba(249,115,22,0.55); }
       50% { box-shadow: 0 0 16px 1px rgba(234,88,12,0.55), inset 0 0 12px rgba(251,146,60,0.22); border-color: rgba(251,146,60,0.85); }
@@ -115,7 +115,7 @@
       <div id="solarShockwave" class="absolute top-1/2 left-1/2 w-56 h-56 rounded-full border-amber-200 shadow-[0_0_60px_#facc15]"></div>
     </div>
 
-    <!-- 1. MODALE D'ACCUEIL -->
+    <!-- 1. MODALE D'ACCUEIL AVEC NUMÉRO DE VERSION -->
     <div id="onboardingModal" onclick="if(event.target.id==='onboardingModal' && hasStartedSession) closeOnboardingModal()"
       class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
       <div class="relative bg-slate-900 border border-slate-800 rounded-3xl max-w-sm w-full p-5 sm:p-6 shadow-2xl animate-pop">
@@ -128,8 +128,13 @@
           <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-sky-400 via-indigo-500 to-orange-500 flex items-center justify-center shadow-lg shadow-sky-500/20 shrink-0">
             <i data-lucide="flame" class="w-5 h-5 text-white"></i>
           </div>
-          <div>
-            <h1 class="text-xl font-extrabold tracking-tight bg-gradient-to-r from-sky-300 via-purple-300 to-amber-300 bg-clip-text text-transparent">ZéroAbsolu</h1>
+          <div class="min-w-0 flex-1">
+            <div class="flex items-center gap-2">
+              <h1 class="text-xl font-extrabold tracking-tight bg-gradient-to-r from-sky-300 via-purple-300 to-amber-300 bg-clip-text text-transparent">ZéroAbsolu</h1>
+              <span id="versionBadgeTop" class="font-mono-num text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-gradient-to-r from-sky-500/20 to-amber-500/20 text-amber-300 border border-amber-400/30 shadow-sm">
+                v0.6
+              </span>
+            </div>
             <p class="text-[11px] text-slate-400">Du froid polaire jusqu'à la fusion solaire</p>
           </div>
         </div>
@@ -148,7 +153,7 @@
             <i data-lucide="compass" class="w-5 h-5 text-sky-400 group-hover:scale-110 transition"></i>
             <span class="text-xs font-bold">Solo</span>
           </button>
-          <button onclick="startCreateRoom()" class="flex flex-col items-center justify-center gap-1 bg-gradient-to-br from-sky-600/90 to-indigo-600/90 hover:from-sky-500 hover:to-indigo-500 border border-sky-400/30 rounded-2xl p-3.5 transition shadow-lg shadow-sky-600/15 group">
+          <button id="createRoomBtn" onclick="startCreateRoom()" class="flex flex-col items-center justify-center gap-1 bg-gradient-to-br from-sky-600/90 to-indigo-600/90 hover:from-sky-500 hover:to-indigo-500 border border-sky-400/30 rounded-2xl p-3.5 transition shadow-lg shadow-sky-600/15 group">
             <i data-lucide="users" class="w-5 h-5 text-white group-hover:scale-110 transition"></i>
             <span class="text-xs font-bold">Créer Salon</span>
           </button>
@@ -165,11 +170,20 @@
             class="w-full bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl px-4 py-2.5 text-center font-mono-num text-base font-bold uppercase tracking-[0.3em] placeholder:tracking-normal placeholder:font-sans placeholder:text-xs placeholder:font-normal focus:outline-none">
           <button id="joinRoomBtn" onclick="startJoinRoom()" disabled
             class="w-full py-2.5 rounded-xl text-sm font-bold transition flex items-center justify-center gap-2 bg-slate-800 text-slate-500 cursor-not-allowed opacity-60">
-            <span>Rejoindre le salon</span>
+            <span id="joinRoomBtnText">Rejoindre le salon</span>
             <i data-lucide="arrow-right" class="w-4 h-4"></i>
           </button>
         </div>
         <p id="modalError" class="text-rose-400 text-xs mt-2 text-center min-h-[1rem]"></p>
+
+        <!-- Pied de carte avec version élégante -->
+        <div class="mt-3 pt-2.5 border-t border-slate-800/70 flex items-center justify-between text-[10px] text-slate-500">
+          <span class="flex items-center gap-1.5">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+            <span> Multijoueur Cloud Temps Réel</span>
+          </span>
+          <span id="versionBadgeFooter" class="font-mono-num text-slate-400 font-semibold">v0.6 • Édition Solaire</span>
+        </div>
       </div>
     </div>
 
@@ -265,6 +279,7 @@
         </button>
         <span id="roundBadge" class="text-xs font-mono-num bg-sky-500/15 text-sky-300 px-2 py-1 rounded-lg border border-sky-500/30 font-bold shrink-0">#1</span>
         <button id="roomCodePill" onclick="copyRoomCode()" class="hidden items-center gap-1 bg-indigo-950/80 hover:bg-indigo-900/80 border border-indigo-500/40 px-2 py-1 rounded-lg transition shrink-0">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
           <strong id="headerRoomCode" class="font-mono-num text-xs font-bold tracking-wider text-white">----</strong>
           <i data-lucide="copy" class="w-3 h-3 text-indigo-400"></i>
         </button>
@@ -431,22 +446,19 @@
 
   <script>
     // =========================================================================
-    // 1. HELPERS, CONSTANTES & CONFIGURATION RÉSEAU ROBUSTE
+    // 1. VERSION, CONSTANTES & CONFIGURATION MULTIJOUEUR WSS (SANS BLOCAGE 4G)
     // =========================================================================
+    const APP_VERSION = "v0.6";
+    const APP_EDITION = "Édition Solaire";
     const $ = id => document.getElementById(id);
-    const TOTAL_GAMES = 500, HINT_COST = 750, XP_PER_LEVEL = 500, PEER_PREFIX = "za-room-";
+    const TOTAL_GAMES = 500, HINT_COST = 750, XP_PER_LEVEL = 500;
+    const TOPIC_ROOT = "zeroabsolu/v06/rooms/";
 
-    // Configuration ICE avec plusieurs serveurs STUN (Google + Cloudflare) pour passer la 4G/5G
-    const PEER_CONFIG = {
-      pingInterval: 5000,
-      config: {
-        iceServers: [
-          { urls: "stun:stun.l.google.com:19302" },
-          { urls: "stun:stun1.l.google.com:19302" },
-          { urls: "stun:stun.cloudflare.com:3478" }
-        ]
-      }
-    };
+    // Double relais WebSocket HTTPS (Port 443) actif-actif : contourne 100% des pare-feux 4G/5G/Wi-Fi
+    const WSS_BROKERS = [
+      "wss://broker.emqx.io:8084/mqtt",
+      "wss://broker.hivemq.com:8884/mqtt"
+    ];
 
     const GRADE_TIERS = [
       { minLevel: 1,  xpReq: 0,    title: "❄️ Flocon Curieux",      desc: "Premiers pas dans le froid absolu" },
@@ -472,6 +484,7 @@
 
     let hasStartedSession = false, roomCode = null, isHost = true;
     let roundNumber = 1, playedGameIds = new Set(), currentGameId = pickUnplayedGameId();
+    let currentLoadSeq = 0; // Empêche toute requête fetch asynchrone obsolète d'écraser une partie
     let gameDictionary = {}, accentInsensitiveMap = {}, guesses = [];
     let roundFinished = false, roomBestScorePct = 0, roomBestRank = 0;
     let players = {}, selectedStatsPlayerId = myId, showingGradesCatalog = false;
@@ -506,7 +519,6 @@
       return Number((1 + Math.max(0, Math.min(1, (temp + 12) / 40)) * 38.5).toFixed(1));
     }
 
-    // Centralise les couleurs et effets de paliers (Froid / Top 1000 / Flamme / Magma / Fusion 100%)
     function getTierVisuals(g) {
       const topLabel = getReadableTopLabel(g.rank);
       if (g.isWin || g.rank === 1000) {
@@ -569,6 +581,8 @@
 
     window.addEventListener("DOMContentLoaded", () => {
       lucide.createIcons();
+      $("versionBadgeTop").textContent = APP_VERSION;
+      $("versionBadgeFooter").textContent = `${APP_VERSION} • ${APP_EDITION}`;
       initialScreenHeight = window.screen?.availHeight || window.innerHeight;
       if (myPseudo) $("modalPseudo").value = myPseudo;
       initSelfPlayer();
@@ -580,16 +594,6 @@
       $("wordInput").addEventListener("blur", () => setTimeout(() => { document.body.classList.remove("keyboard-active"); syncMobileViewport(); }, 120));
       window.visualViewport?.addEventListener("resize", syncMobileViewport);
       window.visualViewport?.addEventListener("scroll", syncMobileViewport);
-    });
-
-    // Libère proprement le code salon sur le serveur PeerJS si on rafraîchit/ferme la page
-    window.addEventListener("beforeunload", () => { if (peer) peer.destroy(); });
-
-    // Reconnecte automatiquement le salon si le téléphone avait mis l'onglet en pause (WhatsApp/SMS)
-    document.addEventListener("visibilitychange", () => {
-      if (document.visibilityState === "visible" && peer && peer.disconnected && !peer.destroyed) {
-        peer.reconnect();
-      }
     });
 
     function initSelfPlayer() {
@@ -804,9 +808,12 @@
     }
 
     // =========================================================================
-    // 6. MULTIJOUEUR ROBUSTE (CORRECTION DU BUG « SALON INTROUVABLE »)
+    // 6. MULTIJOUEUR CLOUD WSS (DOUBLE RELAIS + ÉTAT RETENU INSTANTANÉ)
     // =========================================================================
-    let peer = null, hostConnections = [], clientConnection = null, joinTimeout = null;
+    let mqttClients = [];
+    let seenMsgIds = new Set();
+    let joinTimeout = null;
+    let joinResolved = false;
 
     function handleRoomCodeInput(input) {
       const cleaned = input.value.replace(/[^a-zA-Z]/g, "").toUpperCase().slice(0, 4);
@@ -845,10 +852,90 @@
 
     function disconnectMultiplayer() {
       clearTimeout(joinTimeout);
-      if (peer) { peer.destroy(); peer = null; }
-      hostConnections = []; clientConnection = null;
+      mqttClients.forEach(c => { try { c.end(true); } catch (_) {} });
+      mqttClients = [];
       players = { [myId]: players[myId] };
       renderLeaderboard();
+    }
+
+    // Connecte le salon aux relais WSS en parallèle et déduplique les messages
+    function connectToRoomBrokers(code, onFirstConnected) {
+      let firstFired = false;
+      const stateTopic = `${TOPIC_ROOT}${code}/state`;
+      const eventsTopic = `${TOPIC_ROOT}${code}/events`;
+
+      WSS_BROKERS.forEach(url => {
+        try {
+          const client = mqtt.connect(url, {
+            clientId: `za_${myId}_${Math.random().toString(36).slice(2, 6)}`,
+            clean: true,
+            connectTimeout: 5000,
+            reconnectPeriod: 2000
+          });
+
+          client.on("connect", () => {
+            client.subscribe([stateTopic, eventsTopic], { qos: 1 }, () => {
+              if (!firstFired) {
+                firstFired = true;
+                onFirstConnected?.();
+              }
+            });
+          });
+
+          client.on("message", (topic, message) => {
+            try {
+              const data = JSON.parse(message.toString());
+              if (!data || !data.uid) return;
+              // Pour les événements normaux, on déduplique par uid
+              if (data.type !== "STATE_SNAPSHOT") {
+                if (seenMsgIds.has(data.uid)) return;
+                seenMsgIds.add(data.uid);
+                if (seenMsgIds.size > 400) {
+                  const first = seenMsgIds.values().next().value;
+                  seenMsgIds.delete(first);
+                }
+              }
+              handleNetworkPayload(data);
+            } catch (_) {}
+          });
+
+          mqttClients.push(client);
+        } catch (_) {}
+      });
+    }
+
+    function publishRoomEvent(payload, isRetainedState = false) {
+      if (!roomCode || !mqttClients.length) return;
+      const packet = {
+        ...payload,
+        uid: payload.uid || (`m_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`),
+        ts: Date.now()
+      };
+      const topic = isRetainedState ? `${TOPIC_ROOT}${roomCode}/state` : `${TOPIC_ROOT}${roomCode}/events`;
+      const raw = JSON.stringify(packet);
+
+      seenMsgIds.add(packet.uid);
+      mqttClients.forEach(c => {
+        if (c.connected) {
+          c.publish(topic, raw, { qos: 1, retain: isRetainedState });
+        }
+      });
+    }
+
+    // Sauvegarde l'état complet du salon sur le relais pour que tout nouvel arrivant l'obtienne en < 100ms
+    function publishRetainedRoomSnapshot() {
+      if (!roomCode) return;
+      publishRoomEvent({
+        type: "STATE_SNAPSHOT",
+        hostId: isHost ? myId : undefined,
+        gameId: currentGameId,
+        roundNumber,
+        players,
+        guesses,
+        roomBestScorePct,
+        roomBestRank,
+        roundFinished
+      }, true);
     }
 
     function startSoloMode() {
@@ -864,46 +951,25 @@
     function startCreateRoom() {
       if (!validatePseudoInput()) return;
       disconnectMultiplayer();
+
       isHost = true; roundNumber = 1;
       const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ";
       roomCode = Array.from({ length: 4 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
       navigator.clipboard?.writeText(roomCode).catch(() => {});
 
-      $("modalError").textContent = "Création du salon...";
-      peer = new Peer(PEER_PREFIX + roomCode, PEER_CONFIG);
+      $("modalError").textContent = "Ouverture du salon...";
 
-      peer.on("open", () => {
+      connectToRoomBrokers(roomCode, () => {
         $("modalError").textContent = "";
         $("roomCodePill").classList.remove("hidden"); $("roomCodePill").classList.add("flex");
         $("headerRoomCode").textContent = roomCode;
         closeOnboardingModal();
+
+        publishRetainedRoomSnapshot();
         navigator.clipboard?.writeText(roomCode).catch(() => {});
         addSystemFeedEvent(`Salon ${roomCode} créé (code copié)`);
         updateLiveTicker(`Salon ${roomCode} actif • Code copié !`);
         showToast(`📋 Salon ${roomCode} créé et copié !`, "amber");
-      });
-
-      // Maintient le salon en vie si le serveur de signalisation coupe momentanément
-      peer.on("disconnected", () => { if (peer && !peer.destroyed) peer.reconnect(); });
-
-      peer.on("connection", conn => {
-        hostConnections.push(conn);
-        conn.on("data", data => handleHostReceivedData(conn, data));
-        conn.on("close", () => {
-          hostConnections = hostConnections.filter(c => c !== conn);
-          if (conn.playerId && players[conn.playerId]) {
-            const left = players[conn.playerId].pseudo;
-            delete players[conn.playerId];
-            broadcastFromHost({ type: "STATE_SYNC", gameId: currentGameId, roundNumber, players, guesses, roomBestScorePct, roomBestRank });
-            addSystemFeedEvent(`${left} a quitté`);
-            renderLeaderboard();
-          }
-        });
-      });
-
-      peer.on("error", err => {
-        if (err.type === "unavailable-id") startCreateRoom();
-        else $("modalError").textContent = "Erreur réseau : " + err.type;
       });
     }
 
@@ -913,106 +979,161 @@
       if (!/^[A-Z]{4}$/.test(rawCode)) return;
 
       disconnectMultiplayer();
-      isHost = false; roomCode = rawCode;
-      $("modalError").textContent = `Connexion au salon ${roomCode}...`;
+      isHost = false;
+      roomCode = rawCode;
+      joinResolved = false;
 
-      peer = new Peer(PEER_CONFIG);
+      $("modalError").textContent = `Recherche du salon ${roomCode}...`;
+      $("joinRoomBtnText").textContent = "Connexion...";
+      $("joinRoomBtn").disabled = true;
 
-      peer.on("open", () => {
-        const conn = peer.connect(PEER_PREFIX + roomCode, { reliable: true, serialization: "json" });
-        clientConnection = conn;
-
-        // Délai de 12s adapté à la 4G/5G
-        joinTimeout = setTimeout(() => {
-          if (!conn.open) {
-            $("modalError").textContent = `Délai dépassé pour "${roomCode}". Vérifiez que l'hôte a la page ouverte.`;
-          }
-        }, 12000);
-
-        conn.on("open", () => {
-          clearTimeout(joinTimeout);
-          $("modalError").textContent = "";
-          $("roomCodePill").classList.remove("hidden"); $("roomCodePill").classList.add("flex");
-          $("headerRoomCode").textContent = roomCode;
-          closeOnboardingModal();
-          conn.send({ type: "JOIN", player: players[myId] });
-          showToast(`Connecté à ${roomCode} !`, "sky");
-        });
-
-        conn.on("data", handleClientReceivedData);
-        conn.on("close", () => { showToast("Salon fermé par l'hôte.", "rose"); startSoloMode(); });
+      connectToRoomBrokers(roomCode, () => {
+        // Demande immédiate au cas où + lecture automatique du message retenu (STATE_SNAPSHOT)
+        publishRoomEvent({ type: "JOIN_REQUEST", player: players[myId] }, false);
       });
 
-      // Capture immédiatement si le code à 4 lettres n'existe pas sur le serveur PeerJS
-      peer.on("error", err => {
-        clearTimeout(joinTimeout);
-        if (err.type === "peer-unavailable") {
-          $("modalError").textContent = `Salon "${roomCode}" introuvable (vérifiez le code ou demandez à l'hôte de garder l'écran actif).`;
-        } else {
-          $("modalError").textContent = `Erreur réseau (${err.type}). Réessayez.`;
+      joinTimeout = setTimeout(() => {
+        if (!joinResolved) {
+          disconnectMultiplayer();
+          roomCode = null;
+          $("joinRoomBtnText").textContent = "Rejoindre le salon";
+          $("joinRoomBtn").disabled = false;
+          $("modalError").textContent = `Salon "${rawCode}" introuvable. Vérifiez les 4 lettres.`;
         }
-      });
+      }, 6000);
     }
 
-    function handleHostReceivedData(conn, data) {
-      if (data.type === "JOIN" && data.player) {
-        conn.playerId = data.player.id;
-        players[data.player.id] = {
-          ...data.player,
-          pseudo: String(data.player.pseudo || "Pierre").slice(0, 16),
-          bestScorePct: 0, bestRank: 0, attempts: 0
-        };
-        const joinMsg = `👋 ${players[data.player.id].pseudo} a rejoint`;
-        broadcastFromHost({ type: "STATE_SYNC", gameId: currentGameId, roundNumber, players, guesses, roomBestScorePct, roomBestRank, joinText: joinMsg });
-        renderLeaderboard();
-        addSystemFeedEvent(joinMsg);
-        updateLiveTicker(joinMsg);
-      } else if (data.type === "SHARED_GUESS") {
-        applySharedGuess(data, false);
-        broadcastFromHost(data);
+    function completeJoinSuccess(snapshot) {
+      if (joinResolved) return;
+      joinResolved = true;
+      clearTimeout(joinTimeout);
+
+      $("modalError").textContent = "";
+      $("joinRoomBtnText").textContent = "Rejoindre le salon";
+      $("roomCodePill").classList.remove("hidden"); $("roomCodePill").classList.add("flex");
+      $("headerRoomCode").textContent = roomCode;
+      closeOnboardingModal();
+
+      // Fusionne les joueurs du salon avec notre propre profil
+      const me = players[myId];
+      players = { ...(snapshot.players || {}), [myId]: me };
+      roomBestScorePct = snapshot.roomBestScorePct || 0;
+      roomBestRank = snapshot.roomBestRank || 0;
+      roundFinished = !!snapshot.roundFinished;
+
+      loadGame(snapshot.gameId || currentGameId, snapshot.roundNumber || 1, snapshot.guesses || []);
+      renderLeaderboard();
+
+      // Annonce notre arrivée à tout le salon et met à jour l'état retenu
+      publishRoomEvent({ type: "PLAYER_JOINED", player: me }, false);
+      publishRetainedRoomSnapshot();
+      showToast(`Connecté au salon ${roomCode} !`, "sky");
+    }
+
+    function handleNetworkPayload(data) {
+      // 1. Réception de l'état retenu du salon (permet de rejoindre en < 100ms !)
+      if (data.type === "STATE_SNAPSHOT") {
+        // Ignore un éventuel vieux salon abandonné depuis plus de 12 heures
+        if (data.ts && (Date.now() - data.ts > 12 * 3600 * 1000)) return;
+
+        if (!isHost && !joinResolved) {
+          completeJoinSuccess(data);
+          return;
+        }
+
+        // Si déjà dans le salon, synchronise les joueurs manquants ou un changement de manche
+        if (data.players) {
+          Object.entries(data.players).forEach(([id, pl]) => {
+            if (id !== myId) players[id] = pl;
+          });
+          renderLeaderboard();
+        }
+        return;
       }
-    }
 
-    function handleClientReceivedData(data) {
-      if (data.type === "STATE_SYNC") {
-        players = data.players || players;
-        roomBestScorePct = data.roomBestScorePct || 0;
-        roomBestRank = data.roomBestRank || 0;
-        if (data.gameId && data.gameId !== currentGameId) {
-          loadGame(data.gameId, data.roundNumber || roundNumber, data.guesses || []);
-        } else {
-          if (data.roundNumber) { roundNumber = data.roundNumber; $("roundBadge").textContent = `#${roundNumber}`; }
-          if (Array.isArray(data.guesses)) { guesses = data.guesses; renderGuesses(); updateStatsUI(); }
+      // 2. Un joueur cherche à rejoindre : l'hôte (ou tout joueur présent) rafraîchit le snapshot
+      if (data.type === "JOIN_REQUEST" && data.player) {
+        if (data.player.id !== myId && (isHost || joinResolved)) {
+          players[data.player.id] = {
+            ...data.player,
+            pseudo: String(data.player.pseudo || "Pierre").slice(0, 16),
+            bestScorePct: players[data.player.id]?.bestScorePct || 0,
+            bestRank: players[data.player.id]?.bestRank || 0,
+            attempts: players[data.player.id]?.attempts || 0
+          };
+          publishRetainedRoomSnapshot();
+          renderLeaderboard();
         }
-        if (data.joinText) { addSystemFeedEvent(data.joinText); updateLiveTicker(data.joinText); }
-        renderLeaderboard();
-      } else if (data.type === "NEW_ROUND") {
-        players = data.players || players;
+        return;
+      }
+
+      // 3. Confirmation d'arrivée d'un ami
+      if (data.type === "PLAYER_JOINED" && data.player) {
+        if (data.player.id !== myId) {
+          players[data.player.id] = {
+            ...data.player,
+            pseudo: String(data.player.pseudo || "Pierre").slice(0, 16),
+            bestScorePct: players[data.player.id]?.bestScorePct || 0,
+            bestRank: players[data.player.id]?.bestRank || 0,
+            attempts: players[data.player.id]?.attempts || 0
+          };
+          const joinMsg = `👋 ${players[data.player.id].pseudo} a rejoint le salon`;
+          addSystemFeedEvent(joinMsg);
+          updateLiveTicker(joinMsg);
+          renderLeaderboard();
+          if (isHost) publishRetainedRoomSnapshot();
+        }
+        return;
+      }
+
+      // 4. Mot proposé par un autre joueur du salon
+      if (data.type === "SHARED_GUESS" && data.playerId !== myId) {
+        applySharedGuess(data, false);
+        return;
+      }
+
+      // 5. Passage à la manche suivante
+      if (data.type === "NEW_ROUND" && data.senderId !== myId) {
+        if (data.players) {
+          Object.entries(data.players).forEach(([id, pl]) => { if (id !== myId) players[id] = pl; });
+        }
         loadGame(data.gameId, data.roundNumber, []);
         renderLeaderboard();
-      } else if (data.type === "ROUND_GIVEN_UP") {
+        return;
+      }
+
+      // 6. Révélation / Abandon de la manche
+      if (data.type === "ROUND_GIVEN_UP" && data.senderId !== myId) {
         roundFinished = true;
+        updateHintButtonUI();
         showVictoryBanner("Abandon", data.secretWord, guesses.length, true);
         addSystemFeedEvent(`🏳️ Mot révélé : ${data.secretWord.toUpperCase()}`);
         updateLiveTicker(`🏳️ Réponse : ${data.secretWord.toUpperCase()}`);
-      } else if (data.type === "SHARED_GUESS" && data.playerId !== myId) {
-        applySharedGuess(data, false);
       }
     }
 
-    const broadcastFromHost = p => hostConnections.forEach(c => { if (c.open) c.send(p); });
-    const sendGuessToNetwork = p => { if (roomCode) isHost ? broadcastFromHost(p) : clientConnection?.open && clientConnection.send(p); };
     const copyRoomCode = () => { if (roomCode) { navigator.clipboard.writeText(roomCode); showToast(`📋 Code "${roomCode}" copié !`, "sky"); } };
 
     // =========================================================================
-    // 7. CHARGEMENT DE MANCHE & VALIDATION DES MOTS
+    // 7. CHARGEMENT DE MANCHE SÉQUENCÉ & VALIDATION DES MOTS
     // =========================================================================
     async function loadGame(gameId, displayRound = roundNumber, initialGuesses = []) {
-      currentGameId = gameId; roundNumber = displayRound; guesses = initialGuesses;
-      roundFinished = false; roomBestScorePct = 0; roomBestRank = 0;
-      feedEvents = []; renderFeed(); dismissSurgeOverlay();
+      const seq = ++currentLoadSeq;
+      currentGameId = gameId;
+      roundNumber = displayRound;
+      guesses = [...initialGuesses];
+      roundFinished = guesses.some(g => g.isWin || g.rank === 1000);
+      roomBestScorePct = guesses.reduce((max, g) => Math.max(max, g.scorePct || 0), 0);
+      roomBestRank = guesses.reduce((max, g) => Math.max(max, g.rank || 0), 0);
 
-      Object.values(players).forEach(p => { p.bestScorePct = 0; p.bestRank = 0; p.attempts = 0; });
+      feedEvents = [];
+      renderFeed();
+      dismissSurgeOverlay();
+
+      if (initialGuesses.length === 0) {
+        Object.values(players).forEach(p => { p.bestScorePct = 0; p.bestRank = 0; p.attempts = 0; });
+      }
+
       $("roundBadge").textContent = `#${roundNumber}`;
       toggleModal("lastGuessBox", false);
       toggleModal("victoryBanner", false);
@@ -1020,17 +1141,24 @@
 
       $("guessesList").innerHTML = `<div class="text-slate-400 text-xs text-center my-auto py-8 flex flex-col items-center gap-2"><div class="w-4 h-4 border-2 border-sky-500 border-t-transparent rounded-full animate-spin"></div><span>Manche #${roundNumber}...</span></div>`;
 
+      let dict = FALLBACK_WORDS;
       try {
         const res = await fetch(`parties/partie_${gameId}.json`);
-        if (!res.ok) throw new Error();
-        gameDictionary = (await res.json()).words;
-      } catch {
-        gameDictionary = FALLBACK_WORDS;
-      }
+        if (res.ok) dict = (await res.json()).words;
+      } catch (_) {}
+
+      // Si une autre partie a été chargée entre-temps (ex: connexion salon), on abandonne ce vieux chargement
+      if (seq !== currentLoadSeq) return;
+
+      gameDictionary = dict;
       buildAccentInsensitiveIndex();
 
-      if (guesses.length > 0) { renderGuesses(); updateStatsUI(); }
-      else $("guessesList").innerHTML = `<p class="text-slate-500 text-xs text-center my-auto py-8">Manche #${roundNumber} prête • Montez jusqu'à 100% !</p>`;
+      if (guesses.length > 0) {
+        renderGuesses();
+        updateStatsUI();
+      } else {
+        $("guessesList").innerHTML = `<p class="text-slate-500 text-xs text-center my-auto py-8">Manche #${roundNumber} prête • Montez jusqu'à 100% !</p>`;
+      }
 
       addSystemFeedEvent(`🎯 Manche #${roundNumber} lancée`);
       updateLiveTicker(roomCode ? `Salon ${roomCode} • Manche #${roundNumber}` : `Manche #${roundNumber} en cours`);
@@ -1098,8 +1226,10 @@
         totalAttempts: me.totalAttempts, hotWordsFound: me.hotWordsFound, top10Found: me.top10Found,
         bestScorePct: me.bestScorePct, bestRank: me.bestRank, playerAttempts: me.attempts
       };
+
       applySharedGuess(payload, true);
-      sendGuessToNetwork(payload);
+      publishRoomEvent(payload, false);
+      publishRetainedRoomSnapshot();
     }
 
     function applySharedGuess(data, isLocal) {
@@ -1194,14 +1324,20 @@
       showVictoryBanner("Abandon", secret, guesses.length, true);
       addSystemFeedEvent(`🏳️ Mot révélé : ${secret.toUpperCase()}`);
       updateLiveTicker(`🏳️ Réponse : ${secret.toUpperCase()}`);
-      if (roomCode && isHost) broadcastFromHost({ type: "ROUND_GIVEN_UP", secretWord: secret });
+      if (roomCode && isHost) {
+        publishRoomEvent({ type: "ROUND_GIVEN_UP", senderId: myId, secretWord: secret }, false);
+        publishRetainedRoomSnapshot();
+      }
     }
 
     function triggerNextGame() {
       if (roomCode && !isHost) return showToast("Seul l'hôte peut changer de manche.", "amber");
       const nextId = pickUnplayedGameId(), nextRound = roundNumber + 1;
       loadGame(nextId, nextRound, []);
-      if (roomCode && isHost) broadcastFromHost({ type: "NEW_ROUND", gameId: nextId, roundNumber: nextRound, players });
+      if (roomCode && isHost) {
+        publishRoomEvent({ type: "NEW_ROUND", senderId: myId, gameId: nextId, roundNumber: nextRound, players }, false);
+        publishRetainedRoomSnapshot();
+      }
     }
 
     // =========================================================================
