@@ -1,0 +1,105 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+html, body {
+  margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden;
+  background-color: #070b14; font-family: 'Plus Jakarta Sans', sans-serif;
+}
+#appViewport {
+  position: fixed; inset: 0; display: flex; flex-direction: column; overflow: hidden;
+  background-image: radial-gradient(at 0% 0%, rgba(56,189,248,0.09) 0px, transparent 50%),
+                    radial-gradient(at 100% 0%, rgba(249,115,22,0.08) 0px, transparent 50%);
+}
+.font-mono-num { font-family: 'JetBrains Mono', monospace; }
+
+/* Barres thermiques : Standard (0-99.0%), Magma Rouge (Top 2-10), Fusion Solaire (100%) */
+.thermal-spectrum {
+  background: linear-gradient(90deg, #475569 0%, #0ea5e9 22%, #6366f1 45%, #a855f7 68%, #ec4899 84%, #f97316 100%);
+}
+@keyframes flowAnim { 0%, 100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
+.magma-lava-bar {
+  background: linear-gradient(90deg, #450a0a, #991b1b, #dc2626, #ea580c, #b91c1c, #7f1d1d);
+  background-size: 220% 220%; animation: flowAnim 2.6s ease infinite;
+  box-shadow: 0 0 10px rgba(220, 38, 38, 0.7);
+}
+.solar-fusion-bar {
+  background: linear-gradient(90deg, #f59e0b, #facc15, #fef08a, #ffffff, #fef08a, #facc15);
+  background-size: 200% 200%; animation: flowAnim 1.6s linear infinite;
+  box-shadow: 0 0 16px rgba(254, 240, 138, 0.95);
+}
+
+/* Cartes thématiques : Flamme (Top 11-100), Magma (Top 2-10), Fusion Solaire (100%) */
+@keyframes flameFlicker {
+  0%, 100% { box-shadow: 0 0 10px -2px rgba(249,115,22,0.35), inset 0 0 8px rgba(249,115,22,0.12); border-color: rgba(249,115,22,0.55); }
+  50% { box-shadow: 0 0 16px 1px rgba(234,88,12,0.55), inset 0 0 12px rgba(251,146,60,0.22); border-color: rgba(251,146,60,0.85); }
+}
+.tier-flame-card { background: linear-gradient(135deg, rgba(67,20,7,0.55), rgba(30,41,59,0.7)); animation: flameFlicker 2.2s ease-in-out infinite; }
+.flame-word-glow { text-shadow: 0 0 8px rgba(249,115,22,0.75); color: #ffedd5 !important; }
+
+@keyframes magmaPulse {
+  0%, 100% { box-shadow: 0 0 14px rgba(185,28,28,0.55), inset 0 0 12px rgba(153,27,27,0.35); border-color: rgba(220,38,38,0.75); }
+  50% { box-shadow: 0 0 22px 2px rgba(220,38,38,0.8), inset 0 0 18px rgba(239,68,68,0.45); border-color: rgba(248,113,113,0.95); }
+}
+.tier-magma-card { background: linear-gradient(135deg, rgba(69,10,10,0.82), rgba(127,29,29,0.6), rgba(30,15,25,0.85)); animation: magmaPulse 1.8s ease-in-out infinite; }
+.magma-word-glow { text-shadow: 0 0 10px rgba(239,68,68,0.95), 0 0 18px rgba(185,28,28,0.8); color: #fecaca !important; }
+
+@keyframes sunbeamsSpin { from { transform: translate(-50%, -50%) rotate(0deg); } to { transform: translate(-50%, -50%) rotate(360deg); } }
+@keyframes solarCoronaPulse {
+  0%, 100% { box-shadow: 0 0 22px 2px rgba(250,204,21,0.65), inset 0 0 18px rgba(254,240,138,0.4); }
+  50% { box-shadow: 0 0 34px 6px rgba(254,240,138,0.9), inset 0 0 26px rgba(255,255,255,0.6); }
+}
+.tier-fusion-card {
+  position: relative; overflow: hidden; border-color: #fef08a !important;
+  background: linear-gradient(135deg, rgba(161,98,7,0.75), rgba(202,138,4,0.65), rgba(120,53,15,0.8));
+  animation: solarCoronaPulse 2s ease-in-out infinite;
+}
+.tier-fusion-card::before {
+  content: ""; position: absolute; top: 50%; left: 50%; width: 240%; height: 600%; z-index: 0; pointer-events: none;
+  background: repeating-conic-gradient(from 0deg, rgba(254,240,138,0.22) 0deg 12deg, transparent 12deg 24deg);
+  animation: sunbeamsSpin 10s linear infinite;
+}
+.tier-fusion-card > * { position: relative; z-index: 1; }
+.fusion-word-glow { text-shadow: 0 0 12px #ffffff, 0 0 22px #facc15; color: #ffffff !important; }
+
+/* Explosion Solaire Plein Écran */
+@keyframes solarScreenFlash { 0% { opacity: 0; } 12% { opacity: 0.95; } 35% { opacity: 0.55; } 100% { opacity: 0; } }
+@keyframes solarShockwaveRing { 0% { transform: translate(-50%, -50%) scale(0.1); opacity: 1; border-width: 18px; } 100% { transform: translate(-50%, -50%) scale(3.2); opacity: 0; border-width: 1px; } }
+@keyframes solarCoreBurst { 0% { transform: translate(-50%, -50%) scale(0.2) rotate(0deg); opacity: 1; } 100% { transform: translate(-50%, -50%) scale(2.4) rotate(90deg); opacity: 0; } }
+.animate-solar-flash { animation: solarScreenFlash 1.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+.animate-solar-ring { animation: solarShockwaveRing 1.25s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+.animate-solar-rays { animation: solarCoreBurst 1.45s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+/* Animation Bannière Level-Up */
+@keyframes levelUpDrop {
+  0% { opacity: 0; transform: translate(-50%, -35px) scale(0.85); }
+  12% { opacity: 1; transform: translate(-50%, 0) scale(1.03); }
+  20% { transform: translate(-50%, 0) scale(1); }
+  85% { opacity: 1; transform: translate(-50%, 0) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -25px) scale(0.95); }
+}
+.animate-levelup { animation: levelUpDrop 4.2s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+@keyframes slowSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+.spin-slow { animation: slowSpin 8s linear infinite; }
+
+/* Micro-animations UI */
+@keyframes shake { 0%, 100% { transform: translateX(0); } 20%, 60% { transform: translateX(-6px); } 40%, 80% { transform: translateX(6px); } }
+.animate-shake { animation: shake 0.35s cubic-bezier(.36,.07,.19,.97) both; }
+@keyframes duplicatePulse { 50% { box-shadow: 0 0 0 4px rgba(244,63,94,0.45); transform: scale(1.01); border-color: #f43f5e; } }
+.animate-duplicate { animation: duplicatePulse 0.75s ease-in-out 2; }
+@keyframes newWordPulse { 0% { opacity: 0.35; transform: translateY(-4px) scale(0.97); } 60% { opacity: 1; transform: translateY(0) scale(1.012); } 100% { opacity: 1; transform: scale(1); } }
+.animate-word-entry { animation: newWordPulse 0.36s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+@keyframes popIn { from { opacity: 0; transform: translateY(6px) scale(0.96); } to { opacity: 1; transform: translateY(0) scale(1); } }
+.animate-pop { animation: popIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+.input-glow-cold { box-shadow: 0 0 0 3px rgba(14,165,233,0.35) !important; border-color: #38bdf8 !important; }
+.input-glow-warm { box-shadow: 0 0 0 3px rgba(168,85,247,0.40) !important; border-color: #a855f7 !important; }
+.input-glow-hot  { box-shadow: 0 0 0 4px rgba(249,115,22,0.50) !important; border-color: #facc15 !important; }
+
+@keyframes marqueeScroll { 0%, 20% { transform: translateX(0%); } 80%, 100% { transform: translateX(calc(-100% + 210px)); } }
+.ticker-scroll { display: inline-block; white-space: nowrap; animation: marqueeScroll 7s ease-in-out infinite alternate; }
+
+body.keyboard-active #mainHeader, body.keyboard-active #statsContainer, body.keyboard-active #mobileTabsWrapper { display: none !important; }
+body.keyboard-active #mainGrid, body.keyboard-active #gameSection { padding-top: 0.2rem !important; padding-bottom: 0.2rem !important; gap: 0.3rem !important; }
+
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 9999px; }
