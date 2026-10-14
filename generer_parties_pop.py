@@ -10,53 +10,52 @@ from generer_500_parties import (
 
 OUTPUT_POP_DIR = "parties_pop"
 
-# 80 Mots Secrets Pop Culture, Manga, Gaming, Fantasy & Sci-Fi validés à 100% dans le modèle
+# Exactement 91 Mots Secrets Pop Culture, Manga, Gaming, Fantasy & Sci-Fi (aligné sur total: 91 de app.js)
 POP_CULTURE_SECRETS = [
-    # Manga & Animation Japonaise
+    # Manga & Animation Japonaise (40)
     "manga", "anime", "naruto", "sasuke", "sakura", "kakashi", "hokage", "ninja",
-    "shinobi", "sharingan", "chakra", "akatsuki", "konoha", "sangoku", "goku",
-    "vegeta", "saiyan", "luffy", "ichigo", "shinigami", "ghibli", "miyazaki",
-    "totoro", "mononoké", "akira", "seiya", "cosplay", "otaku", "shonen",
+    "shinobi", "sharingan", "chakra", "akatsuki", "konoha", "orochimaru", "itachi",
+    "tsunade", "sangoku", "goku", "vegeta", "gohan", "trunks", "bulma", "saiyan",
+    "luffy", "ichigo", "rukia", "shinigami", "ghibli", "miyazaki", "totoro",
+    "chihiro", "mononoké", "akira", "seiya", "cosplay", "otaku", "shonen",
     "seinen", "shojo", "mangaka", "samouraï", "katana",
-    # Jeux Vidéo & Consoles
-    "zelda", "hyrule", "triforce", "mario", "bowser", "peach", "pikachu",
+    # Jeux Vidéo & Consoles (24)
+    "zelda", "hyrule", "triforce", "mario", "bowser", "peach", "wario", "pikachu",
     "pokémon", "mewtwo", "sonic", "tetris", "croft", "warcraft", "azeroth",
-    "starcraft", "diablo", "playstation", "nintendo", "gameboy", "joystick",
-    "manette", "mmorpg", "gamer",
-    # Harry Potter, Seigneur des Anneaux, Star Wars, Comics & Sci-Fi
+    "starcraft", "diablo", "playstation", "nintendo", "gamecube", "gameboy",
+    "joystick", "manette", "mmorpg", "gamer",
+    # Harry Potter, Seigneur des Anneaux, Star Wars, Comics & Sci-Fi (27)
     "voldemort", "poudlard", "gryffondor", "serpentard", "moldu", "hagrid",
-    "dumbledore", "gandalf", "frodon", "sauron", "mordor", "hobbit", "elfe",
-    "dragon", "donjon", "troll", "gobelin", "vampire", "loup-garou", "zombie",
-    "cyborg", "jedi", "sith", "vador", "skywalker", "yoda", "matrix", "batman",
-    "spiderman", "superman", "marvel", "x-men", "wolverine", "terminator"
+    "dumbledore", "quidditch", "gandalf", "frodon", "aragorn", "gollum", "sauron",
+    "mordor", "hobbit", "elfe", "dragon", "donjon", "troll", "gobelin", "vampire",
+    "loup-garou", "zombie", "cyborg", "jedi", "sith", "vador", "skywalker", "yoda",
+    "matrix", "batman", "spiderman", "superman", "marvel", "x-men", "wolverine",
+    "terminator"
 ]
 
-# Mots geeks/mangas/gaming supplémentaires toujours autorisés dans le dictionnaire Pop
 POP_WHITELIST_EXTRA = set(POP_CULTURE_SECRETS) | {
-    "uzumaki", "orochimaru", "tsunade", "jiraya", "kyuubi", "uchiwa", "uchiha",
-    "itachi", "neji", "hatake", "obito", "yondaime", "anbu", "kazekage", "chuunin",
-    "juunin", "sannin", "suna", "mangekyou", "taijutsu", "ninjutsu", "genjutsu",
-    "dojutsu", "byakugan", "jutsu", "suiton", "fuuton", "katon", "raiton", "hidan",
-    "kakuzu", "tobi", "kisame", "sangohan", "gohan", "végéta", "bulma", "trunks",
-    "sangoten", "broly", "saiyen", "dragonball", "dbz", "bleach", "kurosaki",
-    "rukia", "hitsugaya", "shikai", "bankai", "zampakuto", "zanpakuto", "shuriken",
-    "kunai", "kunaï", "fullmetal", "alchemist", "elric", "chihiro", "nausicaä",
-    "laputa", "takahata", "toriyama", "kenshin", "shiryu", "nami", "shanks",
-    "ganon", "majora", "ocarina", "goron", "minish", "wario", "yoshi", "donkey",
+    "uzumaki", "jiraya", "kyuubi", "uchiwa", "uchiha", "neji", "hatake", "obito",
+    "yondaime", "anbu", "kazekage", "chuunin", "juunin", "sannin", "suna",
+    "mangekyou", "taijutsu", "ninjutsu", "genjutsu", "dojutsu", "byakugan",
+    "jutsu", "suiton", "fuuton", "katon", "raiton", "hidan", "kakuzu", "tobi",
+    "kisame", "sangohan", "végéta", "sangoten", "broly", "saiyen", "dragonball",
+    "dbz", "bleach", "kurosaki", "hitsugaya", "shikai", "bankai", "zampakuto",
+    "zanpakuto", "shuriken", "kunai", "kunaï", "fullmetal", "alchemist", "elric",
+    "nausicaä", "laputa", "takahata", "toriyama", "kenshin", "shiryu", "nami",
+    "shanks", "ganon", "majora", "ocarina", "goron", "minish", "yoshi", "donkey",
     "kong", "metroid", "samus", "pikmin", "pokédex", "pokéball", "evoli", "kanto",
-    "sega", "dreamcast", "megadrive", "gamecube", "wii", "wiimote", "nunchuck",
-    "xbox", "psp", "psone", "tekken", "bomberman", "lara", "tomb", "raider",
-    "blizzard", "wow", "outreterre", "kalimdor", "lordaeron", "tauren", "arthas",
-    "orcs", "orc", "warhammer", "counter-strike", "half-life", "crysis", "bioshock",
-    "gameplay", "multijoueur", "mangemort", "quidditch", "horcruxe", "détraqueur",
-    "weasley", "malefoy", "mcgonagall", "poufsouffle", "serdaigle", "choixpeau",
-    "hermione", "harry", "albus", "aragorn", "gimli", "legolas", "boromir",
-    "elrond", "saroumane", "gollum", "bilbon", "bilbo", "tolkien", "gondor",
-    "isengard", "fondcombe", "balrog", "naheulbeuk", "dracula", "buffy", "anakin",
-    "palpatine", "padawan", "coruscant", "tatooine", "chewbacca", "jabba", "padmé",
-    "darth", "vader", "catwoman", "punisher", "gotham", "smallville", "luthor",
-    "venom", "hulk", "daredevil", "magneto", "spider-man", "robocop", "predator",
-    "alien"
+    "sega", "dreamcast", "megadrive", "wii", "wiimote", "nunchuck", "xbox", "psp",
+    "psone", "tekken", "bomberman", "lara", "tomb", "raider", "blizzard", "wow",
+    "outreterre", "kalimdor", "lordaeron", "tauren", "arthas", "orcs", "orc",
+    "warhammer", "counter-strike", "half-life", "crysis", "bioshock", "gameplay",
+    "multijoueur", "mangemort", "horcruxe", "détraqueur", "weasley", "malefoy",
+    "mcgonagall", "poufsouffle", "serdaigle", "choixpeau", "hermione", "harry",
+    "albus", "gimli", "legolas", "boromir", "elrond", "saroumane", "bilbon",
+    "bilbo", "tolkien", "gondor", "isengard", "fondcombe", "balrog", "naheulbeuk",
+    "dracula", "buffy", "anakin", "palpatine", "padawan", "coruscant", "tatooine",
+    "chewbacca", "jabba", "padmé", "darth", "vader", "catwoman", "punisher",
+    "gotham", "smallville", "luthor", "venom", "hulk", "daredevil", "magneto",
+    "spider-man", "robocop", "predator", "alien"
 }
 
 def generate_pop_games():
@@ -107,7 +106,7 @@ def generate_pop_games():
 
     clean_vectors = raw_vectors[np.array(clean_indices, dtype=np.int32)]
 
-    valid_secrets = [s for s in dict.fromkeys(POP_CULTURE_SECRETS) if s in word_to_clean_pos]
+    valid_secrets = [s for s in dict.fromkeys(POP_CULTURE_SECRETS) if s in word_to_clean_pos][:91]
     random.seed(42)
     random.shuffle(valid_secrets)
 

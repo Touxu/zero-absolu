@@ -9,11 +9,11 @@
 
 ### 2. AUDIT LINGUISTIQUE DU CORPUS COURANT
 • Mots testés : 934 (incluant pluriels, féminins et mots sans accent)
-• Taux de reconnaissance : 911/934 (97.5%)
-• Mots non reconnus (23) : jardin, ouvre-boite, pierre, or, étoile-de-mer, cil, infirmier, espoir, devoir, piloteplombier, matin, dire, entendre, voir, prendre, mettre, sortir, partir, venir, comprendre, savoir, croire, neuf
+• Taux de reconnaissance : 931/934 (99.7%)
+• Mots non reconnus (3) : ouvre-boite, étoile-de-mer, piloteplombier
 
 ### 3. SYNCHRONISATION SALON MULTIJOUEUR WSS (3 BOTS)
-• Code du salon créé par BotAlpha : RKDD
+• Code du salon créé par BotAlpha : LHPM
 • Joueurs détectés : Alpha=3/3 | Bravo=3/3 | Charlie=3/3
 • Synchro du nombre de mots : Alpha=11 | Bravo=11 | Charlie=11 (Attendu: 11)
 • Synchro du Record Salon   : Alpha=99.9% | Bravo=99.9% | Charlie=99.9%
@@ -28,5 +28,5 @@
 • Passage synchronisé à la Manche #2 : Alpha=#2 | Bravo=#2 | Charlie=#2
 
 ### 5. PERFORMANCES DOM & INTÉGRITÉ TECHNIQUE
-• Temps de rendu DOM pour 100 cartes simultanées : 9 ms (Excellent si < 50 ms)
+• Temps de rendu DOM pour 100 cartes simultanées : 8 ms (Excellent si < 50 ms)
 • Erreurs JavaScript sur les 3 navigateurs : 0
