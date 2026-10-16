@@ -49,13 +49,15 @@ html, body {
 }
 .tier-fusion-card {
   position: relative; overflow: hidden; border-color: #fef08a !important;
-  background: linear-gradient(135deg, rgba(161,98,7,0.75), rgba(202,138,4,0.65), rgba(120,53,15,0.8));
+  background: linear-gradient(135deg, rgba(180,83,9,0.92), rgba(217,119,6,0.85), rgba(146,64,14,0.95));
   animation: solarCoronaPulse 2s ease-in-out infinite;
 }
 .tier-fusion-card::before {
-  content: ""; position: absolute; top: 50%; left: 50%; width: 240%; height: 600%; z-index: 0; pointer-events: none;
-  background: repeating-conic-gradient(from 0deg, rgba(254,240,138,0.22) 0deg 12deg, transparent 12deg 24deg);
-  animation: sunbeamsSpin 10s linear infinite;
+  content: ""; position: absolute; top: 50%; left: 50%; width: 3600px; height: 3600px; max-width: none; max-height: none; z-index: 0; pointer-events: none;
+  background: repeating-conic-gradient(from 0deg, rgba(254,240,138,0.22) 0deg 10deg, transparent 10deg 20deg);
+  mask-image: radial-gradient(circle at center, rgba(0,0,0,1) 0%, rgba(0,0,0,0.85) 30%, rgba(0,0,0,0.25) 55%, transparent 72%);
+  -webkit-mask-image: radial-gradient(circle at center, rgba(0,0,0,1) 0%, rgba(0,0,0,0.85) 30%, rgba(0,0,0,0.25) 55%, transparent 72%);
+  animation: sunbeamsSpin 12s linear infinite;
 }
 .tier-fusion-card > * { position: relative; z-index: 1; }
 .fusion-word-glow { text-shadow: 0 0 12px #ffffff, 0 0 22px #facc15; color: #ffffff !important; }
@@ -90,6 +92,19 @@ html, body {
 .animate-word-entry { animation: newWordPulse 0.36s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
 @keyframes popIn { from { opacity: 0; transform: translateY(6px) scale(0.96); } to { opacity: 1; transform: translateY(0) scale(1); } }
 .animate-pop { animation: popIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+/* Animations Toast / Notifications modernisées */
+@keyframes toastSlideIn {
+  0% { opacity: 0; transform: translateY(-18px) scale(0.9); }
+  65% { opacity: 1; transform: translateY(3px) scale(1.02); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes toastSlideOut {
+  0% { opacity: 1; transform: translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateY(-16px) scale(0.92); }
+}
+.animate-toast-in { animation: toastSlideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+.animate-toast-out { animation: toastSlideOut 0.28s cubic-bezier(0.7, 0, 0.84, 0) forwards; }
 
 .input-glow-cold { box-shadow: 0 0 0 3px rgba(14,165,233,0.35) !important; border-color: #38bdf8 !important; }
 .input-glow-warm { box-shadow: 0 0 0 3px rgba(168,85,247,0.40) !important; border-color: #a855f7 !important; }

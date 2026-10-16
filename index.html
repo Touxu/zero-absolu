@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>ZéroAbsolu — v1.2</title>
+  <title>ZéroAbsolu — v1.3</title>
 
   <!-- Métadonnées SEO & PWA -->
   <meta name="description" content="ZéroAbsolu — Jeu de déduction sémantique multijoueur. Du froid polaire jusqu'à la fusion solaire, trouvez le mot secret grâce à la proximité thermique des mots !">
@@ -32,6 +32,9 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/mqtt@5.10.3/dist/mqtt.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.1"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.4/howler.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/party-js@latest/bundle/party.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/motion@10.16.2/dist/motion.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
   <script src="https://unpkg.com/@phosphor-icons/web@2.1.1"></script>
   <link rel="stylesheet" href="style.css">
@@ -39,6 +42,8 @@
 <body class="text-slate-100 selection:bg-sky-500 selection:text-white">
 
   <div id="appViewport">
+    <!-- CANVAS DES PARTICULES THERMIQUES DÉDIÉES (FLOCONS, FLAMMES, LAVE, ÉTOILES SOLAIRES) -->
+    <canvas id="thermalFxCanvas" class="fixed inset-0 pointer-events-none z-[60] w-full h-full"></canvas>
 
     <!-- EXPLOSION SOLAIRE PLEIN ÉCRAN -->
     <div id="solarExplosionOverlay" class="hidden fixed inset-0 z-50 pointer-events-none overflow-hidden">
@@ -92,7 +97,7 @@
             <div class="flex items-center gap-2">
               <h1 class="text-xl font-extrabold tracking-tight bg-gradient-to-r from-sky-300 via-purple-300 to-amber-300 bg-clip-text text-transparent">ZéroAbsolu</h1>
               <span id="versionBadgeTop" class="font-mono-num text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-gradient-to-r from-sky-500/20 to-amber-500/20 text-amber-300 border border-amber-400/30 shadow-sm">
-                v1.2
+                v1.3
               </span>
             </div>
             <p class="text-[11px] text-slate-400">Du froid polaire jusqu'à la fusion solaire</p>
@@ -139,7 +144,19 @@
             </button>
           </form>
 
-          <p id="authError" class="text-rose-400 text-xs mt-2.5 text-center min-h-[1rem]"></p>
+          <div class="relative flex py-2 items-center">
+            <div class="flex-grow border-t border-slate-800"></div>
+            <span class="flex-shrink mx-2 text-[10px] uppercase text-slate-500 font-bold tracking-wider">ou</span>
+            <div class="flex-grow border-t border-slate-800"></div>
+          </div>
+
+          <button id="authGuestBtn" type="button" onclick="loginAsGuest()"
+            class="w-full py-2.5 rounded-xl text-xs font-bold bg-slate-900 hover:bg-slate-800 border border-slate-700/80 hover:border-amber-500/50 text-slate-200 transition flex items-center justify-center gap-2 group shadow-sm active:scale-98">
+            <i class="ph-duotone ph-user-switch text-base text-amber-400 group-hover:rotate-12 transition-transform"></i>
+            <span>Jouer en invité (sans compte)</span>
+          </button>
+
+          <p id="authError" class="text-rose-400 text-xs mt-2 text-center min-h-[1rem]"></p>
         </div>
 
         <!-- ÉTAPE B : CHOIX DU MODE DE JEU (AFFICHÉ UNE FOIS CONNECTÉ) -->
@@ -164,29 +181,48 @@
             </div>
           </div>
 
-          <!-- Sélecteur de Mode : Classique vs Pop Culture & Manga (Phosphor Duotone) -->
+          <!-- Sélecteur de Mode : Classique vs Pop Culture vs Défi du Jour -->
           <div class="mb-3">
             <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 flex items-center gap-1">
               <i class="ph-duotone ph-planet text-sky-400 text-xs"></i> Choisir l'univers des mots
             </label>
-            <div class="grid grid-cols-2 gap-2 bg-slate-950 p-1 rounded-2xl border border-slate-800">
+            <div class="grid grid-cols-3 gap-1.5 bg-slate-950 p-1 rounded-2xl border border-slate-800">
               <button type="button" id="modeClassicBtn" onclick="selectGameMode('classic')"
-                class="py-2 px-2.5 rounded-xl bg-sky-500/20 border border-sky-400/50 text-sky-200 flex items-center justify-center gap-2 transition shadow-sm">
-                <i class="ph-duotone ph-compass-rose text-lg text-sky-400 shrink-0"></i>
-                <div class="text-left leading-tight">
-                  <div class="text-xs font-extrabold">Classique</div>
-                  <div class="text-[9px] text-sky-300/80">500 mots courants</div>
+                class="py-2 px-1.5 rounded-xl bg-sky-500/20 border border-sky-400/50 text-sky-200 flex flex-col items-center justify-center gap-1 transition shadow-sm">
+                <i class="ph-duotone ph-compass-rose text-base text-sky-400 shrink-0"></i>
+                <div class="text-center leading-tight">
+                  <div class="text-[11px] font-extrabold">Classique</div>
+                  <div class="text-[8px] text-sky-300/80">500 mots</div>
                 </div>
               </button>
               <button type="button" id="modePopBtn" onclick="selectGameMode('pop')"
-                class="py-2 px-2.5 rounded-xl bg-slate-900/60 border border-transparent text-slate-400 hover:text-white flex items-center justify-center gap-2 transition">
-                <i class="ph-duotone ph-game-controller text-lg text-purple-400 shrink-0"></i>
-                <div class="text-left leading-tight">
-                  <div class="text-xs font-extrabold">Pop & Manga</div>
-                  <div class="text-[9px] text-slate-500">Geek, Anime, Jeux</div>
+                class="py-2 px-1.5 rounded-xl bg-slate-900/60 border border-transparent text-slate-400 hover:text-white flex flex-col items-center justify-center gap-1 transition">
+                <i class="ph-duotone ph-game-controller text-base text-purple-400 shrink-0"></i>
+                <div class="text-center leading-tight">
+                  <div class="text-[11px] font-extrabold">Pop & Manga</div>
+                  <div class="text-[8px] text-slate-500">91 thèmes</div>
+                </div>
+              </button>
+              <button type="button" id="modeDailyBtn" onclick="selectGameMode('daily')"
+                class="py-2 px-1.5 rounded-xl bg-slate-900/60 border border-transparent text-slate-400 hover:text-white flex flex-col items-center justify-center gap-1 transition">
+                <i class="ph-duotone ph-calendar-star text-base text-amber-400 shrink-0"></i>
+                <div class="text-center leading-tight">
+                  <div class="text-[11px] font-extrabold">Défi du Jour</div>
+                  <div class="text-[8px] text-amber-300/80">Quotidien</div>
                 </div>
               </button>
             </div>
+
+            <button id="dailyArchiveLobbyBtn" type="button" onclick="openDailyArchiveModal()"
+              class="w-full mt-2 py-2 px-3 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-400/30 text-amber-200 text-xs font-bold transition flex items-center justify-between group shadow-sm active:scale-98">
+              <span class="flex items-center gap-2">
+                <i class="ph-duotone ph-calendar-star text-base text-amber-400 group-hover:scale-110 transition-transform"></i>
+                <span>Archives & Classements des Défis</span>
+              </span>
+              <span class="text-[10px] font-mono-num text-amber-300 bg-amber-500/20 px-2 py-0.5 rounded-md flex items-center gap-1">
+                Historique <i class="ph-bold ph-caret-right text-xs"></i>
+              </span>
+            </button>
           </div>
 
           <div class="grid grid-cols-2 gap-2.5">
@@ -223,7 +259,7 @@
             <span id="cloudStatusDot" class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
             <span id="cloudStatusText">Supabase Cloud Actif</span>
           </span>
-          <span id="versionBadgeFooter" class="font-mono-num text-slate-400 font-semibold">v1.2 • Édition Solaire</span>
+          <span id="versionBadgeFooter" class="font-mono-num text-slate-400 font-semibold">v1.3 • Édition Solaire</span>
         </div>
       </div>
     </div>
@@ -298,34 +334,47 @@
             <div class="w-full shrink-0 px-1 flex flex-col gap-2.5">
               <h4 class="text-base font-extrabold text-white">2. Les Paliers de Fusion</h4>
               <p class="text-xs text-slate-300 leading-relaxed">
-                Les <strong>1 000 mots les plus proches</strong> affichent un badge de classement (de <strong class="text-purple-300">Top 1000</strong> jusqu'à <strong class="text-red-300">Top 2</strong> pour le mot le plus proche) :
+                Les <strong>1 000 mots les plus proches</strong> affichent un badge thermique. Touchez un palier pour tester ses effets :
               </p>
               <div class="flex flex-col gap-1.5 mt-0.5">
-                <div class="rounded-xl px-2.5 py-1.5 border tier-flame-card flex justify-between items-center text-xs">
-                  <strong class="flame-word-glow">Navire</strong>
+                <div onclick="triggerWordParticles(this, 98.3, false, 982); soundManager.playGuessSound(98.3);"
+                     class="cursor-pointer rounded-xl px-2.5 py-1.5 border tier-flame-card flex justify-between items-center text-xs hover:scale-[1.02] active:scale-95 transition-all">
+                  <div class="flex items-center gap-1.5">
+                    <i class="ph-fill ph-flame text-orange-400"></i>
+                    <strong class="flame-word-glow">Navire</strong>
+                  </div>
                   <div class="flex items-center gap-1.5">
                     <span class="bg-orange-500/20 text-orange-200 border border-orange-400/50 text-[10px] font-bold px-1.5 py-0.2 rounded">🔥 Top 18</span>
                     <span class="font-mono-num font-extrabold text-orange-400">98.3%</span>
                   </div>
                 </div>
-                <div class="rounded-xl px-2.5 py-1.5 border tier-magma-card flex justify-between items-center text-xs">
-                  <strong class="magma-word-glow">Mer</strong>
+                <div onclick="triggerWordParticles(this, 99.9, false, 999); soundManager.playGuessSound(99.9, false, true);"
+                     class="cursor-pointer rounded-xl px-2.5 py-1.5 border tier-magma-card flex justify-between items-center text-xs hover:scale-[1.02] active:scale-95 transition-all">
+                  <div class="flex items-center gap-1.5">
+                    <i class="ph-fill ph-meteor text-red-400"></i>
+                    <strong class="magma-word-glow">Mer</strong>
+                  </div>
                   <div class="flex items-center gap-1.5">
                     <span class="bg-red-900/70 text-red-200 border border-red-500/70 text-[10px] font-extrabold px-1.5 py-0.2 rounded">🌋 Top 2</span>
                     <span class="font-mono-num font-extrabold text-red-300">99.9%</span>
                   </div>
                 </div>
-                <div class="rounded-xl px-2.5 py-1.5 border-2 tier-fusion-card flex justify-between items-center text-xs">
-                  <strong class="fusion-word-glow">Océan</strong>
+                <div onclick="triggerSolarFusionExplosion(this); soundManager.playSolarFusionFanfare();"
+                     class="cursor-pointer rounded-xl px-2.5 py-1.5 border-2 tier-fusion-card flex justify-between items-center text-xs hover:scale-[1.02] active:scale-95 transition-all">
+                  <div class="flex items-center gap-1.5">
+                    <i class="ph-fill ph-sun text-amber-300"></i>
+                    <strong class="fusion-word-glow">Océan</strong>
+                  </div>
                   <div class="flex items-center gap-1.5">
                     <span class="bg-amber-300/30 text-white border border-amber-200 text-[10px] font-extrabold px-2 py-0.2 rounded">☀️ FUSION</span>
                     <span class="font-mono-num font-extrabold text-white">100%</span>
                   </div>
                 </div>
               </div>
+              <div class="text-[10px] text-slate-500 text-center">💡 Cliquez sur un mot pour ressentir sa température</div>
             </div>
 
-            <!-- SLIDE 3 : POINTS, INDICES & SALONS -->
+            <!-- SLIDE 3 : POINTS, INDICES & MODES -->
             <div class="w-full shrink-0 pl-1 flex flex-col gap-2.5">
               <h4 class="text-base font-extrabold text-white">3. Points ⚡, Indices & Modes</h4>
               <div class="flex flex-col gap-2 text-xs text-slate-300">
@@ -334,12 +383,12 @@
                   <span>Chaque mot chaud rapporte des <strong>Points ⚡</strong>. Dépensez <strong>35 ⚡</strong> sur l'ampoule en haut pour débloquer un <strong>Indice</strong> !</span>
                 </div>
                 <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-2.5 flex items-center gap-2.5">
-                  <i class="ph-duotone ph-game-controller text-xl text-purple-400 shrink-0"></i>
-                  <span>Basculez entre le mode <strong>Classique</strong> et le mode <strong>Pop & Manga</strong> dans le menu du salon.</span>
+                  <i class="ph-duotone ph-calendar-star text-xl text-amber-400 shrink-0"></i>
+                  <span>Affrontez le <strong>Défi du Jour</strong> quotidien et comparez vos chronos dans l'historique !</span>
                 </div>
                 <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-2.5 flex items-center gap-2.5">
                   <i class="ph-duotone ph-medal-military text-xl text-sky-400 shrink-0"></i>
-                  <span>Votre progression et votre <strong>Grade</strong> sont sauvegardés dans le Cloud sur tous vos appareils.</span>
+                  <span>Votre progression, vos records de vitesse et votre <strong>Grade</strong> sont sauvegardés dans le Cloud.</span>
                 </div>
               </div>
             </div>
@@ -352,9 +401,9 @@
             ← Précédent
           </button>
           <div class="flex items-center gap-1.5" id="tutoDots">
-            <span class="w-5 h-1.5 rounded-full bg-sky-400 transition-all"></span>
-            <span class="w-1.5 h-1.5 rounded-full bg-slate-700 transition-all"></span>
-            <span class="w-1.5 h-1.5 rounded-full bg-slate-700 transition-all"></span>
+            <span onclick="goToTutorialSlide(0)" class="w-6 h-1.5 rounded-full bg-gradient-to-r from-sky-400 to-indigo-400 transition-all cursor-pointer"></span>
+            <span onclick="goToTutorialSlide(1)" class="w-2 h-1.5 rounded-full bg-slate-700 hover:bg-slate-500 transition-all cursor-pointer"></span>
+            <span onclick="goToTutorialSlide(2)" class="w-2 h-1.5 rounded-full bg-slate-700 hover:bg-slate-500 transition-all cursor-pointer"></span>
           </div>
           <button id="tutoNextBtn" onclick="stepTutorial(1)" class="px-4 py-1.5 rounded-xl text-xs font-extrabold bg-sky-500 hover:bg-sky-400 text-slate-950 transition">
             Suivant →
@@ -386,58 +435,141 @@
     <!-- 5. LABORATOIRE SECRET DE TEST / SANDBOX (CODE XXXX + 3 CLICS LOGO) -->
     <div id="debugModal" onclick="if(event.target.id==='debugModal') toggleModal('debugModal', false)"
       class="hidden fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
-      <div class="relative bg-slate-900 border-2 border-amber-500/50 rounded-3xl max-w-sm w-full p-5 shadow-[0_0_50px_rgba(245,158,11,0.2)] animate-pop">
+      <div class="relative bg-slate-900 border-2 border-amber-500/50 rounded-3xl max-w-sm sm:max-w-md w-full p-4 sm:p-5 shadow-[0_0_50px_rgba(245,158,11,0.2)] animate-pop max-h-[92vh] flex flex-col overflow-hidden">
         <button onclick="toggleModal('debugModal', false)" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center">
           <i class="ph-bold ph-x text-base"></i>
         </button>
 
-        <div class="flex items-center gap-2.5 mb-3">
+        <div class="flex items-center gap-2.5 mb-2.5 shrink-0">
           <div class="w-9 h-9 rounded-xl bg-amber-500/20 border border-amber-400/40 flex items-center justify-center text-amber-300">
             <i class="ph-duotone ph-flask text-xl"></i>
           </div>
           <div>
             <h3 class="text-sm font-extrabold text-white uppercase tracking-wider">Laboratoire Secret</h3>
-            <p class="text-[10px] text-amber-300/80 font-mono-num">Mode Sandbox & Test des Animations</p>
+            <p class="text-[10px] text-amber-300/80 font-mono-num">Banc d'Essai Visuel & Particules (Sandbox)</p>
           </div>
         </div>
 
-        <div class="bg-slate-950 border border-slate-800 rounded-xl p-2.5 mb-3 flex items-center justify-between text-xs">
-          <span class="text-slate-400">Mot secret actuel :</span>
-          <strong id="debugSecretWord" class="font-mono-num text-amber-300 uppercase">•••</strong>
-          <button onclick="revealSecretInDebug()" class="text-[10px] bg-slate-800 hover:bg-slate-700 text-sky-300 px-2 py-1 rounded font-bold">
-            Afficher
-          </button>
+        <div class="overflow-y-auto pr-1 flex flex-col gap-3 flex-1 text-xs">
+          <!-- Mot secret actuel -->
+          <div class="bg-slate-950 border border-slate-800 rounded-xl p-2.5 flex items-center justify-between">
+            <span class="text-slate-400">Mot secret actuel :</span>
+            <strong id="debugSecretWord" class="font-mono-num text-amber-300 uppercase">•••</strong>
+            <button onclick="revealSecretInDebug()" class="text-[10px] bg-slate-800 hover:bg-slate-700 text-sky-300 px-2 py-1 rounded font-bold">
+              Afficher
+            </button>
+          </div>
+
+          <!-- Section 1 : Particules Vectorielles GPU & Échelle Thermique -->
+          <div>
+            <div class="flex items-center justify-between mb-1.5">
+              <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1">
+                <i class="ph-duotone ph-sparkle text-amber-400"></i> Particules & Paliers Proportionnels
+              </span>
+              <span class="text-[9px] text-emerald-400 font-semibold bg-emerald-500/10 px-1.5 py-0.2 rounded border border-emerald-500/20">Menu persistant</span>
+            </div>
+            <div class="grid grid-cols-2 gap-1.5">
+              <button id="debugGivre0Btn" onclick="triggerWordParticles(this, 0, false, null); soundManager.playGuessSound(0);"
+                class="bg-sky-500/15 hover:bg-sky-500/25 border border-sky-400/40 text-sky-200 rounded-xl p-2 text-xs font-bold flex items-center gap-1.5 justify-center transition active:scale-95">
+                <i class="ph-fill ph-snowflake text-sky-400"></i> Flocons 0% (Blizzard)
+              </button>
+              <button id="debugGivre35Btn" onclick="triggerWordParticles(this, 35, false, null); soundManager.playGuessSound(35);"
+                class="bg-sky-500/15 hover:bg-sky-500/25 border border-sky-400/40 text-sky-200 rounded-xl p-2 text-xs font-bold flex items-center gap-1.5 justify-center transition active:scale-95">
+                <i class="ph-duotone ph-snowflake text-sky-300"></i> Flocons 35% (Léger)
+              </button>
+              <button id="debugFlamme100Btn" onclick="triggerWordParticles(this, 60, false, 901); soundManager.playGuessSound(60);"
+                class="bg-orange-500/15 hover:bg-orange-500/25 border border-orange-400/40 text-orange-200 rounded-xl p-2 text-xs font-bold flex items-center gap-1.5 justify-center transition active:scale-95">
+                <i class="ph-fill ph-fire-simple text-orange-400"></i> Flammes Top 100
+              </button>
+              <button id="debugFlamme15Btn" onclick="triggerWordParticles(this, 88, false, 985); soundManager.playGuessSound(88);"
+                class="bg-orange-500/15 hover:bg-orange-500/25 border border-orange-400/40 text-orange-200 rounded-xl p-2 text-xs font-bold flex items-center gap-1.5 justify-center transition active:scale-95">
+                <i class="ph-fill ph-fire text-amber-300"></i> Flammes Top 15 (Ardent)
+              </button>
+              <button id="debugLave10Btn" onclick="triggerWordParticles(this, 94, false, 991); soundManager.playMagmaChord();"
+                class="bg-red-500/15 hover:bg-red-500/25 border border-red-400/40 text-red-200 rounded-xl p-2 text-xs font-bold flex items-center gap-1.5 justify-center transition active:scale-95">
+                <i class="ph-fill ph-meteor text-red-400"></i> Lave Top 10
+              </button>
+              <button id="debugLave2Btn" onclick="triggerWordParticles(this, 99.8, false, 999); soundManager.playMagmaChord();"
+                class="bg-red-500/25 hover:bg-red-500/35 border border-red-500/60 text-red-100 rounded-xl p-2 text-xs font-extrabold flex items-center gap-1.5 justify-center transition active:scale-95 shadow-lg shadow-red-950/50">
+                <i class="ph-fill ph-flame text-red-300"></i> Lave Top 2 (Max Magma)
+              </button>
+            </div>
+            <button id="debugFusionBtn" onclick="triggerWordParticles(this, 100, true, 1000); soundManager.playSolarFusionFanfare();"
+              class="w-full mt-1.5 bg-gradient-to-r from-amber-500/20 via-orange-500/20 to-amber-500/20 hover:from-amber-500/30 hover:to-amber-500/30 border border-amber-400/50 text-amber-200 rounded-xl p-2 text-xs font-extrabold flex items-center gap-2 justify-center transition active:scale-95 shadow-md">
+              <i class="ph-fill ph-sun-dim text-amber-300 text-base"></i> Fusion Solaire (100% / Rang 1000)
+            </button>
+          </div>
+
+          <!-- Section 2 : Thermomètre Plasma Interactif (Motion One) -->
+          <div>
+            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 block flex items-center gap-1">
+              <i class="ph-duotone ph-thermometer text-sky-400"></i> Test de la Jauge Thermique (Motion One)
+            </span>
+            <div class="grid grid-cols-4 gap-1.5">
+              <button onclick="updateThermalGauge(15); soundManager.playGuessSound(15); showToast('Jauge : Froid Polaire (15%)', 'sky');"
+                class="bg-slate-800 hover:bg-slate-700 text-sky-300 rounded-lg py-1.5 text-xs font-bold border border-slate-700 transition active:scale-95">
+                15%
+              </button>
+              <button onclick="updateThermalGauge(55); soundManager.playGuessSound(55); showToast('Jauge : Traction (55%)', 'purple');"
+                class="bg-slate-800 hover:bg-slate-700 text-purple-300 rounded-lg py-1.5 text-xs font-bold border border-slate-700 transition active:scale-95">
+                55%
+              </button>
+              <button onclick="updateThermalGauge(94); soundManager.playMagmaChord(); showToast('Jauge : Magma (94%)', 'rose');"
+                class="bg-slate-800 hover:bg-slate-700 text-red-400 rounded-lg py-1.5 text-xs font-bold border border-slate-700 transition active:scale-95">
+                94%
+              </button>
+              <button onclick="updateThermalGauge(100); soundManager.playSolarFusionFanfare(); showToast('Jauge : Fusion Solaire (100%)', 'amber');"
+                class="bg-slate-800 hover:bg-slate-700 text-amber-300 rounded-lg py-1.5 text-xs font-bold border border-slate-700 transition active:scale-95">
+                100%
+              </button>
+            </div>
+          </div>
+
+          <!-- Section 3 : Animations Plein Écran & UI -->
+          <div>
+            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 block flex items-center gap-1">
+              <i class="ph-duotone ph-broadcast text-purple-400"></i> Animations Plein Écran & Sons
+            </span>
+            <div class="grid grid-cols-2 gap-1.5">
+              <button onclick="triggerSolarFusionExplosion(); soundManager.playSolarFusionFanfare();"
+                class="bg-amber-500/15 hover:bg-amber-500/25 border border-amber-400/40 text-amber-200 rounded-xl p-2 text-xs font-bold flex items-center gap-1.5 justify-center transition active:scale-95">
+                <i class="ph-fill ph-sun text-amber-300"></i> Flash Solaire
+              </button>
+              <button onclick="triggerSurgeAnimation(myPseudo || 'Joueur', 'MAGMA', 99.6, 997, 32); soundManager.playSurgeSound();"
+                class="bg-red-500/15 hover:bg-red-500/25 border border-red-400/40 text-red-200 rounded-xl p-2 text-xs font-bold flex items-center gap-1.5 justify-center transition active:scale-95">
+                <i class="ph-fill ph-meteor text-red-400"></i> Percée (+32⚡)
+              </button>
+              <button onclick="showLevelUpBanner(getLevelInfo((players[myId]?.xp || 0) + 100)); soundManager.playLevelUpSound();"
+                class="bg-indigo-500/15 hover:bg-indigo-500/25 border border-indigo-400/40 text-indigo-200 rounded-xl p-2 text-xs font-bold flex items-center gap-1.5 justify-center transition active:scale-95">
+                <i class="ph-duotone ph-shooting-star text-indigo-300"></i> Gain Niveau
+              </button>
+              <button onclick="triggerInputShake($('guessForm')); showToast('Animation Secousse !', 'rose'); vibrateDevice([40, 60, 40]);"
+                class="bg-rose-500/15 hover:bg-rose-500/25 border border-rose-400/40 text-rose-200 rounded-xl p-2 text-xs font-bold flex items-center gap-1.5 justify-center transition active:scale-95">
+                <i class="ph-duotone ph-vibrate text-rose-300"></i> Secousse Doublon
+              </button>
+            </div>
+          </div>
+
+          <!-- Section 4 : Sandbox Scores -->
+          <div>
+            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 block">Gestion Scores Sandbox</span>
+            <div class="grid grid-cols-2 gap-1.5">
+              <button onclick="debugAddPointsAndXp(50, 150)"
+                class="bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-400/40 text-emerald-300 rounded-xl p-2 text-xs font-bold flex items-center gap-1.5 justify-center transition active:scale-95">
+                <i class="ph-fill ph-plus-circle text-base"></i> +50 ⚡ / +150 XP
+              </button>
+              <button onclick="debugResetAllScores()"
+                class="bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/40 text-rose-300 rounded-xl p-2 text-xs font-bold flex items-center gap-1.5 justify-center transition active:scale-95">
+                <i class="ph-duotone ph-trash text-base"></i> Remise à zéro
+              </button>
+            </div>
+          </div>
         </div>
 
-        <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Tester les animations</p>
-        <div class="grid grid-cols-2 gap-2 mb-4">
-          <button onclick="toggleModal('debugModal', false); triggerSolarFusionExplosion();"
-            class="bg-amber-500/15 hover:bg-amber-500/25 border border-amber-400/40 text-amber-200 rounded-xl p-2.5 text-xs font-bold flex items-center gap-1.5 justify-center transition">
-            <i class="ph-fill ph-sun-dim text-base text-amber-300"></i> Fusion 100%
-          </button>
-          <button onclick="toggleModal('debugModal', false); triggerSurgeAnimation(myPseudo || 'Test', 'MAGMA', 99.6, 997, 32);"
-            class="bg-red-500/15 hover:bg-red-500/25 border border-red-400/40 text-red-200 rounded-xl p-2.5 text-xs font-bold flex items-center gap-1.5 justify-center transition">
-            <i class="ph-fill ph-meteor text-base text-red-400"></i> Percée Magma
-          </button>
-          <button onclick="toggleModal('debugModal', false); showLevelUpBanner(getLevelInfo((players[myId]?.xp || 0) + 100));"
-            class="bg-sky-500/15 hover:bg-sky-500/25 border border-sky-400/40 text-sky-200 rounded-xl p-2.5 text-xs font-bold flex items-center gap-1.5 justify-center transition">
-            <i class="ph-duotone ph-shooting-star text-base text-sky-300"></i> Gain Niveau
-          </button>
-          <button onclick="toggleModal('debugModal', false); triggerInputShake($('guessForm')); showToast('Animation Doublon / Secousse !', 'rose');"
-            class="bg-purple-500/15 hover:bg-purple-500/25 border border-purple-400/40 text-purple-200 rounded-xl p-2.5 text-xs font-bold flex items-center gap-1.5 justify-center transition">
-            <i class="ph-duotone ph-vibrate text-base text-purple-300"></i> Secousse
-          </button>
-        </div>
-
-        <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Gestion des Points & Scores</p>
-        <div class="grid grid-cols-2 gap-2">
-          <button onclick="debugAddPointsAndXp(50, 150)"
-            class="bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-400/40 text-emerald-300 rounded-xl p-2.5 text-xs font-bold flex items-center gap-1.5 justify-center transition">
-            <i class="ph-fill ph-plus-circle text-base"></i> +50 ⚡ / +150 XP
-          </button>
-          <button onclick="debugResetAllScores()"
-            class="bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/40 text-rose-300 rounded-xl p-2.5 text-xs font-bold flex items-center gap-1.5 justify-center transition">
-            <i class="ph-duotone ph-trash text-base"></i> Remise à zéro
+        <div class="mt-2.5 pt-2 border-t border-slate-800 shrink-0">
+          <button onclick="toggleModal('debugModal', false)"
+            class="w-full py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 transition flex items-center justify-center gap-1.5">
+            <i class="ph-bold ph-x text-sm"></i> Fermer le Laboratoire
           </button>
         </div>
       </div>
@@ -494,7 +626,7 @@
           </div>
 
           <div id="statsMainView" class="flex flex-col gap-3.5">
-            <div id="profileStatsGrid" class="grid grid-cols-3 gap-2"></div>
+            <div id="profileStatsGrid" class="grid grid-cols-2 sm:grid-cols-4 gap-2"></div>
             <div>
               <div class="flex items-center justify-between text-xs font-bold text-slate-300 mb-2 px-1">
                 <div class="flex items-center gap-1.5">
@@ -508,6 +640,36 @@
               <div id="modalLeaderboardList" class="flex flex-col gap-1.5"></div>
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 6B. MODALE D'HISTORIQUE & ARCHIVES DU DÉFI DU JOUR -->
+    <div id="dailyArchiveModal" onclick="if(event.target.id==='dailyArchiveModal') closeDailyArchiveModal()"
+      class="hidden fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
+      <div class="relative bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-5 sm:p-6 shadow-2xl animate-pop max-h-[90vh] flex flex-col overflow-hidden">
+        <button onclick="closeDailyArchiveModal()" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition">
+          <i class="ph-bold ph-x text-base"></i>
+        </button>
+
+        <div class="flex items-center gap-3 mb-3 shrink-0">
+          <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-lg shadow-amber-500/25 shrink-0 border border-white/20">
+            <i class="ph-duotone ph-calendar-star text-2xl text-slate-950"></i>
+          </div>
+          <div class="min-w-0 flex-1">
+            <h3 class="text-base font-extrabold text-white flex items-center gap-2">
+              <span>Archives des Défis</span>
+              <span class="text-[10px] font-extrabold bg-amber-500/20 text-amber-300 border border-amber-400/40 px-2 py-0.5 rounded-full">Quotidien</span>
+            </h3>
+            <p class="text-[11px] text-slate-400">Historique des mots, nombre de vainqueurs et classements de vitesse</p>
+          </div>
+        </div>
+
+        <div id="dailyArchiveList" class="overflow-y-auto pr-1 flex flex-col gap-2.5 my-2 flex-1"></div>
+
+        <div class="pt-3 border-t border-slate-800 flex items-center justify-between text-[11px] text-slate-400 shrink-0">
+          <span class="flex items-center gap-1.5"><i class="ph-duotone ph-clock text-amber-400"></i> Nouveau mot chaque jour à minuit</span>
+          <button onclick="closeDailyArchiveModal()" class="px-3 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition">Fermer</button>
         </div>
       </div>
     </div>
@@ -536,45 +698,79 @@
     <!-- 8. TOAST CONTAINER -->
     <div id="toastContainer" class="fixed top-2.5 left-1/2 -translate-x-1/2 z-40 flex flex-col items-center gap-1.5 pointer-events-none w-full max-w-xs px-4"></div>
 
-    <!-- 9. EN-TÊTE ULTRA-COMPACT -->
-    <header id="mainHeader" class="w-full max-w-6xl mx-auto px-2.5 sm:px-4 pt-2 pb-1.5 flex items-center justify-between gap-1.5 border-b border-slate-800/80 shrink-0 overflow-hidden">
-      <div class="flex items-center gap-1.5 min-w-0 shrink-0">
-        <button id="headerLogoBtn" onclick="handleHeaderLogoClick()" class="w-8 h-8 rounded-xl bg-gradient-to-br from-sky-500 via-indigo-600 to-orange-500 flex items-center justify-center shadow-md hover:opacity-90 transition shrink-0">
-          <i class="ph-duotone ph-fire-simple text-lg text-white"></i>
+    <!-- 9. EN-TÊTE ULTRA-COMPACT ET RESPONSIVE MOBILE -->
+    <header id="mainHeader" class="w-full max-w-6xl mx-auto px-2 sm:px-4 pt-2 pb-1.5 flex items-center justify-between gap-1 sm:gap-1.5 border-b border-slate-800/80 shrink-0 relative z-30">
+      <div class="flex items-center gap-1 sm:gap-1.5 min-w-0 shrink-0">
+        <button id="headerLogoBtn" onclick="handleHeaderLogoClick()" class="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-gradient-to-br from-sky-500 via-indigo-600 to-orange-500 flex items-center justify-center shadow-md hover:opacity-90 transition shrink-0 active:scale-95">
+          <i class="ph-duotone ph-fire-simple text-base sm:text-lg text-white"></i>
         </button>
-        <span id="roundBadge" class="text-xs font-mono-num bg-sky-500/15 text-sky-300 px-2 py-1 rounded-lg border border-sky-500/30 font-bold shrink-0">#1</span>
-        <span id="modeHeaderBadge" onclick="openOnboardingModal()" title="Changer le mode de jeu" class="cursor-pointer text-[11px] font-bold bg-sky-500/10 text-sky-300 px-2 py-1 rounded-lg border border-sky-500/25 flex items-center gap-1 shrink-0">
+        <span id="roundBadge" class="text-[11px] sm:text-xs font-mono-num bg-sky-500/15 text-sky-300 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-lg border border-sky-500/30 font-bold shrink-0">#1</span>
+        <span id="modeHeaderBadge" onclick="openOnboardingModal()" title="Changer le mode de jeu" class="cursor-pointer text-[10px] sm:text-[11px] font-bold bg-sky-500/10 text-sky-300 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-lg border border-sky-500/25 flex items-center gap-1 shrink-0">
           <i id="modeHeaderIcon" class="ph-duotone ph-compass-rose text-xs text-sky-400"></i>
           <span id="modeHeaderText" class="hidden sm:inline">Classique</span>
         </span>
-        <button id="roomCodePill" onclick="copyRoomCode()" class="hidden items-center gap-1 bg-indigo-950/80 hover:bg-indigo-900/80 border border-indigo-500/40 px-2 py-1 rounded-lg transition shrink-0">
+        <button id="roomCodePill" onclick="copyRoomCode()" class="hidden items-center gap-1 bg-indigo-950/80 hover:bg-indigo-900/80 border border-indigo-500/40 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-lg transition shrink-0">
           <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-          <strong id="headerRoomCode" class="font-mono-num text-xs font-bold tracking-wider text-white">----</strong>
+          <strong id="headerRoomCode" class="font-mono-num text-[11px] sm:text-xs font-bold tracking-wider text-white">----</strong>
           <i class="ph-duotone ph-copy text-xs text-indigo-300"></i>
         </button>
       </div>
 
-      <div class="flex items-center gap-1.5 shrink-0">
-        <button onclick="openStatsModal(myId)" class="flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 px-2 py-1 rounded-lg transition shrink-0">
-          <span id="headerLevelBadge" class="text-[10px] font-extrabold bg-sky-500/20 text-sky-300 px-1.5 py-0.2 rounded">N1</span>
+      <div class="flex items-center gap-1 sm:gap-1.5 shrink-0">
+        <button onclick="openStatsModal(myId)" class="flex items-center gap-1 sm:gap-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-lg transition shrink-0 active:scale-95">
+          <span id="headerLevelBadge" class="text-[9px] sm:text-[10px] font-extrabold bg-sky-500/20 text-sky-300 px-1.5 py-0.2 rounded">N1</span>
           <i class="ph-fill ph-lightning text-xs text-amber-400"></i>
-          <span id="headerPoints" class="font-mono-num text-xs font-extrabold text-amber-400">0</span>
+          <span id="headerPoints" class="font-mono-num text-[11px] sm:text-xs font-extrabold text-amber-400">0</span>
         </button>
-        <button id="hintBtn" onclick="useHint()" title="Indice (35 pts)" class="flex items-center justify-center gap-1 bg-slate-900/70 border border-slate-800 text-slate-500 text-xs font-semibold px-2 py-1 rounded-lg transition opacity-75 shrink-0">
+        <button id="soundToggleBtn" onclick="soundManager.toggleMute()" title="Couper les sons" class="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center bg-amber-500/15 border border-amber-500/30 text-amber-300 hover:bg-amber-500/25 rounded-lg transition shrink-0 active:scale-95">
+          <i id="soundToggleIcon" class="ph-duotone ph-speaker-high text-sm sm:text-base"></i>
+        </button>
+        <button id="hintBtn" onclick="useHint()" title="Indice (35 pts)" class="flex items-center justify-center gap-1 bg-slate-900/70 border border-slate-800 text-slate-500 text-xs font-semibold px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-lg transition opacity-75 shrink-0 active:scale-95">
           <span id="hintBtnContent" class="flex items-center gap-1">
-            <i class="ph-duotone ph-lock-key text-sm"></i>
-            <span class="font-mono-num text-[11px]">35</span>
+            <i class="ph-duotone ph-lock-key text-xs sm:text-sm"></i>
+            <span class="font-mono-num text-[10px] sm:text-[11px]">35</span>
           </span>
         </button>
-        <button onclick="openTutorialModal()" title="Tutoriel" class="w-8 h-8 flex items-center justify-center bg-slate-900 hover:bg-slate-800 border border-slate-800 text-sky-300 rounded-lg transition shrink-0">
-          <i class="ph-bold ph-question text-sm"></i>
-        </button>
-        <button onclick="askGiveUpRound()" title="Révéler le mot" class="w-8 h-8 flex items-center justify-center bg-slate-900 hover:bg-rose-950/50 border border-slate-800 text-slate-400 hover:text-rose-300 rounded-lg transition shrink-0">
-          <i class="ph-duotone ph-flag-banner text-base"></i>
-        </button>
-        <button onclick="askNextGame()" title="Manche suivante" class="w-8 h-8 flex items-center justify-center bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 rounded-lg transition shrink-0">
-          <i class="ph-duotone ph-skip-forward-circle text-base"></i>
-        </button>
+
+        <!-- Actions individuelles sur écrans sm et plus -->
+        <div class="hidden sm:flex items-center gap-1.5 shrink-0">
+          <button onclick="openTutorialModal()" title="Tutoriel" class="w-8 h-8 flex items-center justify-center bg-slate-900 hover:bg-slate-800 border border-slate-800 text-sky-300 rounded-lg transition shrink-0">
+            <i class="ph-bold ph-question text-sm"></i>
+          </button>
+          <button onclick="askGiveUpRound()" title="Révéler le mot" class="w-8 h-8 flex items-center justify-center bg-slate-900 hover:bg-rose-950/50 border border-slate-800 text-slate-400 hover:text-rose-300 rounded-lg transition shrink-0">
+            <i class="ph-duotone ph-flag-banner text-base"></i>
+          </button>
+          <button onclick="askNextGame()" title="Manche suivante" class="w-8 h-8 flex items-center justify-center bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 rounded-lg transition shrink-0">
+            <i class="ph-duotone ph-skip-forward-circle text-base"></i>
+          </button>
+        </div>
+
+        <!-- Menu déroulant d'actions sur mobile (< sm) -->
+        <div class="relative sm:hidden">
+          <button id="headerMenuBtn" onclick="toggleHeaderMenu(event)" title="Options de la partie"
+            class="w-7 h-7 flex items-center justify-center bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 rounded-lg transition shrink-0 active:scale-95">
+            <i class="ph-bold ph-dots-three-vertical text-base"></i>
+          </button>
+
+          <div id="headerDropdownMenu" class="hidden absolute right-0 top-full mt-1.5 w-48 bg-slate-900/95 backdrop-blur-md border border-slate-700/80 rounded-2xl shadow-2xl py-1.5 z-50 flex flex-col gap-0.5 animate-pop">
+            <button onclick="closeHeaderMenu(); openTutorialModal();" class="w-full px-3 py-2 text-left text-xs font-semibold text-sky-300 hover:bg-slate-800/80 flex items-center gap-2.5 transition">
+              <i class="ph-duotone ph-book-open-text text-base text-sky-400"></i>
+              <span>Tutoriel rapide</span>
+            </button>
+            <button onclick="closeHeaderMenu(); openDailyArchiveModal();" class="w-full px-3 py-2 text-left text-xs font-semibold text-amber-300 hover:bg-slate-800/80 flex items-center gap-2.5 transition">
+              <i class="ph-duotone ph-calendar-star text-base text-amber-400"></i>
+              <span>Archives des Défis</span>
+            </button>
+            <button onclick="closeHeaderMenu(); askGiveUpRound();" class="w-full px-3 py-2 text-left text-xs font-semibold text-rose-300 hover:bg-rose-950/40 flex items-center gap-2.5 transition">
+              <i class="ph-duotone ph-flag-banner text-base text-rose-400"></i>
+              <span>Abandonner / Révéler</span>
+            </button>
+            <button onclick="closeHeaderMenu(); askNextGame();" class="w-full px-3 py-2 text-left text-xs font-semibold text-amber-300 hover:bg-slate-800/80 flex items-center gap-2.5 transition">
+              <i class="ph-duotone ph-skip-forward-circle text-base text-amber-400"></i>
+              <span>Manche suivante</span>
+            </button>
+          </div>
+        </div>
       </div>
     </header>
 
@@ -638,6 +834,29 @@
           </div>
         </div>
 
+        <!-- JAUGE THERMIQUE INTERACTIVE & THERMOMÈTRE PLASMA -->
+        <div id="thermalGaugeContainer" class="bg-slate-900/85 border border-slate-800/90 rounded-2xl p-2 sm:p-2.5 px-3 flex items-center justify-between gap-2.5 shadow-lg shrink-0">
+          <div class="flex items-center gap-2.5 min-w-0">
+            <div id="thermalGaugeBulb" class="w-8 h-8 rounded-xl bg-sky-500/20 border border-sky-400/40 text-sky-400 flex items-center justify-center text-lg shadow-[0_0_10px_rgba(14,165,233,0.3)] transition-all duration-500 shrink-0">
+              <i id="thermalGaugeIcon" class="ph-duotone ph-thermometer-cold text-lg"></i>
+            </div>
+            <div class="min-w-0">
+              <div class="flex items-center gap-1.5">
+                <span class="text-xs font-extrabold text-white tracking-wide">Thermomètre</span>
+                <span id="thermalTierBadge" class="text-[10px] font-bold px-1.5 py-0.2 rounded bg-sky-500/20 text-sky-300 border border-sky-400/30">ZÉRO ABSOLU</span>
+              </div>
+              <p id="thermalStatusText" class="text-[10px] text-slate-400 truncate">Proposez un mot pour amorcer la réaction...</p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2.5 shrink-0">
+            <div class="w-24 sm:w-36 h-2.5 sm:h-3 bg-slate-950 rounded-full border border-slate-700/80 p-0.5 relative overflow-hidden flex items-center">
+              <div id="thermalGaugeLiquid" class="h-full rounded-full transition-all duration-500 bg-sky-500 shadow-[0_0_8px_#0ea5e9]" style="width: 4%;"></div>
+            </div>
+            <span id="thermalGaugeVal" class="font-mono-num text-xs sm:text-sm font-extrabold text-sky-300 min-w-[3.2rem] text-right">0.0%</span>
+          </div>
+        </div>
+
         <!-- Barre de Saisie -->
         <form id="guessForm" onsubmit="handleGuess(event)" class="relative flex gap-1.5 shrink-0">
           <div class="relative flex-1">
@@ -655,11 +874,20 @@
         <!-- Bannière de Fin de Manche -->
         <div id="victoryBanner" class="hidden tier-fusion-card border-2 rounded-xl p-2.5 animate-pop shrink-0">
           <div class="flex items-center justify-between gap-2">
-            <div class="min-w-0">
+            <div class="min-w-0 flex-1">
               <h3 id="victoryTitle" class="text-xs sm:text-sm font-extrabold text-white fusion-word-glow truncate">Fusion atteinte !</h3>
               <p id="victorySub" class="text-[11px] text-amber-100 font-medium truncate"></p>
             </div>
-            <button onclick="executeNextGame()" class="bg-white hover:bg-amber-100 text-slate-950 font-extrabold text-xs px-3 py-1.5 rounded-lg transition shrink-0 shadow-lg">Suivant</button>
+            <div class="flex items-center gap-1.5 shrink-0">
+              <button onclick="shareGameResult()" title="Partager le résultat" class="bg-amber-400/20 hover:bg-amber-400/30 text-amber-200 border border-amber-300/40 font-bold text-xs px-2.5 py-1.5 rounded-lg transition flex items-center gap-1">
+                <i class="ph-bold ph-share-network text-sm"></i>
+                <span class="hidden sm:inline">Partager</span>
+              </button>
+              <button onclick="executeNextGame()" class="bg-white hover:bg-amber-100 text-slate-950 font-extrabold text-xs px-3 py-1.5 rounded-lg transition shadow-lg flex items-center gap-1">
+                <span>Suivant</span>
+                <i class="ph-bold ph-arrow-right text-xs"></i>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -723,6 +951,6 @@
   </div>
 
   <script src="config.js"></script>
-  <script src="app.js"></script>
+  <script type="module" src="js/app.js"></script>
 </body>
 </html>
