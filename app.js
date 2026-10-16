@@ -1,14 +1,13 @@
 // =========================================================================
-// 1. CONFIGURATION, SUPABASE CLOUD & CONSTANTES (v1.1)
+// 1. CONFIGURATION, SUPABASE CLOUD & CONSTANTES (v1.2 - CATALOGUE UNIFIÉ)
 // =========================================================================
-const APP_VERSION = "v1.1";
+const APP_VERSION = "v1.2";
 const APP_EDITION = "Édition Solaire";
 const $ = id => document.getElementById(id);
 
 const MODE_CONFIG = {
   classic: {
     total: 500,
-    folder: "parties",
     label: "Classique",
     icon: "ph-compass-rose",
     color: "text-sky-400",
@@ -16,7 +15,6 @@ const MODE_CONFIG = {
   },
   pop: {
     total: 91,
-    folder: "parties_pop",
     label: "Pop & Manga",
     icon: "ph-game-controller",
     color: "text-purple-400",
@@ -39,7 +37,7 @@ const sbClient = (SUPABASE_URL && SUPABASE_ANON_KEY && window.supabase)
   : null;
 
 const HINT_COST = 35, XP_PER_LEVEL = 100;
-const TOPIC_ROOT = "zeroabsolu/v11/rooms/";
+const TOPIC_ROOT = "zeroabsolu/v12/rooms/";
 
 const WSS_BROKERS = [
   "wss://broker.emqx.io:8084/mqtt",
@@ -61,6 +59,9 @@ const FALLBACK_WORDS = {
   "bateau": [70.5, 990], "plage": [66.2, 980], "île": [61.5, 950], "eau": [58.3, 920],
   "poisson": [55.1, 890], "vent": [46.8, 760], "soleil": [32.1, 450], "forêt": 18.5, "plante": 16.0
 };
+
+let catalogueCache = null;
+let cataloguePromise = null;
 
 let myId = sessionStorage.getItem("za_tab_id") || ("p_" + Math.random().toString(36).slice(2, 10));
 sessionStorage.setItem("za_tab_id", myId);
@@ -90,6 +91,43 @@ const vibrateDevice = p => { try { navigator.vibrate?.(p); } catch (_) {} };
 const formatPct = v => v >= 100 ? "100%" : `${Number(v).toFixed(1)}%`;
 const getReadableTopLabel = r => r === 1000 ? "FUSION" : r ? `Top ${1001 - r}` : null;
 const toggleModal = (id, show) => $(id)?.classList.toggle("hidden", !show);
+
+function base64ToUint8(b64) {
+  const bin = atob(b64);
+  const len = bin.length;
+  const bytes = new Uint8Array(len);
+  for (let i = 0; i < len; i++) bytes[i] = bin.charCodeAt(i);
+  return bytes;
+}
+
+async function ensureCatalogueLoaded() {
+  if (catalogueCache) return catalogueCache;
+  if (!cataloguePromise) {
+    cataloguePromise = fetch("data/catalogue.json")
+      .then(r => r.ok ? r.json() : null)
+      .then(raw => {
+        if (!raw) return null;
+        const vBuf = base64ToUint8(raw.vecs16);
+        const cBuf = base64ToUint8(raw.classic);
+        const pBuf = base64ToUint8(raw.pop);
+        const v8 = new Int8Array(vBuf.buffer, vBuf.byteOffset, vBuf.byteLength);
+        const c16 = new Uint16Array(cBuf.buffer, cBuf.byteOffset, cBuf.byteLength / 2);
+        const p16 = new Uint16Array(pBuf.buffer, pBuf.byteOffset, pBuf.byteLength / 2);
+        MODE_CONFIG.classic.total = raw.classicGames || 500;
+        MODE_CONFIG.pop.total = raw.popGames || 91;
+        catalogueCache = {
+          words: raw.words,
+          classicCount: raw.classicCount,
+          vecs16: v8,
+          classicTop: c16,
+          popTop: p16
+        };
+        return catalogueCache;
+      })
+      .catch(() => null);
+  }
+  return cataloguePromise;
+}
 
 function pickUnplayedGameId(mode = currentGameMode) {
   const maxGames = MODE_CONFIG[mode]?.total || 500;
@@ -1155,7 +1193,7 @@ function handleNetworkPayload(data) {
 const copyRoomCode = () => { if (roomCode) { navigator.clipboard.writeText(roomCode); showToast(`Code "${roomCode}" copié !`, "sky"); } };
 
 // =========================================================================
-// 9. CHARGEMENT DE MANCHE (CLASSIQUE OU POP & MANGA) & VALIDATION DES MOTS
+// 9. CHARGEMENT DE MANCHE DEPUIS LE FICHIER UNIQUE data/catalogue.json
 // =========================================================================
 async function loadGame(gameId, displayRound = roundNumber, initialGuesses = [], mode = currentGameMode) {
   const seq = ++currentLoadSeq;
@@ -1189,12 +1227,44 @@ async function loadGame(gameId, displayRound = roundNumber, initialGuesses = [],
   $("guessesList").innerHTML = `<div class="text-slate-400 text-xs text-center my-auto py-8 flex flex-col items-center gap-2"><div class="w-4 h-4 border-2 border-sky-500 border-t-transparent rounded-full animate-spin"></div><span>Manche #${roundNumber} (${cfg.label})...</span></div>`;
 
   let dict = FALLBACK_WORDS;
-  try {
-    const res = await fetch(`${cfg.folder}/partie_${gameId}.json`);
-    if (res.ok) dict = (await res.json()).words;
-  } catch (_) {}
-
+  const cat = await ensureCatalogueLoaded();
   if (seq !== currentLoadSeq) return;
+
+  if (cat) {
+    const isPop = currentGameMode === "pop";
+    const maxWords = isPop ? cat.words.length : cat.classicCount;
+    const topArray = isPop ? cat.popTop : cat.classicTop;
+    const totalGamesInMode = Math.floor(topArray.length / 1000);
+    const safeIdx = Math.max(0, Math.min(totalGamesInMode - 1, (gameId - 1)));
+    const offset = safeIdx * 1000;
+
+    const secretWordIdx = topArray[offset];
+    const sOff = secretWordIdx * 16;
+    const v8 = cat.vecs16;
+    const s0=v8[sOff], s1=v8[sOff+1], s2=v8[sOff+2], s3=v8[sOff+3],
+          s4=v8[sOff+4], s5=v8[sOff+5], s6=v8[sOff+6], s7=v8[sOff+7],
+          s8=v8[sOff+8], s9=v8[sOff+9], s10=v8[sOff+10], s11=v8[sOff+11],
+          s12=v8[sOff+12], s13=v8[sOff+13], s14=v8[sOff+14], s15=v8[sOff+15];
+
+    const newDict = {};
+    const words = cat.words;
+    for (let i = 0; i < maxWords; i++) {
+      const wOff = i * 16;
+      const dot = s0*v8[wOff] + s1*v8[wOff+1] + s2*v8[wOff+2] + s3*v8[wOff+3] +
+                  s4*v8[wOff+4] + s5*v8[wOff+5] + s6*v8[wOff+6] + s7*v8[wOff+7] +
+                  s8*v8[wOff+8] + s9*v8[wOff+9] + s10*v8[wOff+10] + s11*v8[wOff+11] +
+                  s12*v8[wOff+12] + s13*v8[wOff+13] + s14*v8[wOff+14] + s15*v8[wOff+15];
+      newDict[words[i]] = Math.round(((dot / 16129) * 18 + 8) * 10) / 10;
+    }
+
+    for (let r = 0; r < 1000; r++) {
+      const wIdx = topArray[offset + r];
+      const rank = 1000 - r;
+      const temp = rank === 1000 ? 100.0 : Math.round((30 + (rank / 1000) * 65) * 100) / 100;
+      newDict[words[wIdx]] = [temp, rank];
+    }
+    dict = newDict;
+  }
 
   gameDictionary = dict;
   buildAccentInsensitiveIndex();

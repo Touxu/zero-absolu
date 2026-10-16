@@ -1,1 +1,20 @@
+# Modèle Word2Vec lourd (.bin) et caches Python
+models/
 *.bin
+__pycache__/
+*.pyc
+
+# Anciens dossiers de parties individuelles (remplacés par data/catalogue.json)
+parties/
+parties_pop/
+
+# Rapports d'audit et de tests des bots
+audits/
+rapport_*.txt
+
+# Fichiers système et éditeur
+.DS_Store
+.vscode/
+.idea/
+node_modules/
+.vercel/
