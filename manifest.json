@@ -1,0 +1,21 @@
+{
+  "name": "ZéroAbsolu — Du froid polaire à la fusion solaire",
+  "short_name": "ZéroAbsolu",
+  "description": "Jeu de déduction sémantique multijoueur. Trouvez le mot secret grâce à la proximité thermique des mots !",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#070b14",
+  "theme_color": "#070b14",
+  "categories": ["games", "entertainment"],
+  "lang": "fr",
+  "icons": [
+    {
+      "src": "favicon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

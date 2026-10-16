@@ -3,10 +3,35 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>ZéroAbsolu — v1.1</title>
+  <title>ZéroAbsolu — v1.2</title>
+
+  <!-- Métadonnées SEO & PWA -->
+  <meta name="description" content="ZéroAbsolu — Jeu de déduction sémantique multijoueur. Du froid polaire jusqu'à la fusion solaire, trouvez le mot secret grâce à la proximité thermique des mots !">
+  <meta name="theme-color" content="#070b14">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="ZéroAbsolu">
+
+  <!-- Open Graph / Réseaux Sociaux -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="ZéroAbsolu — Du froid polaire à la fusion solaire">
+  <meta property="og:description" content="Jeu de déduction sémantique multijoueur en direct. Devinez le mot secret par proximité sémantique !">
+  <meta property="og:url" content="https://zero-absolu.vercel.app/">
+  <meta property="og:site_name" content="ZéroAbsolu">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="ZéroAbsolu — Du froid polaire à la fusion solaire">
+  <meta name="twitter:description" content="Jeu de déduction sémantique multijoueur en direct.">
+
+  <!-- Favicon & Manifest -->
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="manifest" href="manifest.json">
+
+  <!-- Préchargement haute priorité du dictionnaire de jeu -->
+  <link rel="preload" href="data/catalogue.json" as="fetch" crossorigin>
+
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/mqtt@5.10.3/dist/mqtt.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.1"></script>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
   <script src="https://unpkg.com/@phosphor-icons/web@2.1.1"></script>
   <link rel="stylesheet" href="style.css">
@@ -67,7 +92,7 @@
             <div class="flex items-center gap-2">
               <h1 class="text-xl font-extrabold tracking-tight bg-gradient-to-r from-sky-300 via-purple-300 to-amber-300 bg-clip-text text-transparent">ZéroAbsolu</h1>
               <span id="versionBadgeTop" class="font-mono-num text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-gradient-to-r from-sky-500/20 to-amber-500/20 text-amber-300 border border-amber-400/30 shadow-sm">
-                v1.1
+                v1.2
               </span>
             </div>
             <p class="text-[11px] text-slate-400">Du froid polaire jusqu'à la fusion solaire</p>
@@ -99,7 +124,7 @@
               <label class="block text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1">Mot de passe (4 caract. min)</label>
               <div class="relative">
                 <i class="ph-duotone ph-lock-key text-lg text-slate-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
-                <input id="authPassword" type="password" maxlength="32" placeholder="Votre mot de passe..." autocomplete="current-password"
+                <input id="authPassword" type="password" maxlength="80" placeholder="Votre mot de passe..." autocomplete="current-password"
                   class="w-full bg-slate-950 border border-slate-800 focus:border-sky-500 rounded-xl pl-9 pr-10 py-2.5 text-sm font-medium focus:outline-none">
                 <button type="button" onclick="togglePasswordVisibility()" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300">
                   <i id="eyeIcon" class="ph-duotone ph-eye text-base"></i>
@@ -198,7 +223,7 @@
             <span id="cloudStatusDot" class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
             <span id="cloudStatusText">Supabase Cloud Actif</span>
           </span>
-          <span id="versionBadgeFooter" class="font-mono-num text-slate-400 font-semibold">v1.1 • Édition Solaire</span>
+          <span id="versionBadgeFooter" class="font-mono-num text-slate-400 font-semibold">v1.2 • Édition Solaire</span>
         </div>
       </div>
     </div>

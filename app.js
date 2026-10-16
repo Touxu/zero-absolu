@@ -72,7 +72,12 @@ let isAuthenticated = false;
 let authMode = "login";
 let currentTutoSlide = 0;
 
-let savedStats = JSON.parse(localStorage.getItem("zeroabsolu_profile_v2") || "{}");
+let savedStats = {};
+try {
+  savedStats = JSON.parse(localStorage.getItem("zeroabsolu_profile_v2") || "{}");
+} catch (_) {
+  savedStats = {};
+}
 
 let hasStartedSession = false, roomCode = null, isHost = true;
 let roundNumber = 1, playedGameIds = new Set(), currentGameId = pickUnplayedGameId(currentGameMode);
@@ -258,6 +263,15 @@ function togglePasswordVisibility() {
   $("eyeIcon").className = isPwd ? "ph-duotone ph-eye-slash text-base text-sky-400" : "ph-duotone ph-eye text-base";
 }
 
+async function hashPassword(pseudo, password) {
+  const cleanPseudo = (pseudo || "").trim().toLowerCase();
+  const raw = `zeroabsolu_salt_v2_${cleanPseudo}_${(password || "").trim()}`;
+  const msgBuffer = new TextEncoder().encode(raw);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", msgBuffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return "za2_" + hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
+}
+
 async function handleAuthSubmit(e) {
   e.preventDefault();
   const pseudo = $("authPseudo").value.trim();
@@ -287,6 +301,9 @@ async function handleAuthSubmit(e) {
   }
 
   try {
+    const isAlreadyHashed = pwd.startsWith("za2_") && pwd.length === 68 && /^[0-9a-f]+$/.test(pwd.slice(4));
+    const hashedPwd = isAlreadyHashed ? pwd : await hashPassword(cleanKey, pwd);
+
     const { data: existing, error: selErr } = await sbClient
       .from("players")
       .select("*")
@@ -312,7 +329,7 @@ async function handleAuthSubmit(e) {
       const newRow = {
         pseudo_lower: cleanKey,
         pseudo_display: pseudo,
-        pin_code: pwd,
+        pin_code: hashedPwd,
         points: 0,
         xp: 0,
         wins: 0,
@@ -330,7 +347,7 @@ async function handleAuthSubmit(e) {
       }
 
       isNewAccount = true;
-      applyCloudProfileToSelf(pseudo, pwd, newRow);
+      applyCloudProfileToSelf(pseudo, hashedPwd, newRow);
     } else {
       if (!existing) {
         $("authSubmitBtn").disabled = false;
@@ -338,14 +355,27 @@ async function handleAuthSubmit(e) {
         triggerInputShake($("tabRegisterBtn"));
         return;
       }
-      if (existing.pin_code !== pwd) {
+
+      let isMatch = false;
+      if (existing.pin_code === hashedPwd) {
+        isMatch = true;
+      } else if (existing.pin_code === pwd) {
+        // Ancien compte v1.1 en clair : validé et mis à niveau automatiquement vers SHA-256
+        isMatch = true;
+        try {
+          await sbClient.from("players").update({ pin_code: hashedPwd }).eq("pseudo_lower", cleanKey);
+          existing.pin_code = hashedPwd;
+        } catch (_) {}
+      }
+
+      if (!isMatch) {
         $("authSubmitBtn").disabled = false;
         errEl.textContent = "Mot de passe incorrect pour ce pseudo.";
         triggerInputShake($("authPassword"));
         return;
       }
 
-      applyCloudProfileToSelf(existing.pseudo_display || pseudo, pwd, existing);
+      applyCloudProfileToSelf(existing.pseudo_display || pseudo, hashedPwd, existing);
     }
 
     $("authSubmitBtn").disabled = false;
@@ -691,6 +721,7 @@ function setStatsMinimized(min) {
 }
 
 window.addEventListener("DOMContentLoaded", () => {
+  document.title = `ZéroAbsolu — ${APP_VERSION}`;
   $("versionBadgeTop").textContent = APP_VERSION;
   $("versionBadgeFooter").textContent = `${APP_VERSION} • ${APP_EDITION}`;
   $("cloudStatusText").textContent = sbClient ? "Supabase Cloud Actif" : "Clés Supabase manquantes";
