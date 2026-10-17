@@ -98,19 +98,20 @@ def is_noise_word(w, secret):
 
 def curate_top_list(secret, sorted_indices, words, target_count=999):
     clean = []
-    seen_stems = set()
+    secret_norm = strip_accents(secret).replace("-", "")
+    seen_stems = {secret_norm}
     seen_roots_top = set()
     deferred = []
 
-    secret_stem = strip_accents(secret).replace("-", "")
-    if len(secret_stem) >= 5: secret_stem = secret_stem[:4]
+    secret_stem = secret_norm[:4] if len(secret_norm) >= 5 else secret_norm
 
     for idx in sorted_indices:
         w = words[idx]
         if w == secret: continue
+        norm = strip_accents(w).replace("-", "")
+        if norm == secret_norm: continue
         if is_noise_word(w, secret): continue
 
-        norm = strip_accents(w).replace("-", "")
         if norm in seen_stems: continue
         seen_stems.add(norm)
 

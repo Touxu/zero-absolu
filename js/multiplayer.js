@@ -105,6 +105,10 @@ export function startSoloMode() {
   disconnectMultiplayer();
   state.isHost = true;
   state.roomCode = null;
+  if (state.players[state.myId]) {
+    state.players[state.myId].sessionPoints = 0;
+    state.players[state.myId].sessionWins = 0;
+  }
   $("roomCodePill").classList.add("hidden");
   window.closeOnboardingModal?.();
   window.updateLiveTicker?.(`Mode Solo (${MODE_CONFIG[state.currentGameMode].label}) • Manche #${state.roundNumber}`);
@@ -117,6 +121,10 @@ export function startCreateRoom() {
 
   state.isHost = true;
   state.roundNumber = 1;
+  if (state.players[state.myId]) {
+    state.players[state.myId].sessionPoints = 0;
+    state.players[state.myId].sessionWins = 0;
+  }
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ";
   state.roomCode = Array.from({ length: 4 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
   navigator.clipboard?.writeText(state.roomCode).catch(() => {});
@@ -197,6 +205,10 @@ export function completeJoinSuccess(snapshot) {
   window.closeOnboardingModal?.();
 
   const me = state.players[state.myId];
+  if (me) {
+    me.sessionPoints = 0;
+    me.sessionWins = 0;
+  }
   state.players = { ...(snapshot.players || {}), [state.myId]: me };
   state.roomBestScorePct = snapshot.roomBestScorePct || 0;
   state.roomBestRank = snapshot.roomBestRank || 0;
@@ -224,6 +236,24 @@ export function handleNetworkPayload(data) {
       });
       window.renderLeaderboard?.();
     }
+    if (data.guesses && Array.isArray(data.guesses)) {
+      data.guesses.forEach(g => {
+        if (!state.guesses.some(localG => localG.word === g.word)) {
+          window.applySharedGuess?.({
+            type: "SHARED_GUESS",
+            playerId: g.finderId,
+            pseudo: g.finderPseudo,
+            word: g.word,
+            temp: g.temp,
+            rank: g.rank,
+            scorePct: g.scorePct,
+            isWin: g.isWin || g.rank === 1000,
+            isTop10: g.isTop10,
+            ts: g.ts
+          }, false);
+        }
+      });
+    }
     return;
   }
 
@@ -239,6 +269,9 @@ export function handleNetworkPayload(data) {
       state.players[data.player.id] = {
         ...data.player,
         pseudo: String(data.player.pseudo || "Joueur").slice(0, 16),
+        sessionPoints: Number(data.player.sessionPoints) || 0,
+        sessionWins: Number(data.player.sessionWins) || 0,
+        gold: Number(data.player.gold) || 0,
         bestScorePct: state.players[data.player.id]?.bestScorePct || 0,
         bestRank: state.players[data.player.id]?.bestRank || 0,
         attempts: state.players[data.player.id]?.attempts || 0

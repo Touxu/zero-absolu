@@ -68,6 +68,9 @@ export function loginAsGuest() {
     id: state.myId,
     pseudo: guestPseudo,
     points: 0,
+    gold: 50,
+    sessionPoints: 0,
+    sessionWins: 0,
     xp: 0,
     wins: 0,
     totalAttempts: 0,
@@ -247,10 +250,14 @@ export function applyCloudProfileToSelf(pseudo, pwd, row) {
   localStorage.setItem("zeroabsolu_pseudo", state.myPseudo);
   localStorage.setItem("zeroabsolu_pwd", state.myPassword);
 
+  const pPts = Number(row.points) || 0;
   state.players[state.myId] = {
     id: state.myId,
     pseudo: state.myPseudo,
-    points: Number(row.points) || 0,
+    points: pPts,
+    gold: Number(row.gold) || (state.savedStats.gold ?? pPts) || 50,
+    sessionPoints: 0,
+    sessionWins: 0,
     xp: Number(row.xp) || 0,
     wins: Number(row.wins) || 0,
     totalAttempts: Number(row.total_attempts) || 0,

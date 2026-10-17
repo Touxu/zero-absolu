@@ -160,9 +160,19 @@ export function highlightExistingWordRow(word) {
 
 export function showVictoryBanner(winner, secretWord, total, isGiveUp = false, timeSeconds = null) {
   toggleModal("victoryBanner", true);
-  $("victoryTitle").textContent = `Réponse : ${secretWord.toUpperCase()} (100%)`;
   const timeStr = timeSeconds ? ` • ⏱️ ${formatDuration(timeSeconds)}` : "";
-  $("victorySub").textContent = isGiveUp ? "Manche révélée" : `Fusion atteinte par ${winner} (${total} mots${timeStr})`;
+  const isMe = (winner === state.myPseudo) || (!state.roomCode && !isGiveUp);
+
+  if (isGiveUp) {
+    $("victoryTitle").innerHTML = `<i class="ph-bold ph-flag text-rose-300 mr-1.5"></i>Manche révélée`;
+    $("victorySub").textContent = `Le mot secret était ${secretWord.toUpperCase()} (${total} mots tentés)`;
+  } else if (isMe) {
+    $("victoryTitle").innerHTML = `<i class="ph-fill ph-trophy text-amber-300 mr-1.5 animate-bounce"></i>Victoire ! Vous avez trouvé le mot !`;
+    $("victorySub").textContent = `100% Fusion : ${secretWord.toUpperCase()} découvert en ${total} mots${timeStr} (+20 ⚡)`;
+  } else {
+    $("victoryTitle").innerHTML = `<i class="ph-fill ph-medal text-indigo-300 mr-1.5"></i>Manche remportée par ${escapeHTML(winner)}`;
+    $("victorySub").textContent = `Le mot secret était ${secretWord.toUpperCase()} (${total} mots tentés${timeStr})`;
+  }
 }
 
 export function renderRowHTML(g, isNewWord = false) {
@@ -248,7 +258,19 @@ export function updateLiveTicker(msg) {
 
 export function renderLeaderboard() {
   const all = Object.values(state.players);
-  const sorted = [...all].sort((a, b) => (b.points - a.points) || (b.wins - a.wins));
+  const isMulti = Boolean(state.roomCode);
+
+  const sorted = [...all].sort((a, b) => {
+    if (isMulti) {
+      const pDiff = (b.sessionPoints || 0) - (a.sessionPoints || 0);
+      if (pDiff !== 0) return pDiff;
+      const wDiff = (b.sessionWins || 0) - (a.sessionWins || 0);
+      if (wDiff !== 0) return wDiff;
+      return (b.bestScorePct || 0) - (a.bestScorePct || 0);
+    }
+    return (b.points - a.points) || (b.wins - a.wins);
+  });
+
   const leader = [...all].sort((a, b) => (b.bestScorePct || 0) - (a.bestScorePct || 0))[0];
 
   $("liveLeaderBadge").innerHTML = (leader && leader.bestScorePct > 0)
@@ -256,11 +278,25 @@ export function renderLeaderboard() {
     : `<i class="ph-fill ph-crown text-amber-400 text-xs"></i><span>${escapeHTML(sorted[0]?.pseudo || "--")}</span>`;
 
   const medalColors = ["text-amber-400", "text-slate-300", "text-amber-600"];
+  const hasScores = isMulti
+    ? sorted.some(p => (p.sessionPoints || 0) > 0 || (p.sessionWins || 0) > 0)
+    : sorted.some(p => (p.points || 0) > 0);
 
   $("leaderboardList").innerHTML = sorted.map((p, i) => {
     const isMe = p.id === state.myId;
     const lvl = getLevelInfo(p.xp || 0);
-    const medalHTML = i < 3 ? `<i class="ph-fill ph-medal text-sm ${medalColors[i]}"></i>` : `<span class="text-xs font-mono-num text-slate-500">${i + 1}.</span>`;
+    const scoreVal = isMulti ? (p.sessionPoints || 0) : (p.points || 0);
+    const winsVal = isMulti ? (p.sessionWins || 0) : (p.wins || 0);
+
+    let medalHTML;
+    if (!hasScores || (scoreVal === 0 && winsVal === 0)) {
+      medalHTML = `<span class="text-xs font-mono-num text-slate-500 font-bold">-</span>`;
+    } else if (i < 3) {
+      medalHTML = `<i class="ph-fill ph-medal text-sm ${medalColors[i]}"></i>`;
+    } else {
+      medalHTML = `<span class="text-xs font-mono-num text-slate-500">${i + 1}.</span>`;
+    }
+
     const bestInfo = p.bestRank ? `${getReadableTopLabel(p.bestRank)} (${formatPct(p.bestScorePct)})` : p.bestScorePct > 0 ? formatPct(p.bestScorePct) : "--";
     return `
       <div onclick="openStatsModal('${escapeHTML(p.id)}')" class="cursor-pointer flex items-center justify-between px-2.5 py-1.5 rounded-xl border transition hover:border-sky-500/50 ${isMe ? 'bg-sky-950/30 border-sky-500/40' : 'bg-slate-800/40 border-slate-800'}">
@@ -273,8 +309,8 @@ export function renderLeaderboard() {
           </div>
         </div>
         <div class="text-right shrink-0">
-          <div class="font-mono-num text-xs font-extrabold text-amber-400 flex items-center justify-end gap-0.5"><i class="ph-fill ph-lightning text-[10px]"></i>${p.points}</div>
-          <div class="text-[10px] text-slate-400 flex items-center justify-end gap-0.5"><i class="ph-fill ph-sun-dim text-amber-300 text-[10px]"></i>${p.wins}</div>
+          <div class="font-mono-num text-xs font-extrabold text-amber-400 flex items-center justify-end gap-0.5"><i class="ph-fill ph-lightning text-[10px]"></i>${scoreVal}</div>
+          <div class="text-[10px] text-slate-400 flex items-center justify-end gap-0.5"><i class="ph-fill ph-sun-dim text-amber-300 text-[10px]"></i>${winsVal}</div>
         </div>
       </div>`;
   }).join("");
@@ -481,7 +517,22 @@ export function triggerSolarFusionExplosion(targetEl) {
 }
 
 export function openStatsModal(targetId = state.myId) {
-  state.selectedStatsPlayerId = state.players[targetId] ? targetId : state.myId;
+  if (state.players[targetId]) {
+    state.selectedStatsPlayerId = targetId;
+  } else {
+    const found = Object.values(state.players).find(pl => pl.id === targetId || pl.pseudo === targetId);
+    if (found) {
+      state.selectedStatsPlayerId = found.id;
+    } else {
+      const cloud = state.globalLeaderboardCache.find(cp => cp.id === targetId || cp.pseudo === targetId);
+      if (cloud) {
+        state.players[cloud.id || targetId] = { ...cloud };
+        state.selectedStatsPlayerId = cloud.id || targetId;
+      } else {
+        state.selectedStatsPlayerId = state.myId;
+      }
+    }
+  }
   state.showingGradesCatalog = false;
   state.profileActiveTab = state.profileActiveTab || "stats";
   updateProfileViewsVisibility();
@@ -688,16 +739,31 @@ export function renderHistoryViewContent() {
 }
 
 export function renderStatsModalContent() {
-  const roomPlayers = Object.values(state.players).sort((a, b) => (b.xp - a.xp) || (b.points - a.points));
-  const listSource = (state.leaderboardScope === "global" && state.globalLeaderboardCache.length) ? state.globalLeaderboardCache : roomPlayers;
+  const isMulti = Boolean(state.roomCode);
+  const isGlobal = state.leaderboardScope === "global";
+
+  const roomPlayers = Object.values(state.players).sort((a, b) => {
+    if (isMulti) {
+      const pDiff = (b.sessionPoints || 0) - (a.sessionPoints || 0);
+      if (pDiff !== 0) return pDiff;
+      const wDiff = (b.sessionWins || 0) - (a.sessionWins || 0);
+      if (wDiff !== 0) return wDiff;
+      return (b.bestScorePct || 0) - (a.bestScorePct || 0);
+    }
+    return (b.points - a.points) || (b.wins - a.wins);
+  });
+
+  const listSource = (isGlobal && state.globalLeaderboardCache.length)
+    ? state.globalLeaderboardCache
+    : roomPlayers;
+
   const p = state.players[state.selectedStatsPlayerId] || state.players[state.myId];
   if (!p) return;
 
-  $("statsPlayerTabs").innerHTML = roomPlayers.map(pl => `
-    <button onclick="selectedStatsPlayerId='${escapeHTML(pl.id)}'; renderStatsModalContent();"
-      class="px-3 py-1 rounded-xl text-xs font-bold transition shrink-0 ${pl.id === p.id ? 'bg-sky-500 text-slate-950' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}">
-      ${escapeHTML(pl.pseudo)}
-    </button>`).join("");
+  if ($("statsPlayerTabs")) {
+    $("statsPlayerTabs").innerHTML = "";
+    $("statsPlayerTabs").classList.add("hidden");
+  }
 
   const lvl = getLevelInfo(p.xp || 0);
   $("profileLevelNum").textContent = lvl.level;
@@ -730,16 +796,18 @@ export function renderStatsModalContent() {
 
   const totalAtt = p.totalAttempts || p.attempts || 0, hotCount = p.hotWordsFound || 0;
   const bestTimeStr = p.bestTimeSeconds ? formatDuration(p.bestTimeSeconds) : "--";
-  const avgTimeStr = (p.wins > 0 && p.totalWinTimeSeconds) ? formatDuration(Math.round(p.totalWinTimeSeconds / p.wins)) : "--";
+  const avgTimeStr = p.avgTimeSeconds ? formatDuration(p.avgTimeSeconds) : (p.bestTimeSeconds ? formatDuration(Math.round(p.bestTimeSeconds * 1.3)) : "--");
+  const goldVal = p.gold ?? (p.points || 0);
+
   const cards = [
     ["ph-sun-dim", "Victoires", p.wins || 0, "text-amber-300"],
-    ["ph-crosshair", "Mots testés", totalAtt, "text-white"],
+    ["ph-lightning", "Points", p.points || 0, "text-amber-400"],
+    ["ph-coins", "Or (Indices)", `${goldVal} 🪙`, "text-amber-300"],
     ["ph-flame", "Top 1000", hotCount, "text-orange-400"],
     ["ph-meteor", "Top 10", p.top10Found || 0, "text-red-400"],
     ["ph-chart-polar", "Précision", `${totalAtt > 0 ? Math.round((hotCount / totalAtt) * 100) : 0}%`, "text-sky-400"],
-    ["ph-lightning", "Points", p.points || 0, "text-amber-400"],
     ["ph-timer", "Record Vitesse", bestTimeStr, "text-emerald-400"],
-    ["ph-hourglass-medium", "Temps Moyen", avgTimeStr, "text-indigo-400"]
+    ["ph-hourglass-medium", "Temps Moyen", avgTimeStr, "text-teal-400"]
   ];
   $("profileStatsGrid").innerHTML = cards.map(([ic, lbl, val, col]) => `
     <div class="bg-slate-800/40 border border-slate-800 rounded-xl p-2.5 text-center">
@@ -747,23 +815,54 @@ export function renderStatsModalContent() {
       <strong class="font-mono-num text-sm sm:text-base font-extrabold ${col} block mt-0.5">${val}</strong>
     </div>`).join("");
 
+  const hasScores = isGlobal
+    ? listSource.some(pl => (pl.points || 0) > 0)
+    : (isMulti ? listSource.some(pl => (pl.sessionPoints || 0) > 0 || (pl.sessionWins || 0) > 0) : listSource.some(pl => (pl.points || 0) > 0));
+
   $("modalLeaderboardList").innerHTML = listSource.map((pl, i) => {
     const plLvl = getLevelInfo(pl.xp || 0);
     const rankColors = ["text-amber-400", "text-slate-300", "text-amber-600"];
-    const rankBadge = i < 3 ? `<i class="ph-fill ph-medal text-sm ${rankColors[i]}"></i>` : `<span class="text-xs font-mono-num text-slate-500">${i + 1}.</span>`;
+    const scoreVal = (!isGlobal && isMulti) ? (pl.sessionPoints || 0) : (pl.points || 0);
+    const winsVal = (!isGlobal && isMulti) ? (pl.sessionWins || 0) : (pl.wins || 0);
+    const isSelected = pl.id === p.id || pl.pseudo === p.pseudo;
+    const isMe = pl.id === state.myId;
+
+    let rankBadge;
+    if (!hasScores || (scoreVal === 0 && winsVal === 0)) {
+      rankBadge = `<span class="text-xs font-mono-num text-slate-500 font-bold">-</span>`;
+    } else if (i < 3) {
+      rankBadge = `<i class="ph-fill ph-medal text-sm ${rankColors[i]}"></i>`;
+    } else {
+      rankBadge = `<span class="text-xs font-mono-num text-slate-500">${i + 1}.</span>`;
+    }
+
+    const subDetail = (!isGlobal && isMulti)
+      ? `${winsVal} vict. session`
+      : `${pl.wins || 0} vict.`;
+
+    const secondaryVal = (!isGlobal && isMulti)
+      ? `${pl.points || 0} pts globaux`
+      : `${pl.xp || 0} XP`;
+
     return `
-      <div class="flex items-center justify-between px-3 py-2 rounded-xl border transition ${pl.pseudo === p.pseudo ? 'bg-sky-950/40 border-sky-500/50' : 'bg-slate-800/40 border-slate-800'}">
+      <div onclick="openStatsModal('${escapeHTML(pl.id || pl.pseudo)}')"
+           title="Cliquer pour afficher le profil de ${escapeHTML(pl.pseudo)}"
+           class="cursor-pointer flex items-center justify-between px-3 py-2 rounded-xl border transition hover:border-sky-500/50 ${isSelected ? 'bg-sky-950/40 border-sky-500/60 shadow-sm ring-1 ring-sky-500/30' : 'bg-slate-800/40 border-slate-800 hover:bg-slate-800/70'}">
         <div class="flex items-center gap-2.5 min-w-0">
           <span class="w-4 text-center flex justify-center">${rankBadge}</span>
           <span class="text-[10px] font-extrabold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-1.5 py-0.5 rounded">Niv.${plLvl.level}</span>
           <div class="min-w-0">
-            <span class="font-bold text-xs text-white truncate block">${escapeHTML(pl.pseudo)}</span>
-            <span class="text-[10px] text-slate-400 flex items-center gap-1"><i class="ph-duotone ${plLvl.icon} ${plLvl.color}"></i>${plLvl.title} • ${pl.wins || 0} vict.</span>
+            <div class="flex items-center gap-1.5">
+              <span class="font-bold text-xs text-white truncate block">${escapeHTML(pl.pseudo)}</span>
+              ${isSelected ? '<span class="text-[9px] text-sky-400 font-semibold">• Profil affiché</span>' : ''}
+              ${isMe ? '<span class="text-[9px] text-slate-400">(Vous)</span>' : ''}
+            </div>
+            <span class="text-[10px] text-slate-400 flex items-center gap-1"><i class="ph-duotone ${plLvl.icon} ${plLvl.color}"></i>${plLvl.title} • ${subDetail}</span>
           </div>
         </div>
         <div class="text-right shrink-0 font-mono-num">
-          <div class="text-xs font-extrabold text-amber-400">${pl.points || 0} ⚡</div>
-          <div class="text-[10px] text-sky-400">${pl.xp || 0} XP</div>
+          <div class="text-xs font-extrabold text-amber-400 flex items-center justify-end gap-1">${scoreVal} ⚡</div>
+          <div class="text-[10px] text-slate-400">${secondaryVal}</div>
         </div>
       </div>`;
   }).join("");
@@ -966,18 +1065,20 @@ export function updateLobbyHeaderUI() {
   if ($("lobbyLevelBadge")) $("lobbyLevelBadge").textContent = `N${lvl.level}`;
   if ($("lobbyPseudoDisplay")) $("lobbyPseudoDisplay").textContent = me.pseudo || state.myPseudo;
   if ($("lobbyGradeIcon")) $("lobbyGradeIcon").innerHTML = `<i class="ph-duotone ${lvl.icon} text-xs ${lvl.color}" title="${lvl.title}"></i>`;
-  if ($("lobbyStatsDisplay")) $("lobbyStatsDisplay").textContent = `${me.points || 0} ⚡`;
+  const goldVal = me.gold ?? (me.points || 0);
+  if ($("lobbyStatsDisplay")) $("lobbyStatsDisplay").innerHTML = `${me.points || 0} ⚡ <span class="text-amber-300 font-bold ml-1">${goldVal} 🪙</span>`;
   if ($("lobbyXpBar")) $("lobbyXpBar").style.width = `${Math.max(4, lvl.progressPct)}%`;
   window.updateModeUI?.(state.currentGameMode);
 }
 
 export function updateHintButtonUI() {
   const me = state.players[state.myId];
-  const hasPts = me && me.points >= HINT_COST;
-  $("hintBtn").className = hasPts
+  const gold = (me && me.gold != null) ? me.gold : (me?.points || 0);
+  const hasGold = gold >= HINT_COST;
+  $("hintBtn").className = hasGold
     ? `flex items-center justify-center gap-1 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/50 text-amber-300 text-xs font-bold px-2 py-1 rounded-lg transition shadow-sm shrink-0 ${state.roundFinished ? 'opacity-50' : ''}`
     : "flex items-center justify-center gap-1 bg-slate-900/70 border border-slate-800 text-slate-500 text-xs font-semibold px-2 py-1 rounded-lg transition opacity-75 shrink-0";
-  $("hintBtnContent").innerHTML = `<i class="ph-duotone ${hasPts ? 'ph-lightbulb-filament text-amber-300' : 'ph-lock-key text-slate-500'} text-sm"></i><span class="font-mono-num text-[11px]">${HINT_COST}</span>`;
+  $("hintBtnContent").innerHTML = `<i class="ph-duotone ${hasGold ? 'ph-lightbulb-filament text-amber-300' : 'ph-lock-key text-slate-500'} text-sm"></i><span class="font-mono-num text-[11px]">${HINT_COST} 🪙</span>`;
 }
 
 export function openConfirmModal({ icon, colorCls, title, desc, btnText, onConfirm }) {

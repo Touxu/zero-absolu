@@ -114,6 +114,9 @@ export function initSelfPlayer() {
     id: state.myId,
     pseudo: state.myPseudo || "Joueur",
     points: cur.points ?? state.savedStats.points ?? 0,
+    gold: cur.gold ?? state.savedStats.gold ?? (state.savedStats.points || 50),
+    sessionPoints: cur.sessionPoints ?? 0,
+    sessionWins: cur.sessionWins ?? 0,
     xp: cur.xp ?? state.savedStats.xp ?? 0,
     wins: cur.wins ?? state.savedStats.wins ?? 0,
     totalAttempts: cur.totalAttempts ?? state.savedStats.totalAttempts ?? 0,
@@ -135,6 +138,7 @@ export function saveLocalProgress() {
   if (!me) return;
   state.savedStats = {
     points: me.points,
+    gold: me.gold ?? me.points ?? 50,
     xp: me.xp,
     wins: me.wins,
     totalAttempts: me.totalAttempts,
@@ -144,8 +148,9 @@ export function saveLocalProgress() {
     totalWinTimeSeconds: me.totalWinTimeSeconds
   };
   localStorage.setItem("zeroabsolu_profile_v2", JSON.stringify(state.savedStats));
-  $("headerPoints").textContent = me.points;
-  $("headerLevelBadge").textContent = `N${getLevelInfo(me.xp).level}`;
+  if ($("headerPoints")) $("headerPoints").textContent = me.points;
+  if ($("headerGold")) $("headerGold").textContent = me.gold ?? me.points ?? 50;
+  if ($("headerLevelBadge")) $("headerLevelBadge").textContent = `N${getLevelInfo(me.xp).level}`;
 }
 
 // =========================================================================
@@ -284,7 +289,15 @@ export function handleGuess(e) {
     vibrateDevice([30, 50, 30]);
     triggerInputShake($("guessForm"));
     const who = existing.finderId === state.myId ? "vous" : existing.finderPseudo;
-    showToast(`« ${existing.word} » déjà trouvé par ${who} (#${existing.num})`, "rose");
+    if (existing.isWin) {
+      if (existing.finderId === state.myId) {
+        showToast(`Mot secret « ${existing.word.toUpperCase()} » déjà trouvé par vous !`, "amber");
+      } else {
+        showToast(`Bien joué ! « ${existing.word.toUpperCase()} » trouvé (déjà remporté par ${who})`, "amber");
+      }
+    } else {
+      showToast(`« ${existing.word} » déjà trouvé par ${who} (#${existing.num})`, "rose");
+    }
     updateRecentWordBoxVisibility(existing, false);
     highlightExistingWordRow(existing.word);
     return;
@@ -307,27 +320,33 @@ export function handleGuess(e) {
   const surgeGain = checkPowerSurge(rank, scorePct);
 
   let pointsEarned = 0;
+  let goldEarned = 0;
   let xpEarned = 2;
   let isNewRecord = false;
 
   if (!state.roundFinished) {
     if (isWin) {
       pointsEarned += 20 + (state.guesses.length < 25 ? 5 : 0);
+      goldEarned += 25;
       xpEarned = 45;
     } else if (isTop10) {
       pointsEarned += 10;
+      goldEarned += 10;
       xpEarned = 25;
     } else if (rank >= 900) {
       pointsEarned += 5;
+      goldEarned += 5;
       xpEarned = 12;
     } else if (rank !== null) {
       pointsEarned += 2;
+      goldEarned += 2;
       xpEarned = 5;
     }
 
     if (scorePct > state.roomBestScorePct && rank !== null && !isWin) {
       isNewRecord = true;
       pointsEarned += 3;
+      goldEarned += 3;
       xpEarned += 5;
     }
   }
@@ -339,6 +358,8 @@ export function handleGuess(e) {
   if (rank !== null) me.hotWordsFound = (me.hotWordsFound || 0) + 1;
   if (isTop10 || isWin) me.top10Found = (me.top10Found || 0) + 1;
   me.points += pointsEarned;
+  me.gold = (me.gold ?? me.points ?? 50) + goldEarned;
+  me.sessionPoints = (me.sessionPoints || 0) + pointsEarned;
   me.xp = (me.xp || 0) + xpEarned;
   if (scorePct > (me.bestScorePct || 0)) me.bestScorePct = scorePct;
   if (rank && rank > me.bestRank) me.bestRank = rank;
@@ -350,6 +371,7 @@ export function handleGuess(e) {
 
   if (isWin && !state.roundFinished) {
     me.wins += 1;
+    me.sessionWins = (me.sessionWins || 0) + 1;
     if (durationSeconds) {
       me.totalWinTimeSeconds = (me.totalWinTimeSeconds || 0) + durationSeconds;
       if (!me.bestTimeSeconds || durationSeconds < me.bestTimeSeconds) {
@@ -377,6 +399,7 @@ export function handleGuess(e) {
   syncProfileToSupabase();
   updateHintButtonUI();
 
+  const nowTs = Date.now();
   const payload = {
     type: "SHARED_GUESS",
     playerId: state.myId,
@@ -392,6 +415,9 @@ export function handleGuess(e) {
     pointsEarned,
     durationSeconds,
     totalPoints: me.points,
+    gold: me.gold,
+    sessionPoints: me.sessionPoints,
+    sessionWins: me.sessionWins,
     totalXp: me.xp,
     totalWins: me.wins,
     totalAttempts: me.totalAttempts,
@@ -401,7 +427,8 @@ export function handleGuess(e) {
     totalWinTimeSeconds: me.totalWinTimeSeconds,
     bestScorePct: me.bestScorePct,
     bestRank: me.bestRank,
-    playerAttempts: me.attempts
+    playerAttempts: me.attempts,
+    ts: nowTs
   };
 
   applySharedGuess(payload, true);
@@ -410,7 +437,45 @@ export function handleGuess(e) {
 }
 
 export function applySharedGuess(data, isLocal) {
-  if (state.guesses.some(g => g.word === data.word)) return;
+  const existingWord = state.guesses.find(g => g.word === data.word);
+  if (existingWord) {
+    // Arbitrage d'une éventuelle victoire simultanée (race condition réseau)
+    if (data.isWin && existingWord.isWin) {
+      const incomingTs = data.ts || 0;
+      const existingTs = existingWord.ts || 0;
+      if (!isLocal && incomingTs && existingTs && incomingTs < existingTs) {
+        // Le joueur distant a soumis le mot secret une fraction de seconde plus tôt !
+        const prevWinnerId = existingWord.finderId;
+        const prevWinnerPseudo = existingWord.finderPseudo;
+
+        existingWord.finderId = data.playerId;
+        existingWord.finderPseudo = data.pseudo;
+        existingWord.ts = incomingTs;
+
+        if (prevWinnerId === state.myId) {
+          const me = state.players[state.myId];
+          if (me) {
+            me.wins = Math.max(0, (me.wins || 1) - 1);
+            me.sessionWins = Math.max(0, (me.sessionWins || 1) - 1);
+            saveLocalProgress();
+            syncProfileToSupabase();
+          }
+          showToast(`⚡ ${data.pseudo} a été plus rapide de ${Math.abs(existingTs - incomingTs)}ms ! (2e place)`, "amber");
+        }
+        if (state.players[data.playerId]) {
+          state.players[data.playerId].wins = (state.players[data.playerId].wins || 0) + 1;
+          state.players[data.playerId].sessionWins = (state.players[data.playerId].sessionWins || 0) + 1;
+        }
+        showVictoryBanner(data.pseudo, data.word, state.guesses.length, false, data.durationSeconds);
+        updateLiveTicker(`${data.pseudo} a remporté la manche face à ${prevWinnerPseudo} !`);
+        renderLeaderboard();
+        renderGuesses();
+      } else if (!isLocal) {
+        showToast(`⚡ ${data.pseudo} a aussi trouvé le mot (2e place) !`, "sky");
+      }
+    }
+    return;
+  }
   const scorePct = data.scorePct ?? computeUnifiedScorePct(data.temp, data.rank);
 
   state.players[data.playerId] = {
@@ -418,6 +483,9 @@ export function applySharedGuess(data, isLocal) {
     id: data.playerId,
     pseudo: data.pseudo,
     points: data.totalPoints,
+    gold: data.gold ?? state.players[data.playerId]?.gold ?? 0,
+    sessionPoints: data.sessionPoints ?? state.players[data.playerId]?.sessionPoints ?? 0,
+    sessionWins: data.sessionWins ?? state.players[data.playerId]?.sessionWins ?? 0,
     xp: data.totalXp ?? data.totalPoints,
     wins: data.totalWins,
     totalAttempts: data.totalAttempts ?? data.playerAttempts,
@@ -442,7 +510,8 @@ export function applySharedGuess(data, isLocal) {
     isWin: data.isWin,
     isTop10: data.isTop10,
     finderId: data.playerId,
-    finderPseudo: data.pseudo
+    finderPseudo: data.pseudo,
+    ts: data.ts || Date.now()
   };
   state.guesses.push(guessObj);
   state.guesses.sort((a, b) => (b.scorePct - a.scorePct) || (b.temp - a.temp));
@@ -552,10 +621,11 @@ export function handleResumeSessionClick(btnEl) {
 export function useHint() {
   if (state.roundFinished) return showToast("Manche terminée : passez à la suivante !", "amber");
   const me = state.players[state.myId];
-  if (!me || me.points < HINT_COST) {
+  const gold = me?.gold ?? (me?.points || 0);
+  if (!me || gold < HINT_COST) {
     vibrateDevice(50);
     triggerInputShake($("hintBtn"));
-    return showToast(`Il manque ${HINT_COST - (me?.points || 0)} ⚡ (Coût : ${HINT_COST} ⚡)`, "rose");
+    return showToast(`Il manque ${HINT_COST - gold} 🪙 d'or (Coût : ${HINT_COST} 🪙)`, "rose");
   }
   const targetRank = state.roomBestRank > 0 ? Math.min(998, Math.floor((state.roomBestRank + 1000) / 2)) : 600;
   const guessedSet = new Set(state.guesses.map(g => g.word));
@@ -572,13 +642,13 @@ export function useHint() {
     }
   }
   if (!bestCandidate) return;
-  me.points -= HINT_COST;
+  me.gold = (me.gold ?? me.points ?? 50) - HINT_COST;
   saveLocalProgress();
   syncProfileToSupabase();
   updateHintButtonUI();
   soundManager.playHintSound();
   $("wordInput").value = bestCandidate;
-  showToast(`Indice débloqué (-${HINT_COST} ⚡) : « ${bestCandidate} »`, "amber");
+  showToast(`Indice débloqué (-${HINT_COST} 🪙) : « ${bestCandidate} »`, "amber");
   handleGuess(new Event("submit"));
 }
 

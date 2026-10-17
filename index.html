@@ -576,7 +576,11 @@
           <i class="ph-bold ph-x text-base"></i>
         </button>
 
-        <div id="statsPlayerTabs" class="flex items-center gap-1.5 overflow-x-auto pb-2 mb-3 border-b border-slate-800 pr-8 shrink-0"></div>
+        <div class="flex items-center justify-between pb-3 mb-2 border-b border-slate-800 shrink-0 pr-8">
+          <span class="text-xs font-extrabold text-slate-300 flex items-center gap-1.5">
+            <i class="ph-duotone ph-user-circle text-base text-sky-400"></i> Profil & Classements
+          </span>
+        </div>
 
         <div class="overflow-y-auto pr-1 flex flex-col gap-3.5">
           <div class="bg-slate-950/70 border border-slate-800/90 rounded-2xl p-3.5">
@@ -727,18 +731,21 @@
       </div>
 
       <div class="flex items-center gap-1 sm:gap-1.5 shrink-0">
-        <button onclick="openStatsModal(myId)" class="flex items-center gap-1 sm:gap-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-lg transition shrink-0 active:scale-95">
+        <button onclick="openStatsModal()" title="Profil et progression" class="flex items-center gap-1 sm:gap-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-lg transition shrink-0 active:scale-95">
           <span id="headerLevelBadge" class="text-[9px] sm:text-[10px] font-extrabold bg-sky-500/20 text-sky-300 px-1.5 py-0.2 rounded">N1</span>
           <i class="ph-fill ph-lightning text-xs text-amber-400"></i>
           <span id="headerPoints" class="font-mono-num text-[11px] sm:text-xs font-extrabold text-amber-400">0</span>
+          <span class="text-slate-600 hidden sm:inline">|</span>
+          <i class="ph-duotone ph-coins text-xs text-amber-300 ml-0.5"></i>
+          <span id="headerGold" class="font-mono-num text-[11px] sm:text-xs font-extrabold text-amber-300">50</span>
         </button>
         <button id="soundToggleBtn" onclick="soundManager.toggleMute()" title="Couper les sons" class="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center bg-amber-500/15 border border-amber-500/30 text-amber-300 hover:bg-amber-500/25 rounded-lg transition shrink-0 active:scale-95">
           <i id="soundToggleIcon" class="ph-duotone ph-speaker-high text-sm sm:text-base"></i>
         </button>
-        <button id="hintBtn" onclick="useHint()" title="Indice (35 pts)" class="flex items-center justify-center gap-1 bg-slate-900/70 border border-slate-800 text-slate-500 text-xs font-semibold px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-lg transition opacity-75 shrink-0 active:scale-95">
+        <button id="hintBtn" onclick="useHint()" title="Indice (35 🪙)" class="flex items-center justify-center gap-1 bg-slate-900/70 border border-slate-800 text-slate-500 text-xs font-semibold px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-lg transition opacity-75 shrink-0 active:scale-95">
           <span id="hintBtnContent" class="flex items-center gap-1">
             <i class="ph-duotone ph-lock-key text-xs sm:text-sm"></i>
-            <span class="font-mono-num text-[10px] sm:text-[11px]">35</span>
+            <span class="font-mono-num text-[10px] sm:text-[11px]">35 🪙</span>
           </span>
         </button>
 

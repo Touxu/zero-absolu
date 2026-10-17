@@ -185,14 +185,53 @@ export function getTierVisuals(g) {
 
 export function buildAccentInsensitiveIndex() {
   state.accentInsensitiveMap = {};
+
+  // 1. Priorité aux mots les plus fréquents (premières occurrences dans le catalogue)
   for (const word of Object.keys(state.gameDictionary)) {
     const s = stripAccents(word);
-    state.accentInsensitiveMap[s] = word;
-    if (word.includes("-")) state.accentInsensitiveMap[s.replace(/-/g, "")] = word;
+    if (!state.accentInsensitiveMap[s]) {
+      state.accentInsensitiveMap[s] = word;
+    }
+    if (word.includes("-")) {
+      const sNoHyphen = s.replace(/-/g, "");
+      if (!state.accentInsensitiveMap[sNoHyphen]) {
+        state.accentInsensitiveMap[sNoHyphen] = word;
+      }
+    }
+  }
+
+  // 2. Surclassement par les mots du Top 1000 de la manche en cours
+  for (const [word, val] of Object.entries(state.gameDictionary)) {
+    if (Array.isArray(val)) {
+      const s = stripAccents(word);
+      state.accentInsensitiveMap[s] = word;
+      if (word.includes("-")) {
+        state.accentInsensitiveMap[s.replace(/-/g, "")] = word;
+      }
+    }
+  }
+
+  // 3. Verrouillage absolu du mot secret de la manche
+  if (state.currentSecretWord) {
+    const sSecret = stripAccents(state.currentSecretWord);
+    state.accentInsensitiveMap[sSecret] = state.currentSecretWord;
+    state.accentInsensitiveMap[sSecret.replace(/-/g, "")] = state.currentSecretWord;
   }
 }
 
-export const tryDirectMatch = c => (c in state.gameDictionary ? c : (state.accentInsensitiveMap[stripAccents(c)] || null));
+export const tryDirectMatch = c => {
+  const s = stripAccents(c);
+  const cand = state.accentInsensitiveMap[s];
+  if (cand && cand !== c) {
+    const candEntry = state.gameDictionary[cand];
+    const directEntry = state.gameDictionary[c];
+    // Si la variante accentuée est dans le Top 1000 et pas le mot direct (ex: forêt vs foret)
+    if (Array.isArray(candEntry) && !Array.isArray(directEntry)) {
+      return cand;
+    }
+  }
+  return (c in state.gameDictionary ? c : (cand || null));
+};
 
 export function resolveWordInDictionary(raw) {
   let cleaned = raw.trim().toLowerCase().replace(/['’]/g, "'").replace(/\s+/g, "-");
@@ -200,6 +239,16 @@ export function resolveWordInDictionary(raw) {
   // Suppression des articles élidés ou préfixes courants (l', d', un-, le-, etc.)
   cleaned = cleaned.replace(/^(l'|d'|c'|s'|qu'|j'|m'|t'|n')/i, "");
   cleaned = cleaned.replace(/^(le-|la-|un-|une-|les-|des-|du-)/i, "");
+
+  // RÈGLE ABSOLUE : Si le mot entré correspond au mot secret (avec ou sans accents / tirets),
+  // on retourne IMMÉDIATEMENT le mot secret ! Victoire garantie sans ambiguïté ni collision.
+  if (state.currentSecretWord) {
+    const sSecret = stripAccents(state.currentSecretWord);
+    const sCleaned = stripAccents(cleaned);
+    if (sCleaned === sSecret || sCleaned.replace(/-/g, "") === sSecret.replace(/-/g, "")) {
+      return state.currentSecretWord;
+    }
+  }
 
   let m = tryDirectMatch(cleaned);
   if (m) return m;
@@ -222,9 +271,26 @@ export function resolveWordInDictionary(raw) {
     ["iez","er"],["ions","er"],["ant","er"],["issant","ir"],["issent","ir"],["issait","ir"],["irent","ir"]
   ];
   for (const f of forms) {
+    if (state.currentSecretWord) {
+      const sSecret = stripAccents(state.currentSecretWord);
+      const sF = stripAccents(f);
+      if (sF === sSecret || sF.replace(/-/g, "") === sSecret.replace(/-/g, "")) {
+        return state.currentSecretWord;
+      }
+    }
     if ((m = tryDirectMatch(f))) return m;
     for (const [end, rep] of rules) {
-      if (f.endsWith(end) && f.length - end.length >= 2 && (m = tryDirectMatch(f.slice(0, -end.length) + rep))) return m;
+      if (f.endsWith(end) && f.length - end.length >= 2) {
+        const candidate = f.slice(0, -end.length) + rep;
+        if (state.currentSecretWord) {
+          const sSecret = stripAccents(state.currentSecretWord);
+          const sC = stripAccents(candidate);
+          if (sC === sSecret || sC.replace(/-/g, "") === sSecret.replace(/-/g, "")) {
+            return state.currentSecretWord;
+          }
+        }
+        if ((m = tryDirectMatch(candidate))) return m;
+      }
     }
   }
   return null;
