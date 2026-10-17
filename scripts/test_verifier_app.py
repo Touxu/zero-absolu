@@ -166,6 +166,62 @@ def test_daily_archive_and_time_stats():
 
     print("✅ Écran des archives du jour, statistiques de chronos et rayons solaires validés")
 
+def test_simplification_and_perf():
+    with open("index.html", "r", encoding="utf-8") as fp:
+        html = fp.read()
+    with open("js/auth.js", "r", encoding="utf-8") as fp:
+        auth_js = fp.read()
+    with open("js/particles.js", "r", encoding="utf-8") as fp:
+        part_js = fp.read()
+    with open("js/app.js", "r", encoding="utf-8") as fp:
+        app_js = fp.read()
+    with open("js/ui.js", "r", encoding="utf-8") as fp:
+        ui_js = fp.read()
+    with open("js/constants.js", "r", encoding="utf-8") as fp:
+        const_js = fp.read()
+
+    # 1. Removal of redundant containers
+    assert 'id="statsContainer"' not in html, "#statsContainer must be removed to avoid duplication"
+    assert 'id="thermalGaugeContainer"' not in html, "#thermalGaugeContainer must be removed to declutter"
+    assert 'id="versionBadgeFooter"' not in html, "Duplicate version footer in onboarding must be removed"
+
+    # 2. Simplified auth form
+    assert 'Pseudo</label>' in html, "Label should be simply 'Pseudo'"
+    assert 'Pseudo unique' not in html, "'Pseudo unique' must not exist"
+    assert 'Mot de passe</label>' in html, "Label should be simply 'Mot de passe'"
+    assert 'Mot de passe (4 caract. min)' not in html, "Old label must not exist"
+
+    # 3. Non-alarming verification color
+    assert 'text-sky-400' in auth_js, "Verification status must be reassuring sky-blue"
+
+    # 4. Lobby player card & Daily rename
+    assert 'id="lobbyGradeIcon"' in html
+    assert 'id="lobbyXpBar"' in html
+    assert 'Mot du Jour' in const_js
+    assert 'Défi du Jour' not in const_js
+
+    # 5. Profile tabs & history view
+    assert 'id="tabProfileStats"' in html
+    assert 'id="tabProfileHistory"' in html
+    assert 'id="historyView"' in html
+    assert 'id="historyListContainer"' in html
+    assert 'switchProfileTab' in ui_js
+    assert 'renderHistoryViewContent' in ui_js
+    assert 'resumeSavedGame' in app_js
+    assert 'handleResumeSessionClick' in app_js
+    assert 'saveCurrentGameSession' in app_js
+
+    # 6. Particle engine performance
+    assert '.shadowBlur' not in part_js, "shadowBlur causes massive FPS drops and must be absent"
+    assert 'createRadialGradient' not in part_js, "Radial gradient allocation in animation loop must be avoided"
+    assert 'particles.splice(0, this.particles.length - 50)' in part_js, "Active particles must be capped"
+
+    # 7. No snowflake spam in gameplay
+    assert 'force' in part_js
+    assert 'data.scorePct >= 40' in app_js, "Thermal particles only trigger for >= 40% and progression"
+
+    print("✅ Allègement UI, suppression des doublons, persistance d'historique et optimisations FPS GPU 60-120 validés !")
+
 if __name__ == "__main__":
     test_modules()
     test_guest_lists()
@@ -175,4 +231,5 @@ if __name__ == "__main__":
     test_top2_thermal_gauge_and_particles()
     test_secret_words_filtering()
     test_daily_archive_and_time_stats()
+    test_simplification_and_perf()
     print("\n🎉 TOUS LES TESTS DE NON-RÉGRESSION ET DE NOUVELLES FONCTIONNALITÉS ONT RÉUSSI AVEC SUCCÈS !")

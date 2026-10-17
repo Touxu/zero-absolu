@@ -23,7 +23,7 @@ export const MODE_CONFIG = {
   },
   daily: {
     total: 500,
-    label: "Défi du Jour",
+    label: "Mot du Jour",
     icon: "ph-calendar-star",
     color: "text-amber-400",
     pillCls: "bg-amber-500/15 text-amber-200 border-amber-500/40"
@@ -89,3 +89,21 @@ export const formatDuration = sec => {
 export const getReadableTopLabel = r => (r === 1000 ? "FUSION" : r ? `Top ${1001 - r}` : null);
 
 export const toggleModal = (id, show) => $(id)?.classList.toggle("hidden", !show);
+
+export const getTodayDateStr = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+};
+
+export const formatDailyDateLabel = dateStr => {
+  if (!dateStr) return "";
+  const parts = String(dateStr).split("-");
+  if (parts.length === 3) {
+    const year = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10) - 1;
+    const day = parseInt(parts[2], 10);
+    const months = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"];
+    return `${day} ${months[month]} ${year}`;
+  }
+  return dateStr;
+};

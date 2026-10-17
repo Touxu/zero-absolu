@@ -3,10 +3,10 @@
 // =========================================================================
 import {
   $, escapeHTML, formatPct, formatDuration, vibrateDevice, getReadableTopLabel,
-  toggleModal, GRADE_TIERS, HINT_COST, MODE_CONFIG
+  toggleModal, GRADE_TIERS, HINT_COST, MODE_CONFIG, formatDailyDateLabel
 } from "./constants.js";
 import { state } from "./state.js";
-import { getLevelInfo, getTierVisuals, getDailyHistory } from "./engine.js";
+import { getLevelInfo, getTierVisuals, getDailyHistory, getGameSessions } from "./engine.js";
 import { soundManager } from "./audio.js";
 import { thermalParticles } from "./particles.js";
 
@@ -15,9 +15,9 @@ export { $, toggleModal, soundManager, thermalParticles };
 let initialScreenHeight = window.innerHeight;
 let pendingConfirmAction = null;
 
-export function triggerWordParticles(targetEl, scorePct, isWin = false, rank = null) {
+export function triggerWordParticles(targetEl, scorePct, isWin = false, rank = null, force = false) {
   const el = targetEl || $("guessForm") || document.body;
-  thermalParticles.trigger(el, scorePct, isWin, rank);
+  thermalParticles.trigger(el, scorePct, isWin, rank, force);
 }
 
 export function updateThermalGauge(scorePct = state.roomBestScorePct) {
@@ -233,12 +233,8 @@ export function updateRecentWordBoxVisibility(guessObj, animateBar = true) {
 
 export function updateStatsUI() {
   const total = state.guesses.length;
-  const bestStr = state.roomBestScorePct > 0 ? formatPct(state.roomBestScorePct) : "0%";
-  const topCnt = state.guesses.filter(g => g.rank !== null).length;
-  $("statAttempts").textContent = $("mobileAttemptCount").textContent = $("miniAttempts").textContent = total;
-  $("statBestScore").textContent = $("miniBestScore").textContent = bestStr;
-  $("statTopWords").textContent = $("miniTopWords").textContent = topCnt;
-  updateThermalGauge(state.roomBestScorePct);
+  if ($("mobileAttemptCount")) $("mobileAttemptCount").textContent = total;
+  if ($("statAttempts")) $("statAttempts").textContent = total;
 }
 
 export function updateLiveTicker(msg) {
@@ -412,18 +408,16 @@ export function syncMobileViewport() {
 
 export function resetStatsIdleTimer() {
   clearTimeout(state.statsIdleTimer);
-  state.statsIdleTimer = setTimeout(() => setStatsMinimized(true), 10000);
 }
 
 export function toggleStatsMinimized() {
   setStatsMinimized(!state.statsMinimized);
-  if (!state.statsMinimized) resetStatsIdleTimer();
 }
 
 export function setStatsMinimized(min) {
   state.statsMinimized = min;
-  $("statsExpanded").classList.toggle("hidden", min);
-  $("statsCollapsed").classList.toggle("hidden", !min);
+  if ($("statsExpanded")) $("statsExpanded").classList.toggle("hidden", min);
+  if ($("statsCollapsed")) $("statsCollapsed").classList.toggle("hidden", !min);
 }
 
 export function showLevelUpBanner(newLevelInfo) {
@@ -489,21 +483,208 @@ export function triggerSolarFusionExplosion(targetEl) {
 export function openStatsModal(targetId = state.myId) {
   state.selectedStatsPlayerId = state.players[targetId] ? targetId : state.myId;
   state.showingGradesCatalog = false;
-  updateGradesViewVisibility();
+  state.profileActiveTab = state.profileActiveTab || "stats";
+  updateProfileViewsVisibility();
   renderStatsModalContent();
   toggleModal("statsModal", true);
 }
 
-export function toggleGradesView() {
-  state.showingGradesCatalog = !state.showingGradesCatalog;
-  updateGradesViewVisibility();
-  renderStatsModalContent();
+export function closeStatsModal() {
+  toggleModal("statsModal", false);
 }
 
-export function updateGradesViewVisibility() {
-  $("gradesCatalogView").classList.toggle("hidden", !state.showingGradesCatalog);
-  $("gradesCatalogView").classList.toggle("flex", state.showingGradesCatalog);
-  $("statsMainView").classList.toggle("hidden", state.showingGradesCatalog);
+export function toggleGradesView() {
+  state.showingGradesCatalog = !state.showingGradesCatalog;
+  updateProfileViewsVisibility();
+  if (state.showingGradesCatalog) {
+    renderStatsModalContent();
+  }
+}
+
+export function switchProfileTab(tab = "stats") {
+  state.profileActiveTab = tab;
+  state.showingGradesCatalog = false;
+  updateProfileViewsVisibility();
+  if (tab === "stats") {
+    renderStatsModalContent();
+  }
+}
+
+export function updateProfileViewsVisibility() {
+  const isGrades = Boolean(state.showingGradesCatalog);
+  const isHistory = state.profileActiveTab === "history" && !isGrades;
+  const isStats = state.profileActiveTab === "stats" && !isGrades;
+
+  if ($("gradesCatalogView")) {
+    $("gradesCatalogView").classList.toggle("hidden", !isGrades);
+    $("gradesCatalogView").classList.toggle("flex", isGrades);
+  }
+  if ($("statsMainView")) {
+    $("statsMainView").classList.toggle("hidden", !isStats);
+  }
+  if ($("historyView")) {
+    $("historyView").classList.toggle("hidden", !isHistory);
+    $("historyView").classList.toggle("flex", isHistory);
+  }
+
+  // Mise à jour de l'état visuel des onglets du profil
+  const btnStats = $("tabProfileStats");
+  const btnHist = $("tabProfileHistory");
+  if (btnStats && btnHist) {
+    if (isStats) {
+      btnStats.className = "flex-1 py-1.5 px-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 bg-sky-500/20 text-sky-300 border border-sky-500/30";
+      btnHist.className = "flex-1 py-1.5 px-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 text-slate-400 hover:text-white border border-transparent";
+    } else if (isHistory) {
+      btnHist.className = "flex-1 py-1.5 px-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 bg-amber-500/20 text-amber-300 border border-amber-500/30";
+      btnStats.className = "flex-1 py-1.5 px-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 text-slate-400 hover:text-white border border-transparent";
+      renderHistoryViewContent();
+    } else {
+      btnStats.className = "flex-1 py-1.5 px-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 text-slate-400 hover:text-white border border-transparent";
+      btnHist.className = "flex-1 py-1.5 px-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 text-slate-400 hover:text-white border border-transparent";
+    }
+  }
+}
+
+export const updateGradesViewVisibility = updateProfileViewsVisibility;
+
+export function renderHistoryViewContent() {
+  const container = $("historyListContainer");
+  if (!container) return;
+
+  const sessions = getGameSessions();
+  const dailyHistory = getDailyHistory();
+
+  // 1. Parties récentes / en cours
+  let sessionsHTML = "";
+  if (sessions.length === 0) {
+    sessionsHTML = `
+      <div class="bg-slate-950/60 border border-slate-800 rounded-2xl p-4 text-center">
+        <i class="ph-duotone ph-hourglass-empty text-2xl text-slate-500 mb-1.5 inline-block"></i>
+        <p class="text-xs text-slate-400">Aucune partie récente enregistrée.</p>
+        <p class="text-[10px] text-slate-500 mt-0.5">Lancez une manche Solo ou Multijoueur pour la retrouver ici et la reprendre quand vous voulez !</p>
+      </div>`;
+  } else {
+    sessionsHTML = sessions.map(s => {
+      const modeCfg = MODE_CONFIG[s.mode] || MODE_CONFIG.classic;
+      const isWon = s.isWin;
+      const statusBadge = isWon
+        ? `<span class="text-[10px] font-extrabold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2 py-0.5 rounded-full flex items-center gap-1 shrink-0"><i class="ph-bold ph-check"></i> Trouvé (100%)</span>`
+        : `<span class="text-[10px] font-extrabold bg-amber-500/20 text-amber-300 border border-amber-500/40 px-2 py-0.5 rounded-full flex items-center gap-1 shrink-0"><i class="ph-bold ph-lightning"></i> En cours (${formatPct(s.bestScorePct)})</span>`;
+
+      const modeBadge = `<span class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-800 border border-slate-700 text-slate-300 shrink-0">${modeCfg.label}</span>`;
+      const dateLabel = s.dailyDateStr ? formatDailyDateLabel(s.dailyDateStr) : (s.roundNumber ? `Manche #${s.roundNumber}` : `Partie #${s.gameId}`);
+
+      const guessesJsonAttr = escapeHTML(JSON.stringify(s.guesses || []));
+
+      const actionBtn = isWon
+        ? `<button data-session-game-id="${s.gameId}" data-session-mode="${s.mode}" data-session-round="${s.roundNumber || 1}" data-session-daily="${s.dailyDateStr || ''}" data-session-guesses="${guessesJsonAttr}" onclick="handleResumeSessionClick(this)"
+            class="px-2.5 py-1 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition flex items-center gap-1">
+            <i class="ph-duotone ph-eye text-sm"></i> Revoir
+          </button>`
+        : `<button data-session-game-id="${s.gameId}" data-session-mode="${s.mode}" data-session-round="${s.roundNumber || 1}" data-session-daily="${s.dailyDateStr || ''}" data-session-guesses="${guessesJsonAttr}" onclick="handleResumeSessionClick(this)"
+            class="px-3 py-1.5 rounded-xl text-xs font-extrabold bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-slate-950 transition flex items-center gap-1.5 shadow-md shadow-sky-500/20 active:scale-95">
+            <i class="ph-bold ph-play text-xs"></i> Reprendre
+          </button>`;
+
+      const secretWordDisplay = isWon && s.secretWord
+        ? `<span class="text-[11px] text-slate-400">Mot secret : <strong class="text-amber-300 uppercase">${escapeHTML(s.secretWord)}</strong></span>`
+        : `<span class="text-[11px] text-slate-400">Meilleur : <strong class="text-sky-300">${formatPct(s.bestScorePct)}</strong></span>`;
+
+      return `
+        <div class="bg-slate-950/70 border border-slate-800 rounded-2xl p-3 flex flex-col gap-2 transition hover:border-slate-700">
+          <div class="flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2 min-w-0">
+              ${modeBadge}
+              <span class="text-xs font-extrabold text-white truncate">${dateLabel}</span>
+            </div>
+            ${statusBadge}
+          </div>
+          <div class="flex items-center justify-between pt-1 border-t border-slate-900">
+            <div class="flex items-center gap-2 min-w-0">
+              <span class="text-[11px] text-slate-400 font-mono-num">${s.guessesCount || 0} essais</span>
+              <span class="text-slate-600">•</span>
+              ${secretWordDisplay}
+            </div>
+            <div class="shrink-0 ml-2">
+              ${actionBtn}
+            </div>
+          </div>
+        </div>`;
+    }).join("");
+  }
+
+  // 2. Archives des Mots du Jour (7 derniers jours)
+  let dailyHTML = "";
+  if (dailyHistory.length === 0) {
+    dailyHTML = `<p class="text-xs text-slate-500 text-center py-2">Aucun mot du jour passé disponible.</p>`;
+  } else {
+    dailyHTML = dailyHistory.map(item => {
+      const isSolved = Boolean(item.localRecord && item.localRecord.solved);
+      const formattedDate = formatDailyDateLabel(item.dateStr);
+
+      const statusBadge = isSolved
+        ? `<span class="text-[10px] font-extrabold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2 py-0.5 rounded-full flex items-center gap-1 shrink-0"><i class="ph-bold ph-check"></i> Résolu (${item.localRecord.attempts} essais)</span>`
+        : `<span class="text-[10px] font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded-full shrink-0">À découvrir</span>`;
+
+      const actionBtn = isSolved
+        ? `<button onclick="playDailyArchiveGame(${item.gameId}, '${item.dateStr}', ${item.isToday}); closeStatsModal();"
+            class="px-2.5 py-1 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition flex items-center gap-1">
+            <i class="ph-duotone ph-arrow-counter-clockwise text-sm"></i> Rejouer
+          </button>`
+        : `<button onclick="playDailyArchiveGame(${item.gameId}, '${item.dateStr}', ${item.isToday}); closeStatsModal();"
+            class="px-3 py-1.5 rounded-xl text-xs font-extrabold bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-300 hover:to-orange-400 text-slate-950 transition flex items-center gap-1.5 shadow-md shadow-amber-500/20 active:scale-95">
+            <i class="ph-bold ph-play text-xs"></i> Jouer
+          </button>`;
+
+      return `
+        <div class="bg-slate-950/70 border border-slate-800 rounded-2xl p-3 flex flex-col gap-2 transition hover:border-slate-700">
+          <div class="flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2 min-w-0">
+              <span class="text-xs font-extrabold text-white flex items-center gap-1.5 truncate">
+                <i class="ph-duotone ph-calendar text-amber-400 shrink-0"></i> ${formattedDate}
+              </span>
+              ${item.isToday ? `<span class="text-[9px] font-extrabold bg-sky-500/20 text-sky-300 border border-sky-400/30 px-1.5 py-0.2 rounded-full uppercase shrink-0">Aujourd'hui</span>` : ""}
+            </div>
+            ${statusBadge}
+          </div>
+          <div class="flex items-center justify-between pt-1 border-t border-slate-900">
+            <div class="text-[11px] text-slate-400 font-mono-num flex items-center gap-2 min-w-0">
+              <span><i class="ph-duotone ph-users text-sky-400 mr-1"></i>${item.solversCount} vainqueurs</span>
+              ${item.localRecord && item.localRecord.timeSeconds ? `<span>• <i class="ph-duotone ph-timer text-emerald-400 mr-1"></i>${formatDuration(item.localRecord.timeSeconds)}</span>` : ""}
+            </div>
+            <div class="shrink-0 ml-2">
+              ${actionBtn}
+            </div>
+          </div>
+        </div>`;
+    }).join("");
+  }
+
+  container.innerHTML = `
+    <div>
+      <div class="flex items-center justify-between mb-2 px-1">
+        <span class="text-xs font-extrabold text-white flex items-center gap-1.5">
+          <i class="ph-duotone ph-game-controller text-sky-400 text-base"></i> Mes Parties En Cours & Récentes
+        </span>
+        <span class="text-[10px] text-slate-400 font-mono-num">${sessions.length} partie(s)</span>
+      </div>
+      <div class="flex flex-col gap-2">
+        ${sessionsHTML}
+      </div>
+    </div>
+
+    <div class="pt-2 border-t border-slate-800/80">
+      <div class="flex items-center justify-between mb-2 px-1">
+        <span class="text-xs font-extrabold text-amber-300 flex items-center gap-1.5">
+          <i class="ph-duotone ph-calendar-star text-amber-400 text-base"></i> Archives du Mot du Jour
+        </span>
+        <span class="text-[10px] text-slate-400 font-mono-num">7 derniers jours</span>
+      </div>
+      <div class="flex flex-col gap-2">
+        ${dailyHTML}
+      </div>
+    </div>
+  `;
 }
 
 export function renderStatsModalContent() {
@@ -599,16 +780,13 @@ export function openWelcomeModal(isNewUser) {
     : "Votre compte est prêt ! Découvrez comment faire monter la température.";
 
   $("welcomeLevel").textContent = `Niv. ${lvl.level}`;
-  $("welcomeGrade").textContent = lvl.title;
+  $("welcomeGrade").innerHTML = `<i class="ph-duotone ${lvl.icon} text-lg ${lvl.color}" title="${lvl.title}"></i>`;
   $("welcomePoints").textContent = `${me.points || 0} ⚡`;
 
   if (isExperienced) {
     $("welcomeButtons").innerHTML = `
       <button id="welcomePlayBtn" onclick="closeWelcomeModal()" class="w-full py-2.5 rounded-xl text-xs font-extrabold bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white shadow-lg transition">
         Continuer vers le salon
-      </button>
-      <button id="welcomeTutoBtn" onclick="closeWelcomeModal(); openTutorialModal();" class="w-full py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-sky-300 transition flex items-center justify-center gap-1.5">
-        <i class="ph-duotone ph-compass-tool text-sm"></i> Revoir le tutoriel
       </button>
     `;
   } else {
@@ -722,7 +900,7 @@ export function renderDailyArchiveContent() {
 
     const actionBtn = isToday
       ? `<button onclick="window.playDailyArchiveGame(${item.gameId}, '${item.dateStr}', true)" class="w-full py-1.5 rounded-xl text-xs font-extrabold bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-300 hover:to-orange-400 text-slate-950 transition shadow-md flex items-center justify-center gap-1.5 active:scale-98">
-          <i class="ph-fill ph-play text-xs"></i> Jouer le défi du jour
+          <i class="ph-fill ph-play text-xs"></i> Jouer le mot du jour
          </button>`
       : `<button onclick="window.playDailyArchiveGame(${item.gameId}, '${item.dateStr}', false)" class="w-full py-1 rounded-xl text-[11px] font-bold bg-slate-800 hover:bg-slate-700 text-sky-300 hover:text-white transition flex items-center justify-center gap-1 active:scale-98">
           <i class="ph-duotone ph-arrow-counter-clockwise text-xs"></i> Rejouer cette archive
@@ -785,9 +963,11 @@ export function closeOnboardingModal() {
 export function updateLobbyHeaderUI() {
   const me = state.players[state.myId] || {};
   const lvl = getLevelInfo(me.xp || 0);
-  $("lobbyLevelBadge").textContent = `N${lvl.level}`;
-  $("lobbyPseudoDisplay").textContent = me.pseudo || state.myPseudo;
-  $("lobbyStatsDisplay").textContent = `${me.points || 0} ⚡ • ${me.xp || 0} XP (${lvl.title})`;
+  if ($("lobbyLevelBadge")) $("lobbyLevelBadge").textContent = `N${lvl.level}`;
+  if ($("lobbyPseudoDisplay")) $("lobbyPseudoDisplay").textContent = me.pseudo || state.myPseudo;
+  if ($("lobbyGradeIcon")) $("lobbyGradeIcon").innerHTML = `<i class="ph-duotone ${lvl.icon} text-xs ${lvl.color}" title="${lvl.title}"></i>`;
+  if ($("lobbyStatsDisplay")) $("lobbyStatsDisplay").textContent = `${me.points || 0} ⚡`;
+  if ($("lobbyXpBar")) $("lobbyXpBar").style.width = `${Math.max(4, lvl.progressPct)}%`;
   window.updateModeUI?.(state.currentGameMode);
 }
 

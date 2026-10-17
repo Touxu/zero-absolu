@@ -118,23 +118,27 @@ export async function handleAuthSubmit(e) {
   const errEl = $("authError");
 
   if (pseudo.length < 2) {
+    errEl.className = "text-rose-400 text-xs mt-2 text-center min-h-[1rem]";
     errEl.textContent = "Le pseudo doit contenir au moins 2 caractères.";
     triggerInputShake($("authPseudo"));
     return;
   }
   if (pwd.length < 4) {
+    errEl.className = "text-rose-400 text-xs mt-2 text-center min-h-[1rem]";
     errEl.textContent = "Le mot de passe doit contenir au moins 4 caractères.";
     triggerInputShake($("authPassword"));
     return;
   }
 
-  errEl.textContent = "Vérification Cloud en cours...";
+  errEl.className = "text-sky-400 text-xs mt-2 text-center min-h-[1rem] flex items-center justify-center gap-1.5";
+  errEl.innerHTML = '<div class="w-3.5 h-3.5 border-2 border-sky-400 border-t-transparent rounded-full animate-spin"></div><span>Vérification de connexion...</span>';
   $("authSubmitBtn").disabled = true;
 
   const cleanKey = pseudo.toLowerCase();
 
   if (!sbClient) {
     $("authSubmitBtn").disabled = false;
+    errEl.className = "text-rose-400 text-xs mt-2 text-center min-h-[1rem]";
     errEl.textContent = "Clés Supabase absentes dans config.js !";
     return;
   }
@@ -151,6 +155,7 @@ export async function handleAuthSubmit(e) {
 
     if (selErr) {
       $("authSubmitBtn").disabled = false;
+      errEl.className = "text-rose-400 text-xs mt-2 text-center min-h-[1rem]";
       errEl.textContent = `Erreur Supabase (${selErr.code || 'SQL'}) : ${selErr.message}`;
       return;
     }
@@ -160,6 +165,7 @@ export async function handleAuthSubmit(e) {
     if (state.authMode === "register") {
       if (existing) {
         $("authSubmitBtn").disabled = false;
+        errEl.className = "text-rose-400 text-xs mt-2 text-center min-h-[1rem]";
         errEl.textContent = `Le pseudo "${pseudo}" est déjà pris ! Choisissez-en un autre ou cliquez sur Connexion.`;
         triggerInputShake($("authPseudo"));
         return;
@@ -181,6 +187,7 @@ export async function handleAuthSubmit(e) {
       const { error: insErr } = await sbClient.from("players").insert(newRow);
       if (insErr) {
         $("authSubmitBtn").disabled = false;
+        errEl.className = "text-rose-400 text-xs mt-2 text-center min-h-[1rem]";
         errEl.textContent = `Création refusée par Supabase : ${insErr.message}`;
         return;
       }
@@ -190,6 +197,7 @@ export async function handleAuthSubmit(e) {
     } else {
       if (!existing) {
         $("authSubmitBtn").disabled = false;
+        errEl.className = "text-rose-400 text-xs mt-2 text-center min-h-[1rem]";
         errEl.textContent = `Aucun compte "${pseudo}" trouvé. Cliquez sur l'onglet Inscription !`;
         triggerInputShake($("tabRegisterBtn"));
         return;
@@ -209,6 +217,7 @@ export async function handleAuthSubmit(e) {
 
       if (!isMatch) {
         $("authSubmitBtn").disabled = false;
+        errEl.className = "text-rose-400 text-xs mt-2 text-center min-h-[1rem]";
         errEl.textContent = "Mot de passe incorrect pour ce pseudo.";
         triggerInputShake($("authPassword"));
         return;

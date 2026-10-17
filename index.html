@@ -117,7 +117,7 @@
 
           <form onsubmit="handleAuthSubmit(event)" class="flex flex-col gap-3">
             <div>
-              <label class="block text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1">Pseudo unique</label>
+              <label class="block text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1">Pseudo</label>
               <div class="relative">
                 <i class="ph-duotone ph-user-circle text-lg text-slate-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
                 <input id="authPseudo" type="text" maxlength="16" placeholder="Ex: Touxu" autocomplete="username"
@@ -126,7 +126,7 @@
             </div>
 
             <div>
-              <label class="block text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1">Mot de passe (4 caract. min)</label>
+              <label class="block text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1">Mot de passe</label>
               <div class="relative">
                 <i class="ph-duotone ph-lock-key text-lg text-slate-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
                 <input id="authPassword" type="password" maxlength="80" placeholder="Votre mot de passe..." autocomplete="current-password"
@@ -162,26 +162,29 @@
         <!-- ÉTAPE B : CHOIX DU MODE DE JEU (AFFICHÉ UNE FOIS CONNECTÉ) -->
         <div id="lobbyView" class="hidden">
           <div class="bg-slate-950/80 border border-slate-800 rounded-2xl p-2.5 mb-3 flex items-center justify-between">
-            <div class="flex items-center gap-2 min-w-0">
+            <div class="flex items-center gap-2.5 min-w-0 flex-1 mr-2">
               <div class="w-8 h-8 rounded-xl bg-sky-500/15 border border-sky-500/30 flex items-center justify-center text-sky-300 font-mono-num text-xs font-extrabold shrink-0" id="lobbyLevelBadge">
                 N1
               </div>
-              <div class="min-w-0">
-                <div class="text-xs font-extrabold text-white truncate" id="lobbyPseudoDisplay">Joueur</div>
-                <div class="text-[10px] text-amber-400 font-mono-num" id="lobbyStatsDisplay">0 ⚡ • 0 XP</div>
+              <div class="min-w-0 flex-1">
+                <div class="flex items-center gap-2">
+                  <span class="text-xs font-extrabold text-white truncate" id="lobbyPseudoDisplay">Joueur</span>
+                  <span id="lobbyGradeIcon" class="flex items-center"></span>
+                  <span class="text-[10px] text-amber-400 font-mono-num font-bold ml-auto" id="lobbyStatsDisplay">0 ⚡</span>
+                </div>
+                <div class="w-full bg-slate-900 h-1 rounded-full overflow-hidden border border-slate-800/80 mt-1">
+                  <div id="lobbyXpBar" class="h-full bg-gradient-to-r from-sky-500 to-indigo-500 transition-all duration-500" style="width: 10%;"></div>
+                </div>
               </div>
             </div>
             <div class="flex items-center gap-1 shrink-0">
-              <button onclick="openTutorialModal()" title="Tutoriel" class="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-sky-300 text-[10px] font-bold flex items-center gap-1">
-                <i class="ph-duotone ph-book-open-text text-xs"></i> Tuto
-              </button>
               <button onclick="logoutAccount()" title="Changer de compte" class="p-1.5 rounded-lg bg-slate-800 hover:bg-rose-950/60 text-slate-400 hover:text-rose-300 transition">
                 <i class="ph-bold ph-sign-out text-xs"></i>
               </button>
             </div>
           </div>
 
-          <!-- Sélecteur de Mode : Classique vs Pop Culture vs Défi du Jour -->
+          <!-- Sélecteur de Mode : Classique vs Pop Culture vs Mot du Jour -->
           <div class="mb-3">
             <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 flex items-center gap-1">
               <i class="ph-duotone ph-planet text-sky-400 text-xs"></i> Choisir l'univers des mots
@@ -207,22 +210,11 @@
                 class="py-2 px-1.5 rounded-xl bg-slate-900/60 border border-transparent text-slate-400 hover:text-white flex flex-col items-center justify-center gap-1 transition">
                 <i class="ph-duotone ph-calendar-star text-base text-amber-400 shrink-0"></i>
                 <div class="text-center leading-tight">
-                  <div class="text-[11px] font-extrabold">Défi du Jour</div>
+                  <div class="text-[11px] font-extrabold">Mot du Jour</div>
                   <div class="text-[8px] text-amber-300/80">Quotidien</div>
                 </div>
               </button>
             </div>
-
-            <button id="dailyArchiveLobbyBtn" type="button" onclick="openDailyArchiveModal()"
-              class="w-full mt-2 py-2 px-3 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-400/30 text-amber-200 text-xs font-bold transition flex items-center justify-between group shadow-sm active:scale-98">
-              <span class="flex items-center gap-2">
-                <i class="ph-duotone ph-calendar-star text-base text-amber-400 group-hover:scale-110 transition-transform"></i>
-                <span>Archives & Classements des Défis</span>
-              </span>
-              <span class="text-[10px] font-mono-num text-amber-300 bg-amber-500/20 px-2 py-0.5 rounded-md flex items-center gap-1">
-                Historique <i class="ph-bold ph-caret-right text-xs"></i>
-              </span>
-            </button>
           </div>
 
           <div class="grid grid-cols-2 gap-2.5">
@@ -259,7 +251,6 @@
             <span id="cloudStatusDot" class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
             <span id="cloudStatusText">Supabase Cloud Actif</span>
           </span>
-          <span id="versionBadgeFooter" class="font-mono-num text-slate-400 font-semibold">v1.3 • Édition Solaire</span>
         </div>
       </div>
     </div>
@@ -282,7 +273,9 @@
           <div class="h-6 w-px bg-slate-800"></div>
           <div>
             <span class="text-[10px] text-slate-400 block">Grade</span>
-            <strong id="welcomeGrade" class="text-xs font-extrabold text-white">Flocon Curieux</strong>
+            <span id="welcomeGrade" class="flex items-center justify-center mt-1">
+              <i class="ph-duotone ph-snowflake text-lg text-sky-400"></i>
+            </span>
           </div>
           <div class="h-6 w-px bg-slate-800"></div>
           <div>
@@ -384,7 +377,7 @@
                 </div>
                 <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-2.5 flex items-center gap-2.5">
                   <i class="ph-duotone ph-calendar-star text-xl text-amber-400 shrink-0"></i>
-                  <span>Affrontez le <strong>Défi du Jour</strong> quotidien et comparez vos chronos dans l'historique !</span>
+                  <span>Affrontez le <strong>Mot du Jour</strong> quotidien et comparez vos chronos dans l'historique !</span>
                 </div>
                 <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-2.5 flex items-center gap-2.5">
                   <i class="ph-duotone ph-medal-military text-xl text-sky-400 shrink-0"></i>
@@ -469,11 +462,11 @@
               <span class="text-[9px] text-emerald-400 font-semibold bg-emerald-500/10 px-1.5 py-0.2 rounded border border-emerald-500/20">Menu persistant</span>
             </div>
             <div class="grid grid-cols-2 gap-1.5">
-              <button id="debugGivre0Btn" onclick="triggerWordParticles(this, 0, false, null); soundManager.playGuessSound(0);"
+              <button id="debugGivre0Btn" onclick="triggerWordParticles(this, 0, false, null, true); soundManager.playGuessSound(0);"
                 class="bg-sky-500/15 hover:bg-sky-500/25 border border-sky-400/40 text-sky-200 rounded-xl p-2 text-xs font-bold flex items-center gap-1.5 justify-center transition active:scale-95">
                 <i class="ph-fill ph-snowflake text-sky-400"></i> Flocons 0% (Blizzard)
               </button>
-              <button id="debugGivre35Btn" onclick="triggerWordParticles(this, 35, false, null); soundManager.playGuessSound(35);"
+              <button id="debugGivre35Btn" onclick="triggerWordParticles(this, 35, false, null, true); soundManager.playGuessSound(35);"
                 class="bg-sky-500/15 hover:bg-sky-500/25 border border-sky-400/40 text-sky-200 rounded-xl p-2 text-xs font-bold flex items-center gap-1.5 justify-center transition active:scale-95">
                 <i class="ph-duotone ph-snowflake text-sky-300"></i> Flocons 35% (Léger)
               </button>
@@ -614,6 +607,18 @@
             </div>
           </div>
 
+          <!-- Onglets Profil : Statistiques vs Historique & Parties -->
+          <div class="flex items-center bg-slate-950 p-1 rounded-xl border border-slate-800 gap-1 shrink-0">
+            <button id="tabProfileStats" onclick="switchProfileTab('stats')"
+              class="flex-1 py-1.5 px-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 bg-sky-500/20 text-sky-300 border border-sky-500/30">
+              <i class="ph-duotone ph-chart-bar text-sm"></i> Statistiques & Rangs
+            </button>
+            <button id="tabProfileHistory" onclick="switchProfileTab('history')"
+              class="flex-1 py-1.5 px-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 text-slate-400 hover:text-white border border-transparent">
+              <i class="ph-duotone ph-clock-counter-clockwise text-sm"></i> Historique & Parties
+            </button>
+          </div>
+
           <div id="gradesCatalogView" class="hidden flex-col gap-2 bg-slate-950/60 border border-slate-800 rounded-2xl p-3 animate-pop">
             <div class="flex items-center justify-between border-b border-slate-800 pb-2 mb-1">
               <span class="text-xs font-extrabold text-amber-300 flex items-center gap-1.5">
@@ -640,6 +645,11 @@
               <div id="modalLeaderboardList" class="flex flex-col gap-1.5"></div>
             </div>
           </div>
+
+          <!-- Vue Historique des parties & Archives Mot du Jour -->
+          <div id="historyView" class="hidden flex-col gap-3 animate-pop">
+            <div id="historyListContainer" class="flex flex-col gap-3"></div>
+          </div>
         </div>
       </div>
     </div>
@@ -658,7 +668,7 @@
           </div>
           <div class="min-w-0 flex-1">
             <h3 class="text-base font-extrabold text-white flex items-center gap-2">
-              <span>Archives des Défis</span>
+              <span>Archives du Mot du Jour</span>
               <span class="text-[10px] font-extrabold bg-amber-500/20 text-amber-300 border border-amber-400/40 px-2 py-0.5 rounded-full">Quotidien</span>
             </h3>
             <p class="text-[11px] text-slate-400">Historique des mots, nombre de vainqueurs et classements de vitesse</p>
@@ -759,7 +769,7 @@
             </button>
             <button onclick="closeHeaderMenu(); openDailyArchiveModal();" class="w-full px-3 py-2 text-left text-xs font-semibold text-amber-300 hover:bg-slate-800/80 flex items-center gap-2.5 transition">
               <i class="ph-duotone ph-calendar-star text-base text-amber-400"></i>
-              <span>Archives des Défis</span>
+              <span>Archives du Mot du Jour</span>
             </button>
             <button onclick="closeHeaderMenu(); askGiveUpRound();" class="w-full px-3 py-2 text-left text-xs font-semibold text-rose-300 hover:bg-rose-950/40 flex items-center gap-2.5 transition">
               <i class="ph-duotone ph-flag-banner text-base text-rose-400"></i>
@@ -810,52 +820,6 @@
 
       <!-- COLONNE GAUCHE : JEU -->
       <section id="gameSection" class="lg:col-span-7 flex flex-col gap-1.5 min-h-0 h-full">
-
-        <!-- STATISTIQUES MINIMISABLES -->
-        <div id="statsContainer" onclick="toggleStatsMinimized()" class="cursor-pointer select-none shrink-0 transition-all">
-          <div id="statsExpanded" class="grid grid-cols-3 gap-1.5">
-            <div class="bg-slate-900/70 border border-slate-800/80 rounded-xl px-2.5 py-1.5 flex items-center justify-between">
-              <span class="text-[10px] text-slate-400">Mots</span><span id="statAttempts" class="font-mono-num text-xs font-bold text-white">0</span>
-            </div>
-            <div class="bg-slate-900/70 border border-slate-800/80 rounded-xl px-2.5 py-1.5 flex items-center justify-between">
-              <span class="text-[10px] text-slate-400">Record</span><span id="statBestScore" class="font-mono-num text-xs font-bold text-amber-400">0%</span>
-            </div>
-            <div class="bg-slate-900/70 border border-slate-800/80 rounded-xl px-2.5 py-1.5 flex items-center justify-between">
-              <span class="text-[10px] text-slate-400">Top 1000</span><span id="statTopWords" class="font-mono-num text-xs font-bold text-orange-400">0</span>
-            </div>
-          </div>
-          <div id="statsCollapsed" class="hidden bg-slate-900/50 border border-slate-800/60 rounded-lg px-2.5 py-1 flex items-center justify-between text-[11px] text-slate-400">
-            <div class="flex items-center gap-3 font-mono-num">
-              <span>Mots: <strong id="miniAttempts" class="text-slate-200">0</strong></span>
-              <span>Record: <strong id="miniBestScore" class="text-amber-400">0%</strong></span>
-              <span>Top: <strong id="miniTopWords" class="text-orange-400">0</strong></span>
-            </div>
-            <i class="ph-bold ph-caret-down text-xs text-slate-500"></i>
-          </div>
-        </div>
-
-        <!-- JAUGE THERMIQUE INTERACTIVE & THERMOMÈTRE PLASMA -->
-        <div id="thermalGaugeContainer" class="bg-slate-900/85 border border-slate-800/90 rounded-2xl p-2 sm:p-2.5 px-3 flex items-center justify-between gap-2.5 shadow-lg shrink-0">
-          <div class="flex items-center gap-2.5 min-w-0">
-            <div id="thermalGaugeBulb" class="w-8 h-8 rounded-xl bg-sky-500/20 border border-sky-400/40 text-sky-400 flex items-center justify-center text-lg shadow-[0_0_10px_rgba(14,165,233,0.3)] transition-all duration-500 shrink-0">
-              <i id="thermalGaugeIcon" class="ph-duotone ph-thermometer-cold text-lg"></i>
-            </div>
-            <div class="min-w-0">
-              <div class="flex items-center gap-1.5">
-                <span class="text-xs font-extrabold text-white tracking-wide">Thermomètre</span>
-                <span id="thermalTierBadge" class="text-[10px] font-bold px-1.5 py-0.2 rounded bg-sky-500/20 text-sky-300 border border-sky-400/30">ZÉRO ABSOLU</span>
-              </div>
-              <p id="thermalStatusText" class="text-[10px] text-slate-400 truncate">Proposez un mot pour amorcer la réaction...</p>
-            </div>
-          </div>
-
-          <div class="flex items-center gap-2.5 shrink-0">
-            <div class="w-24 sm:w-36 h-2.5 sm:h-3 bg-slate-950 rounded-full border border-slate-700/80 p-0.5 relative overflow-hidden flex items-center">
-              <div id="thermalGaugeLiquid" class="h-full rounded-full transition-all duration-500 bg-sky-500 shadow-[0_0_8px_#0ea5e9]" style="width: 4%;"></div>
-            </div>
-            <span id="thermalGaugeVal" class="font-mono-num text-xs sm:text-sm font-extrabold text-sky-300 min-w-[3.2rem] text-right">0.0%</span>
-          </div>
-        </div>
 
         <!-- Barre de Saisie -->
         <form id="guessForm" onsubmit="handleGuess(event)" class="relative flex gap-1.5 shrink-0">

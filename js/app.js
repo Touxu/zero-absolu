@@ -4,7 +4,8 @@
 
 import {
   APP_VERSION, APP_EDITION, MODE_CONFIG, HINT_COST, FALLBACK_WORDS,
-  $, escapeHTML, formatPct, vibrateDevice, getReadableTopLabel, toggleModal
+  $, escapeHTML, formatPct, vibrateDevice, getReadableTopLabel, toggleModal,
+  getTodayDateStr, formatDailyDateLabel
 } from "./constants.js";
 
 import { state } from "./state.js";
@@ -12,7 +13,8 @@ import { state } from "./state.js";
 import {
   ensureCatalogueLoaded, pickUnplayedGameId, getLevelInfo,
   computeUnifiedScorePct, buildAccentInsensitiveIndex,
-  resolveWordInDictionary, checkPowerSurge
+  resolveWordInDictionary, checkPowerSurge,
+  getGameSessions, saveGameSession
 } from "./engine.js";
 
 import {
@@ -36,8 +38,9 @@ import {
   renderFeed, showToast, switchMobileTab, syncMobileViewport,
   resetStatsIdleTimer, toggleStatsMinimized, setStatsMinimized,
   showLevelUpBanner, triggerSurgeAnimation, dismissSurgeOverlay,
-  triggerSolarFusionExplosion, openStatsModal, toggleGradesView,
-  renderStatsModalContent, openWelcomeModal, closeWelcomeModal,
+  triggerSolarFusionExplosion, openStatsModal, closeStatsModal, toggleGradesView,
+  switchProfileTab, renderStatsModalContent, renderHistoryViewContent,
+  openWelcomeModal, closeWelcomeModal,
   openTutorialModal, closeTutorialModal, stepTutorial, updateTutorialCarousel,
   goToTutorialSlide, openDailyArchiveModal, closeDailyArchiveModal, renderDailyArchiveContent,
   openOnboardingModal, closeOnboardingModal, updateLobbyHeaderUI,
@@ -148,7 +151,7 @@ export function saveLocalProgress() {
 // =========================================================================
 // 3. CHARGEMENT D'UNE MANCHE (DEPUIS LE CATALOGUE COMPRESSÉ)
 // =========================================================================
-export async function loadGame(gameId, displayRound = state.roundNumber, initialGuesses = [], mode = state.currentGameMode) {
+export async function loadGame(gameId, displayRound = state.roundNumber, initialGuesses = [], mode = state.currentGameMode, dailyDateStr = null) {
   const seq = ++state.currentLoadSeq;
   if (mode && MODE_CONFIG[mode]) {
     state.currentGameMode = mode;
@@ -158,12 +161,18 @@ export async function loadGame(gameId, displayRound = state.roundNumber, initial
 
   const cfg = MODE_CONFIG[state.currentGameMode] || MODE_CONFIG.classic;
   state.currentGameId = gameId;
-  state.roundNumber = displayRound;
+  state.roundNumber = typeof displayRound === "number" ? displayRound : 1;
   state.roundStartTime = Date.now();
   state.guesses = [...initialGuesses];
   state.roundFinished = state.guesses.some(g => g.isWin || g.rank === 1000);
   state.roomBestScorePct = state.guesses.reduce((max, g) => Math.max(max, g.scorePct || 0), 0);
   state.roomBestRank = state.guesses.reduce((max, g) => Math.max(max, g.rank || 0), 0);
+
+  if (dailyDateStr) {
+    state.currentDailyDateStr = dailyDateStr;
+  } else if (state.currentGameMode === "daily" && !state.currentDailyDateStr) {
+    state.currentDailyDateStr = getTodayDateStr();
+  }
 
   state.feedEvents = [];
   renderFeed();
@@ -177,7 +186,10 @@ export async function loadGame(gameId, displayRound = state.roundNumber, initial
     });
   }
 
-  const roundText = typeof state.roundNumber === "number" ? `#${state.roundNumber}` : `${state.roundNumber}`;
+  let roundText = `#${state.roundNumber}`;
+  if (state.currentGameMode === "daily") {
+    roundText = formatDailyDateLabel(state.currentDailyDateStr || getTodayDateStr());
+  }
   $("roundBadge").textContent = roundText;
   toggleModal("lastGuessBox", false);
   toggleModal("victoryBanner", false);
@@ -209,6 +221,7 @@ export async function loadGame(gameId, displayRound = state.roundNumber, initial
 
     const newDict = {};
     const words = cat.words;
+    state.currentSecretWord = words[secretWordIdx];
 
     for (let i = 0; i < maxWords; i++) {
       const wOff = i * 16;
@@ -240,6 +253,7 @@ export async function loadGame(gameId, displayRound = state.roundNumber, initial
 
   addSystemFeedEvent(`Manche #${state.roundNumber} lancée (${cfg.label})`);
   updateLiveTicker(state.roomCode ? `Salon ${state.roomCode} (${cfg.label}) • Manche #${state.roundNumber}` : `Manche #${state.roundNumber} (${cfg.label}) en cours`);
+  saveCurrentGameSession();
 }
 
 // =========================================================================
@@ -468,12 +482,17 @@ export function applySharedGuess(data, isLocal) {
     showVictoryBanner(data.pseudo, data.word, state.guesses.length, false, data.durationSeconds);
     updateLiveTicker(`${data.pseudo} a trouvé ${data.word.toUpperCase()} (100%) !`);
   } else {
-    // Émission de particules thermiques proportionnelles au rang/température
-    triggerWordParticles(wordRowEl, scorePct, false, data.rank);
+    // Émission de particules thermiques UNIQUEMENT si progression significative (>= 40% et nouveau record ou Top 10)
+    const isProgression = data.isNewRecord || (data.scorePct >= state.roomBestScorePct) || data.isTop10;
+    if (isProgression && data.scorePct >= 40) {
+      triggerWordParticles(wordRowEl, scorePct, false, data.rank);
+    }
     if (data.isNewRecord && !data.surgeGain) {
       updateLiveTicker(`Record par ${data.pseudo} : ${data.word} • ${formatPct(scorePct)}`);
     }
   }
+
+  saveCurrentGameSession();
 }
 
 export function playDailyArchiveGame(gameId, dateStr, isToday = false) {
@@ -484,9 +503,47 @@ export function playDailyArchiveGame(gameId, dateStr, isToday = false) {
     localStorage.setItem("zeroabsolu_mode", "daily");
     updateModeUI("daily");
   }
-  const displayLabel = isToday ? 1 : `Défi ${dateStr}`;
-  loadGame(gameId, displayLabel, [], "daily");
-  showToast(isToday ? "Défi du jour lancé !" : `Défi archivé du ${dateStr} chargé !`, "amber");
+  state.currentDailyDateStr = dateStr;
+  loadGame(gameId, 1, [], "daily", dateStr);
+  const prettyDate = formatDailyDateLabel(dateStr);
+  showToast(isToday ? "Mot du jour lancé !" : `Mot archivé du ${prettyDate} chargé !`, "amber");
+}
+
+// Persistance et reprise de session de jeu
+export function saveCurrentGameSession() {
+  if (!state.currentGameId) return;
+  saveGameSession({
+    gameId: state.currentGameId,
+    mode: state.currentGameMode,
+    roundNumber: state.roundNumber,
+    dailyDateStr: state.currentDailyDateStr,
+    guessesCount: state.guesses.length,
+    bestScorePct: state.roomBestScorePct,
+    bestRank: state.roomBestRank,
+    isWin: state.roundFinished,
+    secretWord: state.roundFinished ? state.currentSecretWord : null,
+    guesses: state.guesses.slice(0, 100)
+  });
+}
+
+export function resumeSavedGame(gameId, mode, guesses = [], roundNumber = 1, dailyDateStr = null) {
+  closeStatsModal();
+  loadGame(gameId, roundNumber, guesses, mode, dailyDateStr);
+  showToast(`Partie reprise (${guesses.length} mots essayés)`, "sky");
+}
+
+export function handleResumeSessionClick(btnEl) {
+  if (!btnEl) return;
+  const gameId = Number(btnEl.getAttribute("data-session-game-id")) || 1;
+  const mode = btnEl.getAttribute("data-session-mode") || "classic";
+  const roundNum = Number(btnEl.getAttribute("data-session-round")) || 1;
+  const dailyStr = btnEl.getAttribute("data-session-daily") || null;
+  const rawGuesses = btnEl.getAttribute("data-session-guesses") || "[]";
+  let guesses = [];
+  try {
+    guesses = JSON.parse(rawGuesses);
+  } catch (_) {}
+  resumeSavedGame(gameId, mode, guesses, roundNum, dailyStr);
 }
 
 // =========================================================================
@@ -541,10 +598,12 @@ export function askGiveUpRound() {
 export function executeGiveUpRound() {
   const secret = Object.entries(state.gameDictionary).find(([, v]) => Array.isArray(v) && v[1] === 1000)?.[0] || "inconnu";
   state.roundFinished = true;
+  state.currentSecretWord = secret;
   updateHintButtonUI();
   showVictoryBanner("Abandon", secret, state.guesses.length, true);
   addSystemFeedEvent(`Mot révélé : ${secret.toUpperCase()}`);
   updateLiveTicker(`Réponse : ${secret.toUpperCase()}`);
+  saveCurrentGameSession();
   if (state.roomCode && state.isHost) {
     publishRoomEvent({ type: "ROUND_GIVEN_UP", senderId: state.myId, secretWord: secret }, false);
     publishRetainedRoomSnapshot();
@@ -567,7 +626,7 @@ export function askNextGame() {
 export function executeNextGame() {
   if (state.roomCode && !state.isHost) return showToast("Seul l'hôte peut changer de manche.", "amber");
   const nextId = pickUnplayedGameId(state.currentGameMode);
-  const nextRound = state.roundNumber + 1;
+  const nextRound = (Number(state.roundNumber) || 1) + 1;
   loadGame(nextId, nextRound, [], state.currentGameMode);
   if (state.roomCode && state.isHost) {
     publishRoomEvent({ type: "NEW_ROUND", senderId: state.myId, gameId: nextId, roundNumber: nextRound, gameMode: state.currentGameMode, players: state.players }, false);
@@ -650,7 +709,7 @@ let initialScreenHeight = window.screen?.availHeight || window.innerHeight;
 window.addEventListener("DOMContentLoaded", () => {
   document.title = `ZéroAbsolu — ${APP_VERSION}`;
   $("versionBadgeTop").textContent = APP_VERSION;
-  $("versionBadgeFooter").textContent = `${APP_VERSION} • ${APP_EDITION}`;
+  if ($("versionBadgeFooter")) $("versionBadgeFooter").textContent = `${APP_VERSION} • ${APP_EDITION}`;
   $("cloudStatusText").textContent = sbClient ? "Supabase Cloud Actif" : "Clés Supabase manquantes";
   $("cloudStatusDot").className = sbClient ? "w-1.5 h-1.5 rounded-full bg-emerald-400" : "w-1.5 h-1.5 rounded-full bg-rose-500";
   initialScreenHeight = window.screen?.availHeight || window.innerHeight;
@@ -736,7 +795,13 @@ Object.assign(window, {
   debugAddPointsAndXp,
   debugResetAllScores,
   openStatsModal,
+  closeStatsModal,
   toggleGradesView,
+  switchProfileTab,
+  renderHistoryViewContent,
+  resumeSavedGame,
+  handleResumeSessionClick,
+  saveCurrentGameSession,
   openConfirmModal,
   closeConfirmModal,
   toggleStatsMinimized,

@@ -113,7 +113,7 @@ html, body {
 @keyframes marqueeScroll { 0%, 20% { transform: translateX(0%); } 80%, 100% { transform: translateX(calc(-100% + 210px)); } }
 .ticker-scroll { display: inline-block; white-space: nowrap; animation: marqueeScroll 7s ease-in-out infinite alternate; }
 
-body.keyboard-active #mainHeader, body.keyboard-active #statsContainer, body.keyboard-active #mobileTabsWrapper { display: none !important; }
+body.keyboard-active #mainHeader, body.keyboard-active #mobileTabsWrapper { display: none !important; }
 body.keyboard-active #mainGrid, body.keyboard-active #gameSection { padding-top: 0.2rem !important; padding-bottom: 0.2rem !important; gap: 0.3rem !important; }
 
 ::-webkit-scrollbar { width: 4px; height: 4px; }

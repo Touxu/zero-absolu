@@ -61,7 +61,7 @@ class ThermalParticleEngine {
   }
 
   // Déclencheur principal d'effets thermiques
-  trigger(targetEl, scorePct, isWin = false, rankOrTop10 = null) {
+  trigger(targetEl, scorePct, isWin = false, rankOrTop10 = null, force = false) {
     if (!this.canvas) this.initCanvas();
     let cx = window.innerWidth / 2;
     let cy = window.innerHeight / 2;
@@ -85,14 +85,12 @@ class ThermalParticleEngine {
       // Proportionnel : Top 2 a beaucoup plus de particules que Top 10
       const ratio = rankNum !== null ? Math.max(0, Math.min(1, (rankNum - 991) / 8)) : 0.5;
       this.spawnMagmaEruption(cx, cy, ratio);
-    } else if (rankNum !== null && rankNum >= 901 && rankNum <= 990) {
-      // Palier 2 : Flammèches vives (Top 100 à Top 11 : rank 901 à 990)
-      // Proportionnel au rang : plus proche du Top 11 = plus de flammes
-      const ratio = Math.max(0, Math.min(1, (rankNum - 901) / 89));
+    } else if ((rankNum !== null && rankNum >= 901 && rankNum <= 990) || pct >= 40) {
+      // Palier 2 : Flammèches vives (Top 100 à Top 11 : rank 901 à 990 ou score >= 40%)
+      const ratio = rankNum !== null ? Math.max(0, Math.min(1, (rankNum - 901) / 89)) : Math.max(0, Math.min(1, (pct - 40) / 50));
       this.spawnFlames(cx, cy, ratio);
-    } else {
-      // Palier 1 : Givre / Flocons (< Top 100 / Froid)
-      // Inversément proportionnel : beaucoup plus de flocons quand proche de 0% que de 40%
+    } else if (force) {
+      // Palier 1 : Givre / Flocons (<40%) - UNIQUEMENT si forcé via le laboratoire de test
       const coldRatio = pct <= 0 ? 1.0 : (pct >= 40 ? 0.0 : (40 - pct) / 40);
       this.spawnFrost(cx, cy, coldRatio);
     }
@@ -101,16 +99,16 @@ class ThermalParticleEngine {
   }
 
   // 1. PALIER FROID : FLOCONS GÉOMÉTRIQUES & CRISTAUX DE GLACE
-  // Durée : ~3.5 à 4.5 secondes - Beaucoup plus de flocons vers 0% (blizzard) que vers 40%
+  // Durée : ~2.5 à 3.5 secondes
   spawnFrost(x, y, coldRatio = 0.5) {
-    const count = Math.round(10 + coldRatio * 38); // 10 flocons à 40% -> 48 flocons à 0%
+    const count = Math.round(8 + coldRatio * 18);
     for (let i = 0; i < count; i++) {
       const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.4;
-      const speed = 0.6 + Math.random() * (2.2 + coldRatio * 1.4);
+      const speed = 0.6 + Math.random() * (2.0 + coldRatio * 1.0);
       this.particles.push({
         type: "snowflake",
-        x: x + (Math.random() - 0.5) * (40 + coldRatio * 50),
-        y: y + (Math.random() - 0.5) * 16,
+        x: x + (Math.random() - 0.5) * (35 + coldRatio * 35),
+        y: y + (Math.random() - 0.5) * 14,
         vx: Math.cos(angle) * speed * 0.7,
         vy: -0.6 - Math.random() * (1.2 + coldRatio * 1.0),
         gravity: 0.03 + Math.random() * 0.02,
@@ -129,146 +127,147 @@ class ThermalParticleEngine {
 
   // 2. PALIER CHALEUR : FLAMMÈCHES VIVES & BRAISES MONTANTES (Top 100 à Top 11)
   // Durée : ~2.5 à 3.5 secondes - Proportionnel au rang
+  // 2. PALIER CHALEUR : FLAMMÈCHES VIVES & BRAISES MONTANTES (Top 100 à Top 11)
+  // Durée : ~2.0 à 3.0 secondes - Proportionnel au rang
   spawnFlames(x, y, ratio = 0.5) {
-    // A. Flammes principales dansantes (18 à 52)
-    const flameCount = Math.round(18 + ratio * 34);
+    // A. Flammes principales dansantes (10 à 26)
+    const flameCount = Math.round(10 + ratio * 16);
     for (let i = 0; i < flameCount; i++) {
       this.particles.push({
         type: "flame",
-        x: x + (Math.random() - 0.5) * (45 + ratio * 35),
-        y: y + (Math.random() - 0.5) * 12,
-        vx: (Math.random() - 0.5) * (2.0 + ratio * 1.2),
-        vy: -2.0 - Math.random() * (3.0 + ratio * 2.0),
+        x: x + (Math.random() - 0.5) * (35 + ratio * 25),
+        y: y + (Math.random() - 0.5) * 10,
+        vx: (Math.random() - 0.5) * (1.8 + ratio * 1.0),
+        vy: -1.8 - Math.random() * (2.4 + ratio * 1.6),
         buoyancy: -0.025 - ratio * 0.015,
         turbPhase: Math.random() * Math.PI * 2,
         turbSpeed: 0.06 + Math.random() * 0.05,
-        size: (8 + ratio * 3) + Math.random() * (10 + ratio * 4),
+        size: (7 + ratio * 3) + Math.random() * (8 + ratio * 3),
         alpha: 1.0,
-        decay: 0.006 + Math.random() * 0.004,
+        decay: 0.008 + Math.random() * 0.005,
         color: ["#facc15", "#f59e0b", "#f97316", "#fb923c", "#ef4444"][Math.floor(Math.random() * 5)]
       });
     }
 
-    // B. Micro-braises dorées ascendantes (10 à 28)
-    const emberCount = Math.round(10 + ratio * 18);
+    // B. Micro-braises dorées ascendantes (6 à 16)
+    const emberCount = Math.round(6 + ratio * 10);
     for (let i = 0; i < emberCount; i++) {
       this.particles.push({
         type: "ember",
-        x: x + (Math.random() - 0.5) * 35,
-        y: y + (Math.random() - 0.5) * 10,
-        vx: (Math.random() - 0.5) * 2.0,
-        vy: -2.5 - Math.random() * (3.5 + ratio * 1.5),
+        x: x + (Math.random() - 0.5) * 25,
+        y: y + (Math.random() - 0.5) * 8,
+        vx: (Math.random() - 0.5) * 1.6,
+        vy: -2.0 - Math.random() * (2.8 + ratio * 1.2),
         buoyancy: -0.015,
-        size: 2.0 + Math.random() * 2.6,
+        size: 1.8 + Math.random() * 2.2,
         alpha: 1.0,
-        decay: 0.005 + Math.random() * 0.003,
+        decay: 0.007 + Math.random() * 0.004,
         color: ["#fef08a", "#facc15", "#f59e0b"][Math.floor(Math.random() * 3)]
       });
     }
   }
 
   // 3. PALIER MAGMA : ÉRUPTION VOLCANIQUE & LAVE ARDENTE (Top 10 à Top 2)
-  // Durée : ~3.5 à 4.5 secondes - Proportionnel au rang (Top 2 en a beaucoup plus que Top 10)
+  // Durée : ~2.5 à 3.5 secondes - Proportionnel au rang
   spawnMagmaEruption(x, y, ratio = 0.5) {
-    // A. Roches et boules de lave incandescente (25 à 70)
-    const magmaCount = Math.round(25 + ratio * 45);
+    // A. Roches et boules de lave incandescente (12 à 32)
+    const magmaCount = Math.round(12 + ratio * 20);
     for (let i = 0; i < magmaCount; i++) {
-      const angle = -Math.PI / 2 + (Math.random() - 0.5) * (1.3 + ratio * 0.4);
-      const speed = (5.5 + ratio * 2.5) + Math.random() * (6.5 + ratio * 3.5);
+      const angle = -Math.PI / 2 + (Math.random() - 0.5) * (1.2 + ratio * 0.3);
+      const speed = (4.5 + ratio * 2.0) + Math.random() * (5.5 + ratio * 2.5);
       this.particles.push({
         type: "magma",
-        x: x + (Math.random() - 0.5) * (20 + ratio * 20),
+        x: x + (Math.random() - 0.5) * (16 + ratio * 16),
         y: y,
         vx: Math.cos(angle) * speed,
         vy: Math.sin(angle) * speed,
-        gravity: 0.15 + Math.random() * 0.03,
-        radius: (4 + ratio * 3) + Math.random() * (6 + ratio * 5),
-        trail: [],
+        gravity: 0.16 + Math.random() * 0.03,
+        radius: (3.5 + ratio * 2.5) + Math.random() * (4.5 + ratio * 3.5),
         alpha: 1.0,
-        decay: 0.005 + Math.random() * 0.0035,
+        decay: 0.007 + Math.random() * 0.004,
         coreColor: "#fef08a",
-        outerColor: ["#ef4444", "#dc2626", "#b91c1c", "#ea580c"][Math.floor(Math.random() * 4)]
+        outerColor: ["#ef4444", "#dc2626", "#ea580c"][Math.floor(Math.random() * 3)]
       });
     }
 
-    // B. Éclats de braises volcaniques crépitantes (15 à 40)
-    const sparkCount = Math.round(15 + ratio * 25);
+    // B. Éclats de braises volcaniques crépitantes (8 à 22)
+    const sparkCount = Math.round(8 + ratio * 14);
     for (let i = 0; i < sparkCount; i++) {
       const angle = (Math.PI * 2 * i) / sparkCount + (Math.random() - 0.5) * 0.35;
-      const speed = (3.0 + ratio * 1.5) + Math.random() * (5.0 + ratio * 3.0);
+      const speed = (2.5 + ratio * 1.2) + Math.random() * (4.0 + ratio * 2.0);
       this.particles.push({
         type: "ember",
         x, y,
         vx: Math.cos(angle) * speed,
         vy: Math.sin(angle) * speed * 0.85,
-        gravity: 0.11,
-        size: 3 + Math.random() * (3 + ratio * 2),
+        gravity: 0.12,
+        size: 2.5 + Math.random() * (2.5 + ratio * 1.5),
         alpha: 1.0,
-        decay: 0.006 + Math.random() * 0.004,
+        decay: 0.008 + Math.random() * 0.004,
         color: ["#ffedd5", "#fde047", "#f97316"][Math.floor(Math.random() * 3)]
       });
     }
   }
 
   // 4. PALIER FUSION SOLAIRE : ÉTOILES SOLAIRES, RAYONS & ONDES DE PLASMA (100%)
-  // Durée : ~4.0 à 5.5 secondes (AUCUN CONFETTI)
+  // Durée : ~3.5 à 4.5 secondes (AUCUN CONFETTI)
   spawnSolarFusion(x, y) {
     // A. 2 Ondes de choc circulaires concentriques
     this.shockwaves.push({
       x, y,
-      radius: 12,
-      maxRadius: Math.max(window.innerWidth, window.innerHeight) * 0.65,
+      radius: 10,
+      maxRadius: Math.max(window.innerWidth, window.innerHeight) * 0.6,
       speed: 12,
-      lineWidth: 9,
+      lineWidth: 7,
       alpha: 1.0,
       color: "#fef08a"
     });
     this.shockwaves.push({
       x, y,
       radius: 5,
-      maxRadius: Math.max(window.innerWidth, window.innerHeight) * 0.45,
+      maxRadius: Math.max(window.innerWidth, window.innerHeight) * 0.4,
       speed: 8,
-      lineWidth: 5,
+      lineWidth: 4,
       alpha: 1.0,
       color: "#facc15"
     });
 
-    // B. Étoiles solaires à 8 branches et éclats de photons
-    const starCount = 65;
+    // B. Étoiles solaires à 8 branches et éclats de photons (36 étoiles)
+    const starCount = 36;
     for (let i = 0; i < starCount; i++) {
       const angle = (Math.PI * 2 * i) / starCount + (Math.random() - 0.5) * 0.35;
-      const speed = 3.5 + Math.random() * 8.5;
+      const speed = 3.0 + Math.random() * 7.0;
       this.particles.push({
         type: "sunStar",
         x, y,
         vx: Math.cos(angle) * speed,
         vy: Math.sin(angle) * speed,
-        friction: 0.978, // Décélération très douce
+        friction: 0.98,
         rotation: Math.random() * Math.PI,
         rotSpeed: (Math.random() - 0.5) * 0.04,
         spikes: Math.random() > 0.35 ? 8 : 4,
-        outerR: 10 + Math.random() * 14,
-        innerR: 4 + Math.random() * 5,
+        outerR: 8 + Math.random() * 11,
+        innerR: 3.5 + Math.random() * 4,
         alpha: 1.0,
-        decay: 0.0045 + Math.random() * 0.003, // ~4 à 5 secondes
+        decay: 0.006 + Math.random() * 0.003,
         color: ["#ffffff", "#fef08a", "#facc15", "#f59e0b"][Math.floor(Math.random() * 4)]
       });
     }
 
-    // C. Rayons de plasma solaire
-    const beamCount = 30;
+    // C. Rayons de plasma solaire (16 rayons)
+    const beamCount = 16;
     for (let i = 0; i < beamCount; i++) {
       const angle = Math.random() * Math.PI * 2;
-      const speed = 2.0 + Math.random() * 5.0;
+      const speed = 2.0 + Math.random() * 4.5;
       this.particles.push({
         type: "sunRay",
         x, y,
         vx: Math.cos(angle) * speed,
         vy: Math.sin(angle) * speed,
-        length: 20 + Math.random() * 30,
+        length: 16 + Math.random() * 24,
         angle,
         alpha: 1.0,
-        decay: 0.005 + Math.random() * 0.003,
+        decay: 0.006 + Math.random() * 0.003,
         color: "#fef08a"
       });
     }
@@ -280,21 +279,24 @@ class ThermalParticleEngine {
     if (!ctx) return;
     ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
 
+    // Limitation stricte du nombre de particules actives pour garantir 60-120 FPS constants
+    if (this.particles.length > 50) {
+      this.particles.splice(0, this.particles.length - 50);
+    }
+
     // 1. Dessin des ondes de choc de fusion
     for (let i = this.shockwaves.length - 1; i >= 0; i--) {
       const sw = this.shockwaves[i];
       sw.radius += sw.speed;
       sw.alpha = Math.max(0, 1.0 - sw.radius / sw.maxRadius);
-      sw.lineWidth = Math.max(1, 9 * sw.alpha);
+      sw.lineWidth = Math.max(1, 7 * sw.alpha);
 
       ctx.save();
       ctx.beginPath();
       ctx.arc(sw.x, sw.y, sw.radius, 0, Math.PI * 2);
       ctx.strokeStyle = sw.color;
       ctx.lineWidth = sw.lineWidth;
-      ctx.globalAlpha = sw.alpha * 0.9;
-      ctx.shadowColor = "#facc15";
-      ctx.shadowBlur = 24;
+      ctx.globalAlpha = sw.alpha * 0.85;
       ctx.stroke();
       ctx.restore();
 
@@ -303,7 +305,7 @@ class ThermalParticleEngine {
       }
     }
 
-    // 2. Dessin des particules thématiques
+    // 2. Dessin des particules thématiques (sans flou CPU)
     for (let i = this.particles.length - 1; i >= 0; i--) {
       const p = this.particles[i];
       p.alpha -= p.decay;
@@ -353,10 +355,8 @@ class ThermalParticleEngine {
     ctx.rotate(p.rotation);
     ctx.strokeStyle = p.color;
     ctx.fillStyle = p.color;
-    ctx.lineWidth = 1.8;
+    ctx.lineWidth = 1.6;
     ctx.lineCap = "round";
-    ctx.shadowColor = "#38bdf8";
-    ctx.shadowBlur = 8;
 
     const r = p.radius;
     for (let i = 0; i < 6; i++) {
@@ -375,21 +375,19 @@ class ThermalParticleEngine {
     }
     // Cristal central
     ctx.beginPath();
-    ctx.arc(0, 0, 2.0, 0, Math.PI * 2);
+    ctx.arc(0, 0, 1.8, 0, Math.PI * 2);
     ctx.fill();
   }
 
   // Traceur vectoriel de flammèche ardente
   drawFlame(ctx, p) {
     p.turbPhase += p.turbSpeed;
-    p.x += p.vx + Math.sin(p.turbPhase) * 1.1;
+    p.x += p.vx + Math.sin(p.turbPhase) * 1.0;
     p.y += p.vy;
     p.vy += p.buoyancy;
     p.size = Math.max(1, p.size * 0.992);
 
     ctx.translate(p.x, p.y);
-    ctx.shadowColor = p.color;
-    ctx.shadowBlur = 14;
 
     // Corps de la flamme en goutte étirée
     ctx.beginPath();
@@ -416,33 +414,30 @@ class ThermalParticleEngine {
     if (p.gravity) p.vy += p.gravity;
 
     ctx.translate(p.x, p.y);
-    ctx.shadowColor = p.color;
-    ctx.shadowBlur = 8;
     ctx.beginPath();
     ctx.arc(0, 0, p.size, 0, Math.PI * 2);
     ctx.fillStyle = p.color;
     ctx.fill();
   }
 
-  // Traceur de goutte de lave incandescente
+  // Traceur de goutte de lave incandescente (2 cercles concentriques ultra rapides, 0 allocation de dégradé)
   drawMagma(ctx, p) {
     p.x += p.vx;
     p.y += p.vy;
     p.vy += p.gravity;
 
     ctx.translate(p.x, p.y);
-    ctx.shadowColor = p.outerColor;
-    ctx.shadowBlur = 16;
 
-    // Cœur en fusion
-    const grad = ctx.createRadialGradient(0, 0, 1, 0, 0, p.radius);
-    grad.addColorStop(0, p.coreColor);
-    grad.addColorStop(0.55, p.outerColor);
-    grad.addColorStop(1, "rgba(69, 10, 10, 0.85)");
-
+    // Enveloppe magma externe
     ctx.beginPath();
     ctx.arc(0, 0, p.radius, 0, Math.PI * 2);
-    ctx.fillStyle = grad;
+    ctx.fillStyle = p.outerColor;
+    ctx.fill();
+
+    // Cœur en fusion incandescente
+    ctx.beginPath();
+    ctx.arc(0, 0, Math.max(1, p.radius * 0.45), 0, Math.PI * 2);
+    ctx.fillStyle = p.coreColor;
     ctx.fill();
   }
 
@@ -456,8 +451,6 @@ class ThermalParticleEngine {
 
     ctx.translate(p.x, p.y);
     ctx.rotate(p.rotation);
-    ctx.shadowColor = "#facc15";
-    ctx.shadowBlur = 20;
 
     const spikes = p.spikes;
     const outerR = p.outerR;
@@ -486,7 +479,7 @@ class ThermalParticleEngine {
 
     // Halo central blanc éclatant
     ctx.beginPath();
-    ctx.arc(0, 0, innerR * 0.9, 0, Math.PI * 2);
+    ctx.arc(0, 0, innerR * 0.85, 0, Math.PI * 2);
     ctx.fillStyle = "#ffffff";
     ctx.fill();
   }
@@ -499,10 +492,8 @@ class ThermalParticleEngine {
     ctx.translate(p.x, p.y);
     ctx.rotate(p.angle);
     ctx.strokeStyle = p.color;
-    ctx.lineWidth = 2.2;
+    ctx.lineWidth = 2.0;
     ctx.lineCap = "round";
-    ctx.shadowColor = "#facc15";
-    ctx.shadowBlur = 12;
 
     ctx.beginPath();
     ctx.moveTo(0, 0);

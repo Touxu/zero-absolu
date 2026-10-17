@@ -236,3 +236,34 @@ export function checkPowerSurge(rank, newPct) {
   const milestone = (rank >= 991 && state.roomBestRank < 991) || (rank >= 900 && state.roomBestRank < 750);
   return (newPct > state.roomBestScorePct && newPct >= 45 && (jump >= 15 || milestone)) ? Math.max(15, Math.round(jump)) : null;
 }
+
+// Persistance et récupération de l'historique des parties récentes
+export function getGameSessions() {
+  try {
+    const raw = localStorage.getItem("zeroabsolu_recent_games");
+    const arr = raw ? JSON.parse(raw) : [];
+    return Array.isArray(arr) ? arr : [];
+  } catch (_) {
+    return [];
+  }
+}
+
+export function saveGameSession(sessionData) {
+  if (!sessionData || !sessionData.gameId) return;
+  try {
+    let history = getGameSessions();
+    const existingIdx = history.findIndex(h =>
+      h.gameId === sessionData.gameId &&
+      h.mode === sessionData.mode &&
+      (!sessionData.dailyDateStr || h.dailyDateStr === sessionData.dailyDateStr)
+    );
+    if (existingIdx >= 0) {
+      history[existingIdx] = { ...history[existingIdx], ...sessionData, updatedAt: Date.now() };
+    } else {
+      history.unshift({ ...sessionData, updatedAt: Date.now() });
+      if (history.length > 25) history = history.slice(0, 25);
+    }
+    localStorage.setItem("zeroabsolu_recent_games", JSON.stringify(history));
+  } catch (_) {}
+}
+

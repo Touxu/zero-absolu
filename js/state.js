@@ -46,7 +46,9 @@ export const state = {
   roomBestScorePct: 0,
   roomBestRank: 0,
   roundStartTime: null,
+  currentSecretWord: null,
   dailyArchiveCache: [],
+  currentDailyDateStr: null,
 
   // Joueurs et classements
   players: {},
@@ -54,6 +56,7 @@ export const state = {
   leaderboardScope: "room",
   selectedStatsPlayerId: initialTabId,
   showingGradesCatalog: false,
+  profileActiveTab: "stats",
 
   // Timers et filtres UI
   statsMinimized: false,
